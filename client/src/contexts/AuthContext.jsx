@@ -9,6 +9,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     // Проверяем, есть ли сохраненный пользователь в localStorage
@@ -20,12 +21,13 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // Функция для регистрации
-  const register = (username, password) => {
+  const register = async (username, password) => {
     // Проверяем, существует ли уже пользователь
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const userExists = users.some(user => user.username === username);
     
     if (userExists) {
+      setError('Пользователь с таким именем уже существует');
       throw new Error('Пользователь с таким именем уже существует');
     }
     
@@ -45,16 +47,18 @@ export const AuthProvider = ({ children }) => {
     const { password: _, ...userWithoutPassword } = newUser;
     setCurrentUser(userWithoutPassword);
     localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+    setError(null);
     
     return userWithoutPassword;
   };
 
   // Функция для входа
-  const login = (username, password) => {
+  const login = async (username, password) => {
     const users = JSON.parse(localStorage.getItem('users') || '[]');
     const user = users.find(u => u.username === username && u.password === password);
     
     if (!user) {
+      setError('Неверное имя пользователя или пароль');
       throw new Error('Неверное имя пользователя или пароль');
     }
     
@@ -62,6 +66,7 @@ export const AuthProvider = ({ children }) => {
     const { password: _, ...userWithoutPassword } = user;
     setCurrentUser(userWithoutPassword);
     localStorage.setItem('user', JSON.stringify(userWithoutPassword));
+    setError(null);
     
     return userWithoutPassword;
   };
@@ -70,6 +75,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('user');
+  };
+  
+  // Функция для проверки username
+  const checkUsername = async (username) => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    return !users.some(user => user.username === username);
   };
 
   // Создаем первого пользователя, если его нет
@@ -92,9 +103,11 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     isAuthenticated: !!currentUser,
     loading,
+    error,
     register,
     login,
-    logout
+    logout,
+    checkUsername
   };
 
   return (

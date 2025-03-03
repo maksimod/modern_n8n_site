@@ -10,7 +10,11 @@ const resources = {
       "loading": "Loading...",
       "videos": "videos",
       "logout": "Logout",
-      
+      "course.markCompleted": "Mark as completed",
+      "course.completed": "Completed",
+      "course.courses": "Courses",
+      "course.continueCourse": "Continue course",
+      "course.startCourse": "Start course",
       // Авторизация
       "login": "Login",
       "register": "Register",
@@ -42,7 +46,11 @@ const resources = {
       "loading": "Загрузка...",
       "videos": "видео",
       "logout": "Выход",
-      
+      "course.markCompleted": "Отметить как просмотренное",
+      "course.completed": "Просмотрено",
+      "course.courses": "Курсы",
+      "course.continueCourse": "Продолжить курс",
+      "course.startCourse": "Начать курс",
       // Авторизация
       "login": "Вход",
       "register": "Регистрация",

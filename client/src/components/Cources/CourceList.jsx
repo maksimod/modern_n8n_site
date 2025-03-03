@@ -1,130 +1,108 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { getCourses, calculateCourseCompletion } from '../../services/course.service';
+import { getCourseProgress, calculateCourseCompletion } from '../../services/course.service';
 import styles from '../../styles/courses.module.css';
 
-const CourseList = () => {
+const CourseItem = ({ course, currentVideo }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
-  const { language } = useLanguage();
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        const coursesData = await getCourses(language);
-        setCourses(coursesData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching courses:', err);
-        setError('Failed to load courses');
-      } finally {
-        setLoading(false);
+  if (!course) return null;
+
+  const progress = getCourseProgress(currentUser, course.id);
+  const completionPercentage = calculateCourseCompletion(currentUser, course);
+
+  // Find the first uncompleted video
+  const findNextVideo = () => {
+    if (!progress) return course.videos[0];
+
+    for (const video of course.videos) {
+      if (!progress[video.id]) {
+        return video;
       }
-    };
+    }
 
-    fetchCourses();
-  }, [language]);
-
-  if (loading) {
-    return <div>{t('common.loading')}</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
-
-  // Find the next course to continue for the user
-  const findNextCourse = () => {
-    if (!currentUser || !currentUser.progress) return courses[0];
-    
-    // First, check for courses in progress
-    const courseInProgress = courses.find(course => {
-      const completion = calculateCourseCompletion(currentUser, course);
-      return completion > 0 && completion < 100;
-    });
-    
-    if (courseInProgress) return courseInProgress;
-    
-    // If no courses in progress, find the first course not started
-    const notStartedCourse = courses.find(course => {
-      const completion = calculateCourseCompletion(currentUser, course);
-      return completion === 0;
-    });
-    
-    return notStartedCourse || courses[0];
+    return course.videos[0]; // If all completed, return the first video
   };
 
-  const nextCourse = findNextCourse();
+  const nextVideo = findNextVideo();
+
+  const handleVideoClick = (videoId) => {
+    // Здесь будет логика обновления прогресса просмотра видео
+    // Например, отправка запроса на сервер
+    console.log(`Video ${videoId} clicked`);
+  };
 
   return (
-    <div>
-      <div className={styles.welcomeCard}>
-        <h1 className={styles.welcomeTitle}>{t('Welcome to VideoLearn')}</h1>
-        <p className={styles.welcomeText}>
-          {t('Explore our comprehensive video courses and enhance your skills.')}
-        </p>
-        
-        {nextCourse && (
-          <Link 
-            to={`/course/${nextCourse.id}`}
-            className={styles.courseCardButton}
-          >
-            {currentUser && currentUser.progress && currentUser.progress[nextCourse.id] 
-              ? t('course.continueCourse') 
-              : t('course.startCourse')}
-          </Link>
-        )}
-      </div>
+    <div className={styles.videosList}>
+      <h3 className={styles.sidebarTitle}>{course.title}</h3>
 
-      <h2 className={styles.sidebarTitle}>{t('Available Courses')}</h2>
-      
-      <div className={styles.courseGrid}>
-        {courses.map((course) => {
-          const completionPercentage = calculateCourseCompletion(currentUser, course);
-          
+      {completionPercentage > 0 && (
+        <div className={styles.progressContainer}>
+          <div
+            className={styles.progressBar}
+            style={{ width: `${completionPercentage}%` }}
+          ></div>
+          <span className={styles.progressText}>
+            {completionPercentage}% {t('course.completed')}
+          </span>
+        </div>
+      )}
+
+      <div style={{ marginTop: '1.5rem' }}>
+        {course.videos.map((video, index) => {
+          const isCompleted = progress && progress[video.id];
+          const isActive = currentVideo && currentVideo.id === video.id;
+
           return (
-            <Link key={course.id} to={`/course/${course.id}`} className={styles.courseCard}>
-              <div className={styles.courseCardBody}>
-                <h3 className={styles.courseCardTitle}>{course.title}</h3>
-                <p className={styles.courseCardDescription}>{course.description}</p>
-                <div>
-                  <span className={styles.courseCardMeta}>
-                    {course.videos.length} {t('videos')}
-                  </span>
+            <div key={video.id} className={styles.videoCardContainer}>
+              <Link
+                to={`/course/${course.id}?video=${video.id}`}
+                className={`${styles.videoCard} ${isActive ? styles.videoCardActive : ''} ${
+                  isCompleted ? styles.videoCardCompleted : ''
+                }`}
+                onClick={() => handleVideoClick(video.id)}
+              >
+                <div className={styles.videoNumber}>
+                  {index + 1}
                 </div>
-              </div>
-              
-              <div className={styles.courseCardFooter}>
-                {completionPercentage > 0 ? (
-                  <div className={styles.courseCardProgress}>
-                    <div className={styles.progressContainer}>
-                      <div 
-                        className={styles.progressBar}
-                        style={{ width: `${completionPercentage}%` }}
-                      ></div>
-                    </div>
-                    <span className={styles.courseCardProgressText}>
-                      {completionPercentage}% {t('course.completed')}
-                    </span>
+                <div className={styles.videoCardInfo}>
+                  <div className={styles.videoCardHeader}>
+                    <h4 className={styles.videoCardTitle}>{video.title}</h4>
+                    <span className={styles.videoDuration}>{video.duration}</span>
                   </div>
-                ) : (
-                  <div></div>
-                )}
-                
-                <span className={styles.courseCardButton}>
-                  {completionPercentage > 0 
-                    ? t('course.continueCourse') 
-                    : t('course.startCourse')}
-                </span>
-              </div>
-            </Link>
+                  <p className={styles.videoCardDescription}>{video.description}</p>
+                  <div className={styles.videoCardMeta}>
+                    {isCompleted && (
+                      <span className={styles.videoCardStatus}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 6L9 17l-5-5"></path>
+                        </svg>
+                        {t('course.completed')}
+                      </span>
+                    )}
+                    {video.isPrivate && (
+                      <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
+                        {t('Private')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+              <input
+                type="checkbox"
+                id={`video-${video.id}`}
+                checked={isCompleted}
+                onChange={() => {
+                  // Здесь будет логика обновления статуса просмотра
+                  // Например, отправка запроса на сервер
+                  console.log(`Video ${video.id} checkbox changed`);
+                }}
+                className={styles.videoCheckbox}
+              />
+            </div>
           );
         })}
       </div>
@@ -132,4 +110,4 @@ const CourseList = () => {
   );
 };
 
-export default CourseList;
+export default CourseItem;

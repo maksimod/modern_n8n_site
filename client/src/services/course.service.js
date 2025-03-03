@@ -1,6 +1,6 @@
 import api from './api';
 
-// Получить все курсы (ТОЛЬКО с сервера)
+// Получить все курсы (от сервера или из локальных данных)
 export const getCourses = async (language = 'ru') => {
   try {
     const response = await api.get(`/api/courses?language=${language}`);
@@ -12,7 +12,7 @@ export const getCourses = async (language = 'ru') => {
   }
 };
 
-// Получить курс по ID (ТОЛЬКО с сервера)
+// Получить курс по ID (от сервера или из локальных данных)
 export const getCourseById = async (courseId, language = 'ru') => {
   try {
     const response = await api.get(`/api/courses/${courseId}?language=${language}`);
@@ -23,7 +23,7 @@ export const getCourseById = async (courseId, language = 'ru') => {
   }
 };
 
-// Получить видео по ID (ТОЛЬКО с сервера)
+// Получить видео по ID (от сервера или из локальных данных)
 export const getVideoById = async (courseId, videoId, language = 'ru') => {
   try {
     const response = await api.get(`/api/courses/${courseId}/videos/${videoId}?language=${language}`);
@@ -34,18 +34,58 @@ export const getVideoById = async (courseId, videoId, language = 'ru') => {
   }
 };
 
-// Отметить видео как просмотренное (ТОЛЬКО с сервера)
+// Отметить видео как просмотренное (обновляем локальные данные)
 export const markVideoAsCompleted = async (userId, courseId, videoId, completed = true) => {
   try {
-    const response = await api.post(`/api/progress/${courseId}/${videoId}`, { completed });
-    return response.data;
+    // Получаем текущего пользователя из localStorage
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      throw new Error('Пользователь не авторизован');
+    }
+    
+    const user = JSON.parse(userStr);
+    
+    // Инициализируем структуру прогресса, если она отсутствует
+    if (!user.progress) {
+      user.progress = {};
+    }
+    
+    if (!user.progress[courseId]) {
+      user.progress[courseId] = {};
+    }
+    
+    // Обновляем статус просмотра
+    user.progress[courseId][videoId] = completed;
+    
+    // Сохраняем обновленные данные обратно в localStorage
+    localStorage.setItem('user', JSON.stringify(user));
+    
+    // Также обновляем пользователя в 'users' массиве
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const userIndex = users.findIndex(u => u.id === userId);
+    
+    if (userIndex !== -1) {
+      // Убедимся, что структура прогресса инициализирована
+      if (!users[userIndex].progress) {
+        users[userIndex].progress = {};
+      }
+      
+      if (!users[userIndex].progress[courseId]) {
+        users[userIndex].progress[courseId] = {};
+      }
+      
+      users[userIndex].progress[courseId][videoId] = completed;
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+    
+    return user.progress;
   } catch (error) {
     console.error('Error marking video as completed:', error);
-    return null;
+    throw error;
   }
 };
 
-// Получить прогресс по курсу
+// Получить прогресс по курсу для пользователя
 export const getCourseProgress = (user, courseId) => {
   if (!user || !user.progress || !user.progress[courseId]) {
     return {};

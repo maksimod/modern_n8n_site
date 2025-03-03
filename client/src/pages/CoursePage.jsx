@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourseById, getVideoById } from '../services/course.service';
+import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress } from '../services/course.service';
+import Header from '../components/Layout/Header';
 
 const CoursePage = () => {
   const { t } = useTranslation();
@@ -10,10 +12,12 @@ const CoursePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const videoId = searchParams.get('video');
   const { language } = useLanguage();
+  const { currentUser, isAuthenticated } = useAuth();
   
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [completedVideos, setCompletedVideos] = useState({});
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -22,7 +26,6 @@ const CoursePage = () => {
         const courseData = await getCourseById(courseId, language);
         setCourse(courseData);
         
-        // Если видео не выбрано, выбираем первое
         if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
           if (courseData.videos.length > 0) {
             setSearchParams({ video: courseData.videos[0].id });
@@ -30,6 +33,12 @@ const CoursePage = () => {
         } else if (videoId && courseData) {
           const videoData = await getVideoById(courseId, videoId, language);
           setCurrentVideo(videoData);
+          
+          // Загрузка данных о просмотренных видео
+          if (currentUser) {
+            const progress = getCourseProgress(currentUser, courseId);
+            setCompletedVideos(progress || {});
+          }
         }
       } catch (error) {
         console.error('Ошибка загрузки курса:', error);
@@ -39,7 +48,23 @@ const CoursePage = () => {
     };
 
     fetchCourse();
-  }, [courseId, videoId, language, setSearchParams]);
+  }, [courseId, videoId, language, setSearchParams, currentUser]);
+
+  const handleMarkAsCompleted = async (videoId, completed) => {
+    if (!isAuthenticated) {
+      return;
+    }
+    
+    try {
+      await markVideoAsCompleted(currentUser.id, courseId, videoId, completed);
+      setCompletedVideos(prev => ({
+        ...prev,
+        [videoId]: completed
+      }));
+    } catch (error) {
+      console.error('Ошибка при отметке видео:', error);
+    }
+  };
 
   if (loading) {
     return <div style={{ padding: '40px' }}>{t('loading')}</div>;
@@ -50,43 +75,91 @@ const CoursePage = () => {
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <Link to="/" style={{ color: '#4f46e5', textDecoration: 'none' }}>{t('backToCourses')}</Link>
-      </div>
+    <div>
+      <Header />
       
-      <h1 style={{ marginBottom: '20px' }}>{course.title}</h1>
-      <p style={{ marginBottom: '30px', color: '#666' }}>{course.description}</p>
-      
-      <div style={{ display: 'flex', gap: '30px' }}>
-        {/* Список видео */}
-        <div style={{ width: '300px', borderRight: '1px solid #ddd', paddingRight: '20px' }}>
-          <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('courseContents')}</h2>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {course.videos.map(video => (
-              <li key={video.id} style={{ marginBottom: '10px' }}>
+      <div style={{ display: 'flex', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ width: '300px', padding: '20px', borderRight: '1px solid #ddd' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', color: '#4f46e5', textDecoration: 'none' }}>
+            <span>← Назад к курсам</span>
+          </Link>
+          
+          <h2 style={{ marginBottom: '20px' }}>Основы n8n</h2>
+          
+          <div>
+            {course.videos.map((video, index) => {
+              const isCompleted = completedVideos[video.id];
+              const isActive = currentVideo && currentVideo.id === video.id;
+              
+              return (
                 <Link 
+                  key={video.id} 
                   to={`/course/${courseId}?video=${video.id}`}
-                  style={{ 
-                    display: 'block',
-                    padding: '10px', 
-                    borderRadius: '4px',
+                  style={{
+                    display: 'flex',
+                    padding: '15px',
+                    marginBottom: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ddd',
+                    borderLeft: isCompleted ? '4px solid #10b981' : '1px solid #ddd',
                     textDecoration: 'none',
-                    color: currentVideo && currentVideo.id === video.id ? '#fff' : '#333',
-                    backgroundColor: currentVideo && currentVideo.id === video.id ? '#4f46e5' : 'transparent'
+                    background: isActive ? '#eff6ff' : 'white',
+                    color: '#111827'
                   }}
                 >
-                  {video.title}
+                  <div style={{ 
+                    minWidth: '28px', 
+                    height: '28px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    backgroundColor: '#f1f5f9', 
+                    borderRadius: '50%', 
+                    marginRight: '10px',
+                    flexShrink: 0
+                  }}>
+                    {index + 1}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <h4 style={{ margin: 0, fontWeight: 500 }}>{video.title}</h4>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        padding: '2px 8px', 
+                        backgroundColor: '#f1f5f9', 
+                        borderRadius: '4px' 
+                      }}>
+                        {video.duration}
+                      </span>
+                    </div>
+                    
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      fontSize: '13px', 
+                      color: '#6b7280',
+                      marginTop: '8px'
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        checked={!!isCompleted} 
+                        onChange={(e) => handleMarkAsCompleted(video.id, e.target.checked)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ marginRight: '5px' }}
+                      />
+                      Отметить как просмотренное
+                    </label>
+                  </div>
                 </Link>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         </div>
         
-        {/* Видеоплеер */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, padding: '20px' }}>
           {currentVideo ? (
-            <>
+            <div>
               <div style={{ 
                 paddingTop: '56.25%', 
                 position: 'relative', 
@@ -113,10 +186,7 @@ const CoursePage = () => {
               
               <h2 style={{ marginBottom: '10px' }}>{currentVideo.title}</h2>
               <p style={{ color: '#666' }}>{currentVideo.description}</p>
-              <div style={{ marginTop: '10px', color: '#888', fontSize: '14px' }}>
-                {t('duration')}: {currentVideo.duration}
-              </div>
-            </>
+            </div>
           ) : (
             <div style={{ 
               padding: '40px', 
