@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,14 +14,15 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   
   const { login, register, isAuthenticated } = useAuth();
-  const { language, switchLanguage, supportedLanguages } = useLanguage();
+  const { language } = useLanguage();
   const navigate = useNavigate();
   
   // Если пользователь уже авторизован, перенаправляем на главную
-  if (isAuthenticated) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,25 +68,29 @@ const AuthPage = () => {
       background: 'linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)',
       padding: '1rem'
     }}>
-      {/* Выбор языка */}
+      {/* Прямые ссылки для смены языка */}
       <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
-        {supportedLanguages.map(lang => (
-          <button
-            key={lang.code}
-            onClick={() => switchLanguage(lang.code)}
-            style={{
-              padding: '8px 16px',
-              marginLeft: '10px',
-              background: language === lang.code ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            {lang.name}
-          </button>
-        ))}
+        <a href="/auth?lang=ru" style={{
+          padding: '8px 16px',
+          background: language === 'ru' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '4px',
+          textDecoration: 'none',
+          marginRight: '10px'
+        }}>
+          Русский
+        </a>
+        <a href="/auth?lang=en" style={{
+          padding: '8px 16px',
+          background: language === 'en' ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+          color: '#fff',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '4px',
+          textDecoration: 'none'
+        }}>
+          English
+        </a>
       </div>
       
       <div style={{
