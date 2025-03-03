@@ -1,5 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { createContext, useState, useContext } from 'react';
 
 const LanguageContext = createContext(null);
 
@@ -8,20 +7,13 @@ export const useLanguage = () => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const { i18n } = useTranslation();
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('language') || 'ru';
   });
 
-  useEffect(() => {
-    // Set the initial language
-    i18n.changeLanguage(language);
-    localStorage.setItem('language', language);
-  }, [i18n, language]);
-
   const switchLanguage = (lang) => {
     setLanguage(lang);
-    i18n.changeLanguage(lang);
+    i18n.changeLanguage(lang); // Эта строка обязательна!
     localStorage.setItem('language', lang);
   };
 

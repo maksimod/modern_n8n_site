@@ -1,155 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourseById, getVideoById, getCourseProgress } from '../services/course.service';
-import CourseItem from '../components/Courses/CourseItem';
-import VideoPlayer from '../components/Courses/VideoPlayer';
-import styles from '../styles/courses.module.css';
+import { getCourseById, getVideoById } from '../services/course.service';
 
 const CoursePage = () => {
   const { t } = useTranslation();
   const { courseId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const videoId = searchParams.get('video');
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
   const { language } = useLanguage();
   
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
-  const [progress, setProgress] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Fetch course data
   useEffect(() => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
         const courseData = await getCourseById(courseId, language);
-        
-        if (!courseData) {
-          setError('Course not found');
-          return;
-        }
-        
         setCourse(courseData);
         
-        // Get user progress for this course
-        if (currentUser) {
-          const userProgress = getCourseProgress(currentUser, courseId);
-          setProgress(userProgress || {});
-        }
-        
-        // If no video is selected, use the first one
-        if (!videoId && courseData.videos.length > 0) {
-          navigate(`/course/${courseId}?video=${courseData.videos[0].id}`, { replace: true });
-        } else if (videoId) {
+        // Если видео не выбрано, выбираем первое
+        if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
+          if (courseData.videos.length > 0) {
+            setSearchParams({ video: courseData.videos[0].id });
+          }
+        } else if (videoId && courseData) {
           const videoData = await getVideoById(courseId, videoId, language);
           setCurrentVideo(videoData);
         }
-        
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching course:', err);
-        setError('Failed to load course');
+      } catch (error) {
+        console.error('Ошибка загрузки курса:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCourse();
-  }, [courseId, videoId, language, currentUser, navigate]);
-
-  // Handle video completion
-  const handleVideoComplete = (videoId, completed) => {
-    setProgress({ ...progress, [videoId]: completed });
-  };
-
-  // Find next and previous videos
-  const getAdjacentVideos = () => {
-    if (!course || !currentVideo) return { prev: null, next: null };
-    
-    const videoIndex = course.videos.findIndex(v => v.id === currentVideo.id);
-    if (videoIndex === -1) return { prev: null, next: null };
-    
-    const prev = videoIndex > 0 ? course.videos[videoIndex - 1] : null;
-    const next = videoIndex < course.videos.length - 1 ? course.videos[videoIndex + 1] : null;
-    
-    return { prev, next };
-  };
-  
-  const { prev, next } = getAdjacentVideos();
+  }, [courseId, videoId, language, setSearchParams]);
 
   if (loading) {
-    return <div>{t('common.loading')}</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
+    return <div style={{ padding: '40px' }}>{t('loading')}</div>;
   }
 
   if (!course) {
-    return <div>Course not found</div>;
+    return <div style={{ padding: '40px' }}>Курс не найден</div>;
   }
 
   return (
-    <div>
-      <div className={styles.courseHeader}>
-        <div className={styles.courseDetails}>
-          <h1 className={styles.coursePageTitle}>{course.title}</h1>
-          <p className={styles.coursePageDescription}>{course.description}</p>
-        </div>
+    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '20px' }}>
+        <Link to="/" style={{ color: '#4f46e5', textDecoration: 'none' }}>{t('backToCourses')}</Link>
       </div>
-
-      {currentVideo ? (
-        <>
-          <VideoPlayer 
-            course={course} 
-            video={currentVideo} 
-            isCompleted={progress[currentVideo.id]} 
-            onVideoComplete={handleVideoComplete}
-          />
-          
-          {(prev || next) && (
-            <div className={styles.videoNavigation}>
-              {prev && (
-                <a 
-                  href={`/course/${courseId}?video=${prev.id}`}
-                  className={styles.videoNavItem}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(`/course/${courseId}?video=${prev.id}`);
+      
+      <h1 style={{ marginBottom: '20px' }}>{course.title}</h1>
+      <p style={{ marginBottom: '30px', color: '#666' }}>{course.description}</p>
+      
+      <div style={{ display: 'flex', gap: '30px' }}>
+        {/* Список видео */}
+        <div style={{ width: '300px', borderRight: '1px solid #ddd', paddingRight: '20px' }}>
+          <h2 style={{ marginBottom: '15px', fontSize: '18px' }}>{t('courseContents')}</h2>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {course.videos.map(video => (
+              <li key={video.id} style={{ marginBottom: '10px' }}>
+                <Link 
+                  to={`/course/${courseId}?video=${video.id}`}
+                  style={{ 
+                    display: 'block',
+                    padding: '10px', 
+                    borderRadius: '4px',
+                    textDecoration: 'none',
+                    color: currentVideo && currentVideo.id === video.id ? '#fff' : '#333',
+                    backgroundColor: currentVideo && currentVideo.id === video.id ? '#4f46e5' : 'transparent'
                   }}
                 >
-                  <div className={styles.videoNavType}>{t('Previous')}</div>
-                  <div className={styles.videoNavTitle}>{prev.title}</div>
-                </a>
-              )}
+                  {video.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Видеоплеер */}
+        <div style={{ flex: 1 }}>
+          {currentVideo ? (
+            <>
+              <div style={{ 
+                paddingTop: '56.25%', 
+                position: 'relative', 
+                backgroundColor: '#000', 
+                marginBottom: '20px',
+                borderRadius: '8px',
+                overflow: 'hidden'
+              }}>
+                <iframe
+                  src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    border: 'none'
+                  }}
+                  title={currentVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
               
-              {next && (
-                <a 
-                  href={`/course/${courseId}?video=${next.id}`}
-                  className={styles.videoNavItem}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(`/course/${courseId}?video=${next.id}`);
-                  }}
-                >
-                  <div className={styles.videoNavType}>{t('Next')}</div>
-                  <div className={styles.videoNavTitle}>{next.title}</div>
-                </a>
-              )}
+              <h2 style={{ marginBottom: '10px' }}>{currentVideo.title}</h2>
+              <p style={{ color: '#666' }}>{currentVideo.description}</p>
+              <div style={{ marginTop: '10px', color: '#888', fontSize: '14px' }}>
+                {t('duration')}: {currentVideo.duration}
+              </div>
+            </>
+          ) : (
+            <div style={{ 
+              padding: '40px', 
+              textAlign: 'center', 
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px'
+            }}>
+              {t('selectVideo')}
             </div>
           )}
-        </>
-      ) : (
-        <div>Select a video to start watching</div>
-      )}
-      
-      <CourseItem course={course} currentVideo={currentVideo} />
+        </div>
+      </div>
     </div>
   );
 };

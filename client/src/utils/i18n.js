@@ -1,107 +1,82 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-import Backend from 'i18next-http-backend';
+
+// Переводы
+const resources = {
+  en: {
+    translation: {
+      // Общие
+      "videoCourses": "Video Courses",
+      "loading": "Loading...",
+      "videos": "videos",
+      "logout": "Logout",
+      
+      // Авторизация
+      "login": "Login",
+      "register": "Register",
+      "username": "Username",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "enterYourData": "Enter your credentials",
+      "createAccount": "Create a new account",
+      "noAccount": "Don't have an account?",
+      "hasAccount": "Already have an account?",
+      "enterAllFields": "Please fill in all fields",
+      "passwordsDontMatch": "Passwords don't match",
+      "userExists": "User with this username already exists",
+      "wrongCredentials": "Invalid username or password",
+      
+      // Курсы
+      "courseContents": "Course Content",
+      "duration": "Duration",
+      "selectVideo": "Select a video from the list",
+      "backToCourses": "← Back to courses",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  ru: {
+    translation: {
+      // Общие
+      "videoCourses": "Видеокурсы",
+      "loading": "Загрузка...",
+      "videos": "видео",
+      "logout": "Выход",
+      
+      // Авторизация
+      "login": "Вход",
+      "register": "Регистрация",
+      "username": "Имя пользователя",
+      "password": "Пароль",
+      "confirmPassword": "Подтвердите пароль",
+      "enterYourData": "Введите свои данные для входа",
+      "createAccount": "Создайте новую учетную запись",
+      "noAccount": "Нет учетной записи?",
+      "hasAccount": "Уже есть учетная запись?",
+      "enterAllFields": "Заполните все поля",
+      "passwordsDontMatch": "Пароли не совпадают",
+      "userExists": "Пользователь с таким именем уже существует",
+      "wrongCredentials": "Неверное имя пользователя или пароль",
+      
+      // Курсы
+      "courseContents": "Содержание курса",
+      "duration": "Продолжительность",
+      "selectVideo": "Выберите видео из списка",
+      "backToCourses": "← Назад к курсам",
+      "previous": "Предыдущее",
+      "next": "Следующее"
+    }
+  }
+};
 
 i18n
-  .use(Backend)
-  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    resources: {
-      en: {
-        translation: {
-          // Auth
-          'auth.welcome': 'Welcome to Video Learning Platform',
-          'auth.login': 'Log In',
-          'auth.register': 'Register',
-          'auth.username': 'Username',
-          'auth.password': 'Password',
-          'auth.confirmPassword': 'Confirm Password',
-          'auth.noAccount': 'Don\'t have an account?',
-          'auth.haveAccount': 'Already have an account?',
-          'auth.usernameRequired': 'Username is required',
-          'auth.passwordRequired': 'Password is required',
-          'auth.passwordMatch': 'Passwords must match',
-          'auth.usernameExists': 'Username already exists',
-          'auth.invalidCredentials': 'Invalid username or password',
-          
-          // Navigation
-          'nav.home': 'Home',
-          'nav.profile': 'Profile',
-          'nav.logout': 'Log Out',
-          'nav.language': 'Language',
-          
-          // Course
-          'course.courses': 'Courses',
-          'course.progress': 'Your Progress',
-          'course.markCompleted': 'Mark as completed',
-          'course.completed': 'Completed',
-          'course.watchNext': 'Watch Next',
-          'course.startCourse': 'Start Course',
-          'course.continueCourse': 'Continue Course',
-          
-          // Common
-          'common.loading': 'Loading...',
-          'common.error': 'An error occurred',
-          'common.save': 'Save',
-          'common.cancel': 'Cancel',
-          'common.search': 'Search',
-          'common.back': 'Back',
-          'common.next': 'Next'
-        }
-      },
-      ru: {
-        translation: {
-          // Auth
-          'auth.welcome': 'Добро пожаловать на платформу видеообучения',
-          'auth.login': 'Войти',
-          'auth.register': 'Зарегистрироваться',
-          'auth.username': 'Имя пользователя',
-          'auth.password': 'Пароль',
-          'auth.confirmPassword': 'Подтвердите пароль',
-          'auth.noAccount': 'Нет аккаунта?',
-          'auth.haveAccount': 'Уже есть аккаунт?',
-          'auth.usernameRequired': 'Имя пользователя обязательно',
-          'auth.passwordRequired': 'Пароль обязателен',
-          'auth.passwordMatch': 'Пароли должны совпадать',
-          'auth.usernameExists': 'Имя пользователя уже занято',
-          'auth.invalidCredentials': 'Неверное имя пользователя или пароль',
-          
-          // Navigation
-          'nav.home': 'Главная',
-          'nav.profile': 'Профиль',
-          'nav.logout': 'Выйти',
-          'nav.language': 'Язык',
-          
-          // Course
-          'course.courses': 'Курсы',
-          'course.progress': 'Ваш прогресс',
-          'course.markCompleted': 'Отметить как выполненное',
-          'course.completed': 'Выполнено',
-          'course.watchNext': 'Смотреть далее',
-          'course.startCourse': 'Начать курс',
-          'course.continueCourse': 'Продолжить курс',
-          
-          // Common
-          'common.loading': 'Загрузка...',
-          'common.error': 'Произошла ошибка',
-          'common.save': 'Сохранить',
-          'common.cancel': 'Отмена',
-          'common.search': 'Поиск',
-          'common.back': 'Назад',
-          'common.next': 'Далее'
-        }
-      }
-    },
+    resources,
+    lng: localStorage.getItem('language') || 'ru', // Язык по умолчанию
     fallbackLng: 'ru',
-    debug: false,
     interpolation: {
-      escapeValue: false,
-    },
-    detection: {
-      order: ['localStorage', 'navigator'],
-      caches: ['localStorage'],
+      escapeValue: false
     }
   });
 

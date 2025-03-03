@@ -4,15 +4,15 @@ import { useAuth } from '../contexts/AuthContext';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-
+  
   if (loading) {
-    return <div>Loading...</div>;
+    return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка...</div>;
   }
-
+  
   if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/auth" />;
   }
-
+  
   return children;
 };
 
