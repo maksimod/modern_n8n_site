@@ -1,3 +1,5 @@
+// client/src/components/Courses/CourseItem.jsx
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -46,23 +48,28 @@ const CourseItem = ({ course, currentVideo }) => {
       )}
       
       <div style={{ marginTop: '1.5rem' }}>
-        {course.videos.map((video) => {
+        {course.videos.map((video, index) => {
           const isCompleted = progress && progress[video.id];
           const isActive = currentVideo && currentVideo.id === video.id;
           
           return (
             <Link
-              key={video.id}
+              key={video.id} 
               to={`/course/${course.id}?video=${video.id}`}
               className={`${styles.videoCard} ${isActive ? styles.videoCardActive : ''} ${
                 isCompleted ? styles.videoCardCompleted : ''
               }`}
             >
+              <div className={styles.videoNumber}>
+                {index + 1}
+              </div>
               <div className={styles.videoCardInfo}>
-                <h4 className={styles.videoCardTitle}>{video.title}</h4>
+                <div className={styles.videoCardHeader}>
+                  <h4 className={styles.videoCardTitle}>{video.title}</h4>
+                  <span className={styles.videoDuration}>{video.duration}</span>
+                </div>
                 <p className={styles.videoCardDescription}>{video.description}</p>
                 <div className={styles.videoCardMeta}>
-                  <span>{video.duration}</span>
                   {isCompleted && (
                     <span className={styles.videoCardStatus}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
