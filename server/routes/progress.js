@@ -1,39 +1,64 @@
+// server/routes/progress.js
 const express = require('express');
 const router = express.Router();
+const db = require('../db/db');
 const auth = require('../middleware/auth');
-
-// Simple in-memory user storage for demo purposes
-// In a real app, this would be a database
-// Get users from auth.js (this is just for demo)
-let users = [];
 
 // @route   POST api/progress/:courseId/:videoId
 // @desc    Update video progress
 // @access  Private
-router.post('/:courseId/:videoId', auth, (req, res) => {
+router.post('/:courseId/:videoId', auth, async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
     const { completed } = req.body;
+    const userId = req.user.id;
     
-    // Find user
-    const userIndex = users.findIndex(user => user.id === req.user.id);
-    if (userIndex === -1) {
-      return res.status(404).json({ message: 'User not found' });
+    // Проверяем существование курса и видео
+    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
+    const videoCheck = await db.query('SELECT * FROM videos WHERE id = $1 AND course_id = $2', [videoId, courseId]);
+    
+    if (courseCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Initialize course progress if it doesn't exist
-    if (!users[userIndex].progress) {
-      users[userIndex].progress = {};
+    if (videoCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Video not found' });
     }
     
-    if (!users[userIndex].progress[courseId]) {
-      users[userIndex].progress[courseId] = {};
+    // Проверяем существует ли уже прогресс
+    const progressCheck = await db.query(
+      'SELECT * FROM user_progress WHERE user_id = $1 AND course_id = $2 AND video_id = $3',
+      [userId, courseId, videoId]
+    );
+    
+    if (progressCheck.rows.length > 0) {
+      // Обновляем существующий прогресс
+      await db.query(
+        'UPDATE user_progress SET is_completed = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND course_id = $3 AND video_id = $4',
+        [completed, userId, courseId, videoId]
+      );
+    } else {
+      // Создаем новую запись прогресса
+      await db.query(
+        'INSERT INTO user_progress (user_id, course_id, video_id, is_completed) VALUES ($1, $2, $3, $4)',
+        [userId, courseId, videoId, completed]
+      );
     }
     
-    // Update video progress
-    users[userIndex].progress[courseId][videoId] = completed;
+    // Получаем весь прогресс пользователя по курсу
+    const progressResult = await db.query(
+      'SELECT video_id, is_completed FROM user_progress WHERE user_id = $1 AND course_id = $2',
+      [userId, courseId]
+    );
     
-    res.json(users[userIndex].progress);
+    // Форматируем прогресс для ответа
+    const progress = {};
+    
+    progressResult.rows.forEach(row => {
+      progress[row.video_id] = row.is_completed;
+    });
+    
+    res.json(progress);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -43,18 +68,30 @@ router.post('/:courseId/:videoId', auth, (req, res) => {
 // @route   GET api/progress/:courseId
 // @desc    Get course progress
 // @access  Private
-router.get('/:courseId', auth, (req, res) => {
+router.get('/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
+    const userId = req.user.id;
     
-    // Find user
-    const user = users.find(user => user.id === req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    // Проверяем существование курса
+    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
+    
+    if (courseCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Return course progress
-    const progress = user.progress && user.progress[courseId] ? user.progress[courseId] : {};
+    // Получаем прогресс пользователя по курсу
+    const progressResult = await db.query(
+      'SELECT video_id, is_completed FROM user_progress WHERE user_id = $1 AND course_id = $2',
+      [userId, courseId]
+    );
+    
+    // Форматируем прогресс для ответа
+    const progress = {};
+    
+    progressResult.rows.forEach(row => {
+      progress[row.video_id] = row.is_completed;
+    });
     
     res.json(progress);
   } catch (err) {

@@ -1,17 +1,20 @@
+// server/middleware/auth.js
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {
-  // Get token from header
-  const token = req.header('x-auth-token') || req.header('Authorization')?.replace('Bearer ', '');
+  // Получаем токен из заголовка
+  const token = req.header('Authorization').replace('Bearer ', '');
 
-  // Check if no token
+  // Проверяем наличие токена
   if (!token) {
     return res.status(401).json({ message: 'No token, authorization denied' });
   }
 
-  // Verify token
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    // Верифицируем токен
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Добавляем информацию о пользователе в request
     req.user = decoded.user;
     next();
   } catch (err) {

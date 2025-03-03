@@ -12,13 +12,28 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Обработка ошибок при отсутствии токена
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/auth') || 
+      (req.path.startsWith('/api/courses') && req.method === 'GET')) {
+    return next();
+  }
+  
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ message: 'No token, authorization denied' });
+  }
+  
+  next();
+});
+
 // Routes
 const authRouter = require('./routes/auth');
-const coursesRouter = require('./routes/courses'); // Используем роутер
+const coursesRouter = require('./routes/courses');
 const progressRouter = require('./routes/progress');
 
 app.use('/api/auth', authRouter);
-app.use('/api/courses', coursesRouter); // Подключаем роутер
+app.use('/api/courses', coursesRouter);
 app.use('/api/progress', progressRouter);
 
 // Serve static assets in production

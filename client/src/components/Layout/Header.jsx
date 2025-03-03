@@ -35,52 +35,44 @@ const Header = () => {
         <span>VideoLearn</span>
       </Link>
 
-      <nav>
-        <ul className={styles.navList}>
-          <li className={styles.navItem}>
-            <Link to="/" className={styles.navLink}>
-              {t('nav.home')}
-            </Link>
-          </li>
+      <div className={styles.navList}>
+        {currentUser && (
+          <div className={styles.userMenu}>
+            <button 
+              className={styles.userButton} 
+              onClick={toggleDropdown}
+              aria-expanded={dropdownOpen}
+            >
+              <div className={styles.userAvatar}>
+                {getInitial(currentUser.username)}
+              </div>
+              <span className={styles.userName}>{currentUser.username}</span>
+            </button>
 
-          {currentUser && (
-            <li className={styles.userMenu}>
-              <button 
-                className={styles.userButton} 
-                onClick={toggleDropdown}
-                aria-expanded={dropdownOpen}
-              >
-                <div className={styles.userAvatar}>
-                  {getInitial(currentUser.username)}
+            {dropdownOpen && (
+              <div className={styles.dropdown}>
+                <button className={styles.dropdownItem} onClick={handleLogout}>
+                  {t('nav.logout')}
+                </button>
+                
+                <div className={styles.languages}>
+                  {supportedLanguages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      className={`${styles.languageButton} ${
+                        language === lang.code ? styles.activeLanguage : ''
+                      }`}
+                      onClick={() => handleLanguageChange(lang.code)}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
                 </div>
-                <span className={styles.userName}>{currentUser.username}</span>
-              </button>
-
-              {dropdownOpen && (
-                <div className={styles.dropdown}>
-                  <button className={styles.dropdownItem} onClick={handleLogout}>
-                    {t('nav.logout')}
-                  </button>
-                  
-                  <div className={styles.languages}>
-                    {supportedLanguages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        className={`${styles.languageButton} ${
-                          language === lang.code ? styles.activeLanguage : ''
-                        }`}
-                        onClick={() => handleLanguageChange(lang.code)}
-                      >
-                        {lang.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </li>
-          )}
-        </ul>
-      </nav>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </header>
   );
 };

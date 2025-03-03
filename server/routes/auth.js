@@ -1,12 +1,11 @@
+// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
-
-// Simple in-memory user storage for demo purposes
-// In a real app, this would be a database
-let users = [];
+const db = require('../db/db');
+const auth = require('../middleware/auth');
 
 // @route   POST api/auth/register
 // @desc    Register a user
@@ -27,8 +26,9 @@ router.post(
 
     try {
       // Check if user already exists
-      let userExists = users.find(user => user.username === username);
-      if (userExists) {
+      const userCheck = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+      
+      if (userCheck.rows.length > 0) {
         return res.status(400).json({ message: 'User already exists' });
       }
 
@@ -36,34 +36,31 @@ router.post(
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      const newUser = {
-        id: Date.now().toString(),
-        username,
-        password: hashedPassword,
-        progress: {}
-      };
-
-      users.push(newUser);
+      const newUser = await db.query(
+        'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
+        [username, hashedPassword]
+      );
+      
+      const user = newUser.rows[0];
 
       // Create and return JWT token
       const payload = {
         user: {
-          id: newUser.id
+          id: user.id
         }
       };
 
       jwt.sign(
         payload,
-        process.env.JWT_SECRET || 'secret',
+        process.env.JWT_SECRET,
         { expiresIn: '7d' },
         (err, token) => {
           if (err) throw err;
           res.json({
             token,
             user: {
-              id: newUser.id,
-              username: newUser.username,
-              progress: newUser.progress
+              id: user.id,
+              username: user.username
             }
           });
         }
@@ -94,16 +91,36 @@ router.post(
 
     try {
       // Find user
-      const user = users.find(user => user.username === username);
-      if (!user) {
+      const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+      
+      if (result.rows.length === 0) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
+
+      const user = result.rows[0];
 
       // Check password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
+
+      // Get user progress
+      const progressResult = await db.query(
+        `SELECT course_id, video_id, is_completed
+         FROM user_progress
+         WHERE user_id = $1`,
+        [user.id]
+      );
+      
+      const progress = {};
+      
+      progressResult.rows.forEach(row => {
+        if (!progress[row.course_id]) {
+          progress[row.course_id] = {};
+        }
+        progress[row.course_id][row.video_id] = row.is_completed;
+      });
 
       // Create and return JWT token
       const payload = {
@@ -114,7 +131,7 @@ router.post(
 
       jwt.sign(
         payload,
-        process.env.JWT_SECRET || 'secret',
+        process.env.JWT_SECRET,
         { expiresIn: '7d' },
         (err, token) => {
           if (err) throw err;
@@ -123,7 +140,7 @@ router.post(
             user: {
               id: user.id,
               username: user.username,
-              progress: user.progress
+              progress
             }
           });
         }
@@ -138,17 +155,37 @@ router.post(
 // @route   GET api/auth/user
 // @desc    Get user data
 // @access  Private
-router.get('/user', require('../middleware/auth'), async (req, res) => {
+router.get('/user', auth, async (req, res) => {
   try {
-    const user = users.find(user => user.id === req.user.id);
-    if (!user) {
+    const userResult = await db.query('SELECT id, username FROM users WHERE id = $1', [req.user.id]);
+    
+    if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
+    
+    const user = userResult.rows[0];
+    
+    // Get user progress
+    const progressResult = await db.query(
+      `SELECT course_id, video_id, is_completed
+       FROM user_progress
+       WHERE user_id = $1`,
+      [user.id]
+    );
+    
+    const progress = {};
+    
+    progressResult.rows.forEach(row => {
+      if (!progress[row.course_id]) {
+        progress[row.course_id] = {};
+      }
+      progress[row.course_id][row.video_id] = row.is_completed;
+    });
     
     res.json({
       id: user.id,
       username: user.username,
-      progress: user.progress
+      progress
     });
   } catch (err) {
     console.error(err.message);
@@ -159,11 +196,16 @@ router.get('/user', require('../middleware/auth'), async (req, res) => {
 // @route   GET api/auth/check-username/:username
 // @desc    Check if username is available
 // @access  Public
-router.get('/check-username/:username', (req, res) => {
+router.get('/check-username/:username', async (req, res) => {
   const { username } = req.params;
-  const userExists = users.find(user => user.username === username);
   
-  res.json({ available: !userExists });
+  try {
+    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    res.json({ available: result.rows.length === 0 });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
 });
 
 module.exports = router;

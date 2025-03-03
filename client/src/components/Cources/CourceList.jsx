@@ -1,47 +1,51 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { getCourseProgress, calculateCourseCompletion } from '../../services/course.service';
+import { getCourseProgress, calculateCourseCompletion, markVideoAsCompleted, isVideoCompleted } from '../../services/course.service';
 import styles from '../../styles/courses.module.css';
 
 const CourseItem = ({ course, currentVideo }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
+  const [progress, setProgress] = useState({});
+
+  useEffect(() => {
+    if (currentUser && course) {
+      const userProgress = getCourseProgress(currentUser, course.id);
+      setProgress(userProgress || {});
+    }
+  }, [currentUser, course]);
 
   if (!course) return null;
 
-  const progress = getCourseProgress(currentUser, course.id);
   const completionPercentage = calculateCourseCompletion(currentUser, course);
 
-  // Find the first uncompleted video
-  const findNextVideo = () => {
-    if (!progress) return course.videos[0];
-
-    for (const video of course.videos) {
-      if (!progress[video.id]) {
-        return video;
+  const handleCheckboxChange = async (videoId, isChecked, e) => {
+    e.stopPropagation(); // Предотвращаем срабатывание клика на ссылке
+    e.preventDefault(); // Предотвращаем переход по ссылке
+    
+    if (currentUser && course?.id) {
+      try {
+        await markVideoAsCompleted(currentUser.id, course.id, videoId, isChecked);
+        // Обновляем состояние прогресса
+        setProgress(prev => ({
+          ...prev,
+          [videoId]: isChecked
+        }));
+      } catch (error) {
+        console.error('Error updating video status:', error);
       }
     }
-
-    return course.videos[0]; // If all completed, return the first video
-  };
-
-  const nextVideo = findNextVideo();
-
-  const handleVideoClick = (videoId) => {
-    // Здесь будет логика обновления прогресса просмотра видео
-    // Например, отправка запроса на сервер
-    console.log(`Video ${videoId} clicked`);
   };
 
   return (
     <div className={styles.videosList}>
       <h3 className={styles.sidebarTitle}>{course.title}</h3>
-
+      
       {completionPercentage > 0 && (
         <div className={styles.progressContainer}>
-          <div
+          <div 
             className={styles.progressBar}
             style={{ width: `${completionPercentage}%` }}
           ></div>
@@ -53,17 +57,17 @@ const CourseItem = ({ course, currentVideo }) => {
 
       <div style={{ marginTop: '1.5rem' }}>
         {course.videos.map((video, index) => {
-          const isCompleted = progress && progress[video.id];
+          const isCompleted = progress[video.id];
           const isActive = currentVideo && currentVideo.id === video.id;
 
           return (
-            <div key={video.id} className={styles.videoCardContainer}>
+            <div key={video.id} className={styles.videoCardContainer} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
               <Link
                 to={`/course/${course.id}?video=${video.id}`}
                 className={`${styles.videoCard} ${isActive ? styles.videoCardActive : ''} ${
                   isCompleted ? styles.videoCardCompleted : ''
                 }`}
-                onClick={() => handleVideoClick(video.id)}
+                style={{ flex: 1 }}
               >
                 <div className={styles.videoNumber}>
                   {index + 1}
@@ -73,34 +77,14 @@ const CourseItem = ({ course, currentVideo }) => {
                     <h4 className={styles.videoCardTitle}>{video.title}</h4>
                     <span className={styles.videoDuration}>{video.duration}</span>
                   </div>
-                  <p className={styles.videoCardDescription}>{video.description}</p>
-                  <div className={styles.videoCardMeta}>
-                    {isCompleted && (
-                      <span className={styles.videoCardStatus}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        {t('course.completed')}
-                      </span>
-                    )}
-                    {video.isPrivate && (
-                      <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
-                        {t('Private')}
-                      </span>
-                    )}
-                  </div>
                 </div>
               </Link>
               <input
                 type="checkbox"
-                id={`video-${video.id}`}
-                checked={isCompleted}
-                onChange={() => {
-                  // Здесь будет логика обновления статуса просмотра
-                  // Например, отправка запроса на сервер
-                  console.log(`Video ${video.id} checkbox changed`);
-                }}
+                checked={!!isCompleted}
+                onChange={(e) => handleCheckboxChange(video.id, e.target.checked, e)}
                 className={styles.videoCheckbox}
+                style={{ marginLeft: '10px', transform: 'scale(1.2)' }}
               />
             </div>
           );

@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactPlayer from 'react-player';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { markVideoAsCompleted } from '../../services/course.service';
+import { markVideoAsCompleted, isVideoCompleted } from '../../services/course.service';
 import styles from '../../styles/courses.module.css';
 
-const VideoPlayer = ({ course, video, isCompleted, onVideoComplete }) => {
+const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [completed, setCompleted] = useState(isCompleted || false);
+  const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Проверяем состояние просмотра при изменении видео
+  useEffect(() => {
+    if (currentUser && course?.id && video?.id) {
+      const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
+      setCompleted(isCompleted);
+    }
+  }, [currentUser, course, video]);
 
   const handleProgress = (state) => {
     setProgress(state.played);

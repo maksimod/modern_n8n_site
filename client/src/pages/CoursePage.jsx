@@ -3,8 +3,9 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress } from '../services/course.service';
+import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress, isVideoCompleted } from '../services/course.service';
 import Header from '../components/Layout/Header';
+import styles from '../styles/courses.module.css';
 
 const CoursePage = () => {
   const { t } = useTranslation();
@@ -66,6 +67,14 @@ const CoursePage = () => {
     }
   };
 
+  // Обработчик события при завершении видео - это важная часть, которая обновляет состояние в родительском компоненте
+  const handleVideoComplete = (videoId, completed) => {
+    setCompletedVideos(prev => ({
+      ...prev,
+      [videoId]: completed
+    }));
+  };
+
   if (loading) {
     return <div style={{ padding: '40px' }}>{t('loading')}</div>;
   }
@@ -92,66 +101,59 @@ const CoursePage = () => {
               const isActive = currentVideo && currentVideo.id === video.id;
               
               return (
-                <Link 
-                  key={video.id} 
-                  to={`/course/${courseId}?video=${video.id}`}
-                  style={{
-                    display: 'flex',
-                    padding: '15px',
-                    marginBottom: '10px',
-                    borderRadius: '8px',
-                    border: '1px solid #ddd',
-                    borderLeft: isCompleted ? '4px solid #10b981' : '1px solid #ddd',
-                    textDecoration: 'none',
-                    background: isActive ? '#eff6ff' : 'white',
-                    color: '#111827'
-                  }}
-                >
-                  <div style={{ 
-                    minWidth: '28px', 
-                    height: '28px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    backgroundColor: '#f1f5f9', 
-                    borderRadius: '50%', 
-                    marginRight: '10px',
-                    flexShrink: 0
-                  }}>
-                    {index + 1}
-                  </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                      <h4 style={{ margin: 0, fontWeight: 500 }}>{video.title}</h4>
-                      <span style={{ 
-                        fontSize: '12px', 
-                        padding: '2px 8px', 
-                        backgroundColor: '#f1f5f9', 
-                        borderRadius: '4px' 
-                      }}>
-                        {video.duration}
-                      </span>
-                    </div>
-                    
-                    <label style={{ 
+                <div key={video.id} style={{ display: 'flex', marginBottom: '10px' }}>
+                  <Link 
+                    to={`/course/${courseId}?video=${video.id}`}
+                    style={{
+                      display: 'flex',
+                      flex: 1,
+                      padding: '15px',
+                      borderRadius: '8px',
+                      border: '1px solid #ddd',
+                      borderLeft: isCompleted ? '4px solid #10b981' : '1px solid #ddd',
+                      textDecoration: 'none',
+                      background: isActive ? '#eff6ff' : 'white',
+                      color: '#111827'
+                    }}
+                  >
+                    <div style={{ 
+                      minWidth: '28px', 
+                      height: '28px', 
                       display: 'flex', 
                       alignItems: 'center', 
-                      fontSize: '13px', 
-                      color: '#6b7280',
-                      marginTop: '8px'
+                      justifyContent: 'center', 
+                      backgroundColor: '#f1f5f9', 
+                      borderRadius: '50%', 
+                      marginRight: '10px',
+                      flexShrink: 0
                     }}>
-                      <input 
-                        type="checkbox" 
-                        checked={!!isCompleted} 
-                        onChange={(e) => handleMarkAsCompleted(video.id, e.target.checked)}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ marginRight: '5px' }}
-                      />
-                      Отметить как просмотренное
-                    </label>
+                      {index + 1}
+                    </div>
+                    
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <h4 style={{ margin: 0, fontWeight: 500 }}>{video.title}</h4>
+                        <span style={{ 
+                          fontSize: '12px', 
+                          padding: '2px 8px', 
+                          backgroundColor: '#f1f5f9', 
+                          borderRadius: '4px' 
+                        }}>
+                          {video.duration}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                  
+                  <div style={{ marginLeft: '10px', display: 'flex', alignItems: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={!!isCompleted} 
+                      onChange={(e) => handleMarkAsCompleted(video.id, e.target.checked)}
+                      style={{ transform: 'scale(1.2)' }}
+                    />
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -184,7 +186,17 @@ const CoursePage = () => {
                 ></iframe>
               </div>
               
-              <h2 style={{ marginBottom: '10px' }}>{currentVideo.title}</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h2 style={{ margin: 0 }}>{currentVideo.title}</h2>
+                <label style={{ display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={!!completedVideos[currentVideo.id]} 
+                    onChange={(e) => handleMarkAsCompleted(currentVideo.id, e.target.checked)}
+                    style={{ marginRight: '5px', transform: 'scale(1.2)' }}
+                  />
+                </label>
+              </div>
               <p style={{ color: '#666' }}>{currentVideo.description}</p>
             </div>
           ) : (
