@@ -9,8 +9,11 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }) => {
   const { i18n } = useTranslation();
-  const [language, setLanguage] = useState('ru');
+  const [language, setLanguage] = useState(() => 
+    localStorage.getItem('language') || 'ru'
+  );
 
+  // Эффект только при инициализации - для загрузки языка
   useEffect(() => {
     // Проверяем URL для параметра lang
     const urlParams = new URLSearchParams(window.location.search);
@@ -18,23 +21,25 @@ export const LanguageProvider = ({ children }) => {
     
     if (urlLang && ['ru', 'en'].includes(urlLang)) {
       // Устанавливаем язык из URL
-      setLanguage(urlLang);
-      i18n.changeLanguage(urlLang);
-      localStorage.setItem('language', urlLang);
+      handleLanguageChange(urlLang);
     } else {
-      // Используем сохраненный язык
-      const savedLang = localStorage.getItem('language') || 'ru';
-      setLanguage(savedLang);
-      i18n.changeLanguage(savedLang);
+      // Инициализируем текущий язык
+      i18n.changeLanguage(language);
     }
-  }, [i18n]);
+  }, []);
 
-  const switchLanguage = (lang) => {
-    setLanguage(lang);
+  // Функция смены языка
+  const handleLanguageChange = (lang) => {
+    // Устанавливаем язык в i18n
     i18n.changeLanguage(lang);
+    
+    // Обновляем состояние
+    setLanguage(lang);
+    
+    // Сохраняем в localStorage
     localStorage.setItem('language', lang);
     
-    // Добавляем параметр к URL
+    // Обновляем URL без перезагрузки
     const url = new URL(window.location.href);
     url.searchParams.set('lang', lang);
     window.history.pushState({}, '', url);
@@ -42,7 +47,7 @@ export const LanguageProvider = ({ children }) => {
 
   const value = {
     language,
-    switchLanguage,
+    switchLanguage: handleLanguageChange,
     supportedLanguages: [
       { code: 'ru', name: 'Русский' },
       { code: 'en', name: 'English' }
