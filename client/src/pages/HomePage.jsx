@@ -11,15 +11,18 @@ const HomePage = () => {
   const { currentUser, logout } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await getCourses(language);
         setCourses(data);
-      } catch (error) {
-        console.error('Ошибка загрузки курсов:', error);
+      } catch (err) {
+        console.error('Ошибка загрузки курсов:', err);
+        setError('Не удалось загрузить курсы. Пожалуйста, убедитесь, что сервер запущен.');
       } finally {
         setLoading(false);
       }
@@ -80,6 +83,18 @@ const HomePage = () => {
 
       {loading ? (
         <p>{t('loading')}</p>
+      ) : error ? (
+        <div style={{ 
+          padding: '20px', 
+          backgroundColor: '#ffe0e0', 
+          color: '#d32f2f', 
+          borderRadius: '8px',
+          marginBottom: '20px' 
+        }}>
+          {error}
+        </div>
+      ) : courses.length === 0 ? (
+        <p>Курсы не найдены. Проверьте, что сервер запущен и работает корректно.</p>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
           {courses.map(course => (
@@ -99,7 +114,7 @@ const HomePage = () => {
               <h2 style={{ marginBottom: '10px', color: '#4f46e5' }}>{course.title}</h2>
               <p style={{ color: '#666' }}>{course.description}</p>
               <div style={{ marginTop: '15px', fontSize: '14px', color: '#888' }}>
-                {course.videos.length} {t('videos')}
+                {course.videos?.length || 0} {t('videos')}
               </div>
             </Link>
           ))}

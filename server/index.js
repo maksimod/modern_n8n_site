@@ -13,15 +13,17 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/courses', require('./routes/courses'));
-app.use('/api/progress', require('./routes/progress'));
+const authRouter = require('./routes/auth');
+const coursesRouter = require('./routes/courses'); // Используем роутер
+const progressRouter = require('./routes/progress');
+
+app.use('/api/auth', authRouter);
+app.use('/api/courses', coursesRouter); // Подключаем роутер
+app.use('/api/progress', progressRouter);
 
 // Serve static assets in production
 if (process.env.NODE_ENV === 'production') {
-  // Set static folder
   app.use(express.static(path.join(__dirname, '../client/dist')));
-
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
   });
@@ -31,7 +33,7 @@ if (process.env.NODE_ENV === 'production') {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
-    message: err.message || 'Internal Server Error',
+    message: err.message || 'Internal Server Error'
   });
 });
 

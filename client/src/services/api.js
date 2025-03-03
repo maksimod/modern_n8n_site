@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-// Create axios instance
+// Создаем экземпляр axios с базовым URL сервера
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: 'http://localhost:5000', // URL сервера
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Add interceptor to add auth token to requests
+// Добавляем перехватчик для добавления токена авторизации
 api.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -17,19 +17,15 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add interceptor to handle token expiration
+// Добавляем обработчик ошибок
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
+    // При 401 ошибке (неавторизован) перенаправляем на страницу логина
     if (error.response && error.response.status === 401) {
-      // Clear user data and redirect to login
       localStorage.removeItem('user');
       window.location.href = '/auth';
     }
