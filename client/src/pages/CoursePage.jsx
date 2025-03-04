@@ -3,9 +3,10 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress, isVideoCompleted } from '../services/course.service';
+import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress } from '../services/course.service';
 import Header from '../components/Layout/Header';
-import styles from '../styles/courses.module.css';
+import styles from '../styles/courses.module.css'; // Убедитесь, что этот файл существует
+import debug from 'debug';
 
 const CoursePage = () => {
   const { t } = useTranslation();
@@ -27,10 +28,8 @@ const CoursePage = () => {
         const courseData = await getCourseById(courseId, language);
         setCourse(courseData);
         
-        // Если язык курса не совпадает с выбранным языком, уведомляем пользователя
         if (courseData && courseData.language !== language) {
           console.log(`Курс доступен только на языке: ${courseData.language}`);
-          // Можно добавить уведомление для пользователя
         }
         
         if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
@@ -41,9 +40,8 @@ const CoursePage = () => {
           const videoData = await getVideoById(courseId, videoId, language);
           setCurrentVideo(videoData);
           
-          // Загрузка данных о просмотренных видео
           if (currentUser) {
-            const progress = getCourseProgress(currentUser, courseId);
+            const progress = await getCourseProgress(currentUser.id, courseId);
             setCompletedVideos(progress || {});
           }
         }
@@ -58,12 +56,17 @@ const CoursePage = () => {
   }, [courseId, videoId, language, setSearchParams, currentUser]);
 
   const handleMarkAsCompleted = async (videoId, completed) => {
+    console.log("1");
+    // process.stdout.write('Отладочная информация\n');
+    // process.stderr.write('Ошибка: что-то пошло не так\n');
     if (!isAuthenticated) {
       return;
     }
-    
+    console.log(isAuthenticated);
     try {
-      await markVideoAsCompleted(currentUser.id, courseId, videoId, completed);
+      await markVideoAsCompleted(currentUser.id, courseId, videoId);
+      console.log("ok");
+      debugger;
       setCompletedVideos(prev => ({
         ...prev,
         [videoId]: completed
@@ -73,139 +76,78 @@ const CoursePage = () => {
     }
   };
 
-  // Обработчик события при завершении видео - это важная часть, которая обновляет состояние в родительском компоненте
-  const handleVideoComplete = (videoId, completed) => {
-    setCompletedVideos(prev => ({
-      ...prev,
-      [videoId]: completed
-    }));
-  };
-
   if (loading) {
-    return <div style={{ padding: '40px' }}>{t('loading')}</div>;
+    return <div className={styles.loading}>{t('loading')}</div>;
   }
 
   if (!course) {
-    return <div style={{ padding: '40px' }}>Курс не найден</div>;
+    return <div className={styles.notFound}>Курс не найден</div>;
   }
 
   return (
     <div>
       <Header />
       
-      <div style={{ display: 'flex', maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{ width: '300px', padding: '20px', borderRight: '1px solid #ddd' }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', marginBottom: '20px', color: '#4f46e5', textDecoration: 'none' }}>
+      <div className={styles.coursePageContainer}>
+        <div className={styles.courseSidebar}>
+          <Link to="/" className={styles.backToCoursesLink}>
             <span>← Назад к курсам</span>
           </Link>
           
-          <h2 style={{ marginBottom: '20px' }}>Основы n8n</h2>
+          <h2 className={styles.courseTitle}>Основы n8n</h2>
           
           <div>
             {course.videos.map((video, index) => {
-              const isCompleted = completedVideos[video.id];
+              const isCompleted = !!completedVideos[video.id];
               const isActive = currentVideo && currentVideo.id === video.id;
               
               return (
-                <div key={video.id} style={{ display: 'flex', marginBottom: '10px' }}>
+                <div key={video.id} className={styles.videoItemContainer}>
                   <Link 
                     to={`/course/${courseId}?video=${video.id}`}
-                    style={{
-                      display: 'flex',
-                      flex: 1,
-                      padding: '15px',
-                      borderRadius: '8px',
-                      border: '1px solid #ddd',
-                      borderLeft: isCompleted ? '4px solid #10b981' : '1px solid #ddd',
-                      textDecoration: 'none',
-                      background: isActive ? '#eff6ff' : 'white',
-                      color: '#111827'
-                    }}
+                    className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''}`}
                   >
-                    <div style={{ 
-                      minWidth: '28px', 
-                      height: '28px', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center', 
-                      backgroundColor: '#f1f5f9', 
-                      borderRadius: '50%', 
-                      marginRight: '10px',
-                      flexShrink: 0
-                    }}>
-                      {index + 1}
-                    </div>
+                    <div className={styles.videoIndex}>{index + 1}</div>
                     
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                        <h4 style={{ margin: 0, fontWeight: 500 }}>{video.title}</h4>
-                        <span style={{ 
-                          fontSize: '12px', 
-                          padding: '2px 8px', 
-                          backgroundColor: '#f1f5f9', 
-                          borderRadius: '4px' 
-                        }}>
-                          {video.duration}
-                        </span>
+                    <div className={styles.videoDetails}>
+                      <div className={styles.videoTitleRow}>
+                        <h4 className={styles.videoTitle}>{video.title}</h4>
+                        <span className={styles.videoDuration}>{video.duration}</span>
                       </div>
                     </div>
-                  </Link>
-                  
-                  <div style={{ marginLeft: '10px', display: 'flex', alignItems: 'center' }}>
                     <input 
                       type="checkbox" 
-                      checked={!!isCompleted} 
+                      checked={isCompleted} 
                       onChange={(e) => handleMarkAsCompleted(video.id, e.target.checked)}
-                      style={{ transform: 'scale(1.2)' }}
+                      className={styles.videoCheckbox}
                     />
-                  </div>
+                  </Link>
                 </div>
               );
             })}
           </div>
         </div>
         
-        <div style={{ flex: 1, padding: '20px' }}>
+        <div className={styles.videoContent}>
           {currentVideo ? (
             <div>
-              <div style={{ 
-                paddingTop: '56.25%', 
-                position: 'relative', 
-                backgroundColor: '#000', 
-                marginBottom: '20px',
-                borderRadius: '8px',
-                overflow: 'hidden'
-              }}>
+              <div className={styles.videoWrapper}>
                 <iframe
                   src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    border: 'none'
-                  }}
                   title={currentVideo.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
+                  className={styles.videoIframe}
                 ></iframe>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h2 style={{ margin: 0 }}>{currentVideo.title}</h2>
+              <div className={styles.videoInfo}>
+                <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
               </div>
-              <p style={{ color: '#666' }}>{currentVideo.description}</p>
+              <p className={styles.videoDescription}>{currentVideo.description}</p>
             </div>
           ) : (
-            <div style={{ 
-              padding: '40px', 
-              textAlign: 'center', 
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px'
-            }}>
-              {t('selectVideo')}
-            </div>
+            <div className={styles.selectVideo}>{t('selectVideo')}</div>
           )}
         </div>
       </div>

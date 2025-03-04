@@ -45,7 +45,8 @@ export const isVideoCompleted = (user, courseId, videoId) => {
 export const markVideoAsCompleted = async (userId, courseId, videoId, completed = true) => {
   try {
     const response = await api.post(`/api/progress/${courseId}/${videoId}`, { completed });
-    
+    console.log("started");
+    debugger;
     // Обновляем информацию о пользователе в локальном хранилище
     const userStr = localStorage.getItem('user');
     if (userStr) {

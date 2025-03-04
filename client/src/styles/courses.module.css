@@ -1,608 +1,152 @@
-.sidebarTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 1.5rem;
-    color: var(--text-primary);
-  }
-  
-  .courseList {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .courseItem {
-    margin-bottom: 1rem;
-  }
-  
-  .courseLink {
-    display: block;
-    text-decoration: none;
-    color: var(--text-primary);
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-    transition: all 0.2s ease;
-    background-color: var(--background-white);
-  }
-  
-  .courseLink:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-  }
-  
-  .activeCourse {
-    border-color: var(--primary-color);
-    background-color: var(--background-blue);
-  }
-  
-  .courseTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .courseDescription {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-  }
-  
-  .progressContainer {
-    height: 6px;
-    background-color: var(--border-color);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 0.5rem;
-    position: relative;
-  }
-  
-  .progressBar {
-    height: 100%;
-    background-color: var(--success-color);
-    border-radius: 3px;
-  }
-  
-  .progressText {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-top: 0.25rem;
-    display: block;
-  }
-  
-  /* Course page styles */
-  .courseHeader {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-  }
-  
-  .courseDetails {
-    max-width: 800px;
-  }
-  
-  .coursePageTitle {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-  }
-  
-  .coursePageDescription {
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-  }
-  
-  .videoSection {
-    margin-bottom: 2rem;
-  }
-  
-  .videoContainer {
-    position: relative;
-    padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    background-color: #000;
-    margin-bottom: 1.5rem;
-  }
-  
-  .videoPlayer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-  
-  .videoDetails {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-  }
-  
-  .videoInfo {
-    flex: 1;
-  }
-  
-  .videoTitle {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .videoDescription {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-  }
-  
-  .videoDuration {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .videoActions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1.5rem;
-  }
-  
-  .checkbox {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-  }
-  
-  .checkbox input {
-    width: auto;
-  }
-  
-  .videoNavigation {
-    display: flex;
-    flex-wrap: wrap;
-    margin-top: 2rem;
-    border-top: 1px solid var(--border-color);
-    padding-top: 1.5rem;
-  }
-  
-  .videoNavItem {
-    flex: 1;
-    min-width: 200px;
-    padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    margin: 0.5rem;
-    text-decoration: none;
-    color: var(--text-primary);
-    transition: all 0.2s ease;
-    background-color: var(--background-white);
-  }
-  
-  .videoNavItem:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-  }
-  
-  .videoNavTitle {
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-  }
-  
-  .videoNavType {
-    font-size: 0.75rem;
-    color: var(--primary-color);
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-  
-  .videoNavDesc {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-  }
-  
-  .videosList {
-    margin-top: 2rem;
-  }
-  
-  .videoCard {
-    display: flex;
-    align-items: center;
-    padding: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    color: var(--text-primary);
-    background-color: var(--background-white);
-  }
-  
-  .videoCard:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-decoration: none;
-  }
-  
-  .videoCardActive {
-    border-color: var(--primary-color);
-    background-color: var(--background-blue);
-  }
-  
-  .videoCardCompleted {
-    border-left: 4px solid var(--success-color);
-  }
-  
-  .videoCardThumbnail {
-    width: 120px;
-    height: 68px;
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    margin-right: 1rem;
-    background-color: #000;
-    flex-shrink: 0;
-  }
-  
-  .videoCardImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .videoCardInfo {
-    flex: 1;
-  }
-  
-  .videoCardTitle {
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  
-  .videoCardDescription {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-  }
-  
-  .videoCardMeta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    font-size: 0.75rem;
-    color: var(--text-light);
-  }
-  
-  .videoCardStatus {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  
-  .videoCardBadge {
-    display: inline-block;
-    padding: 0.125rem 0.375rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border-radius: 4px;
-    margin-left: 0.5rem;
-  }
-  
-  .privateVideo {
-    background-color: rgba(245, 158, 11, 0.1);
-    color: var(--warning-color);
-  }
-  
-  .publicVideo {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success-color);
-  }
-  
-  .homepageContainer {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  
-  .welcomeCard {
-    background-color: var(--background-white);
-    border-radius: var(--border-radius);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border: 1px solid var(--border-color);
-  }
-  
-  .welcomeTitle {
-    font-size: 1.875rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    color: var(--primary-color);
-  }
-  
-  .welcomeText {
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-    line-height: 1.6;
-  }
-  
-  .courseGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-  }
-  
-  .courseCard {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    color: var(--text-primary);
-    background-color: var(--background-white);
-  }
-  
-  .courseCard:hover {
-    border-color: var(--primary-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-    text-decoration: none;
-  }
-  
-  .courseCardBody {
-    padding: 1.5rem;
-    flex: 1;
-  }
-  
-  .courseCardTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-  }
-  
-  .courseCardDescription {
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-    font-size: 0.875rem;
-  }
-  
-  .courseCardFooter {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
-  .courseCardProgress {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .courseCardProgressText {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-  
-  .courseCardButton {
-    padding: 0.5rem 1rem;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: var(--border-radius);
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .courseCardButton:hover {
-    background-color: var(--primary-hover);
-    text-decoration: none;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .courseHeader {
-      flex-direction: column;
-    }
-    
-    .courseGrid {
-      grid-template-columns: 1fr;
-    }
-    
-    .videoNavigation {
-      flex-direction: column;
-    }
-    
-    .videoCard {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .videoCardThumbnail {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 16/9;
-      margin-right: 0;
-      margin-bottom: 1rem;
-    }
-  }
+/* styles/courses.module.css */
 
-.videoCard {
+.coursePageContainer {
   display: flex;
-  align-items: flex-start;
-  padding: 1rem;
-  border: 1px solid #ddd;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.courseSidebar {
+  width: 350px; /* Увеличена ширина sidebar */
+  padding: 20px;
+  border-right: 1px solid #ddd;
+}
+
+.backToCoursesLink {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.courseTitle {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.videoItemContainer {
+  margin-bottom: 10px;
+}
+
+.videoItem {
+  display: flex;
+  align-items: center; /* Выравнивание по вертикали */
+  justify-content: space-between; /* Распределение элементов по строке */
+  padding: 15px;
   border-radius: 8px;
-  margin-bottom: 1rem;
-  transition: all 0.2s ease;
+  border: 1px solid #ddd;
   text-decoration: none;
-  color: var(--text-primary);
-  background-color: var(--background-white);
+  background: white;
+  color: #111827;
+  transition: background-color 0.2s ease;
 }
 
-.videoCard:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
+.videoItem:hover {
+  background-color: #f9f9f9;
 }
 
-.videoCardActive {
-  border-color: var(--primary-color);
-  background-color: var(--background-blue);
+.videoItemActive {
+  background: #eff6ff;
+  border-left: 4px solid #4f46e5;
 }
 
-.videoCardCompleted {
-  border-left: 4px solid var(--success-color);
-}
-
-.videoNumber {
+.videoIndex {
+  min-width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
   background-color: #f1f5f9;
   border-radius: 50%;
-  margin-right: 1rem;
-  font-weight: 500;
+  margin-right: 10px;
   flex-shrink: 0;
+  font-size: 0.875rem;
 }
 
-.videoCardInfo {
+.videoDetails {
   flex: 1;
-}
-
-.videoCardHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.25rem;
+  flex-direction: column;
 }
 
-.videoCardTitle {
-  font-weight: 600;
+.videoTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.videoTitle {
   margin: 0;
+  font-weight: 500;
+  font-size: 1rem;
 }
 
 .videoDuration {
   font-size: 0.75rem;
-  color: var(--text-light);
+  padding: 2px 8px;
   background-color: #f1f5f9;
-  padding: 0.25rem 0.5rem;
   border-radius: 4px;
-  font-weight: 500;
-}
-
-.videoCardDescription {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.25rem;
-}
-
-.videoCardMeta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: var(--text-light);
-}
-
-/* Добавьте эти стили в ваш файл courses.module.css */
-.videoCardContainer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between; /* Размещает checkbox справа */
+  white-space: nowrap; /* Предотвращает перенос на новую строку */
 }
 
 .videoCheckbox {
-  margin-left: 10px; /* Отступ между ссылкой и чекбоксом */
-  cursor: pointer;
+  transform: scale(1.2);
+  margin-left: 10px;
 }
 
-.videoCard {
-  display: flex;
-  align-items: flex-start;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  color: var(--text-primary);
-  background-color: var(--background-white);
-}
-
-.videoCard:hover {
-  border-color: var(--primary-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  text-decoration: none;
-}
-
-.videoCardActive {
-  border-color: var(--primary-color);
-  background-color: var(--background-blue);
-}
-
-.videoCardCompleted {
-  border-left: 4px solid var(--success-color);
-}
-
-.videoNumber {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  background-color: #f1f5f9;
-  border-radius: 50%;
-  margin-right: 1rem;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.videoCardInfo {
+.videoContent {
   flex: 1;
+  padding: 20px;
 }
 
-.videoCardHeader {
+.videoWrapper {
+  position: relative;
+  padding-top: 56.25%;
+  background-color: #000;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.videoIframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.videoInfo {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.25rem;
-}
-
-.videoCardTitle {
-  font-weight: 600;
-  margin: 0;
-}
-
-.videoDuration {
-  font-size: 0.75rem;
-  color: var(--text-light);
-  background-color: #f1f5f9;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-}
-
-.videoCardDescription {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.25rem;
-}
-
-.videoCardMeta {
-  display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: var(--text-light);
+  margin-bottom: 10px;
+}
+
+.videoDescription {
+  color: #666;
+  font-size: 0.875rem;
+}
+
+.selectVideo {
+  padding: 40px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  color: #777;
+}
+
+.loading {
+  padding: 40px;
+  text-align: center;
+  color: #777;
+}
+
+.notFound {
+  padding: 40px;
+  text-align: center;
+  color: #777;
 }

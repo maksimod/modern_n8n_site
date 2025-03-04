@@ -18,7 +18,7 @@ export const register = async (username, password) => {
     localStorage.setItem('token', response.data.token);
     localStorage.setItem('user', JSON.stringify(response.data.user));
     
-    return response.data.user;
+    return { user: response.data.user, token: response.data.token };
   } catch (error) {
     console.error('Registration error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
@@ -37,7 +37,7 @@ export const login = async (username, password) => {
     localStorage.setItem('token', response.data.token);
     localStorage.setItem('user', JSON.stringify(response.data.user));
     
-    return response.data.user;
+    return { user: response.data.user, token: response.data.token };
   } catch (error) {
     console.error('Login error:', error);
     
