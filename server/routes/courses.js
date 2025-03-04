@@ -11,12 +11,18 @@ router.get('/', async (req, res) => {
   console.log('GET /api/courses - Запрос курсов получен');
   try {
     const language = req.query.language || 'ru';
-    
+    console.log('Запрошенный язык:', language);
+
+    const allCoursesResult = await db.query('SELECT id, title, language FROM courses');
+    console.log('Все доступные курсы в базе:', allCoursesResult.rows);
+
     const coursesResult = await db.query(
       'SELECT * FROM courses WHERE language = $1',
       [language]
     );
     
+    console.log('Параметры запроса к БД:', { language });
+    console.log('SQL запрос курсов результат:', coursesResult);
     console.log('Результаты запроса курсов:', coursesResult.rows.length, 'курсов найдено');
 
     const courses = [];
