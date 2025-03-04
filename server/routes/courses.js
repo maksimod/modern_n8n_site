@@ -8,6 +8,7 @@ const auth = require('../middleware/auth');
 // @desc    Get all courses
 // @access  Public
 router.get('/', async (req, res) => {
+  console.log('GET /api/courses - Запрос курсов получен');
   try {
     const language = req.query.language || 'ru';
     
@@ -16,6 +17,8 @@ router.get('/', async (req, res) => {
       [language]
     );
     
+    console.log('Результаты запроса курсов:', coursesResult.rows.length, 'курсов найдено');
+
     const courses = [];
     
     // Для каждого курса получаем его видео

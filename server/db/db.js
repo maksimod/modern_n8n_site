@@ -10,6 +10,19 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
+console.log('Пытаемся подключиться к базе данных с настройками:', {
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
+});
+pool.query('SELECT NOW()', (err, res) => {
+  if (err) {
+    console.error('Ошибка подключения к PostgreSQL:', err);
+  } else {
+    console.log('PostgreSQL подключен:', res.rows[0]);
+  }
+});
+
 // Обработка ошибок
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
