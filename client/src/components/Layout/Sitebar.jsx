@@ -65,18 +65,6 @@ const Sidebar = () => {
                   <p className={courseStyles.courseDescription}>
                     {course.description}
                   </p>
-                  
-                  {/* {progress > 0 && (
-                    <div className={courseStyles.progressContainer}>
-                      <div 
-                        className={courseStyles.progressBar}
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                      <span className={courseStyles.progressText}>
-                        {progress}% {t('course.completed')}
-                      </span>
-                    </div>
-                  )} */}
                 </div>
               </Link>
             </li>

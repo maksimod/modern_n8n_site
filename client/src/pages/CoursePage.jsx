@@ -194,14 +194,6 @@ const CoursePage = () => {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <h2 style={{ margin: 0 }}>{currentVideo.title}</h2>
-                <label style={{ display: 'flex', alignItems: 'center' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={!!completedVideos[currentVideo.id]} 
-                    onChange={(e) => handleMarkAsCompleted(currentVideo.id, e.target.checked)}
-                    style={{ marginRight: '5px', transform: 'scale(1.2)' }}
-                  />
-                </label>
               </div>
               <p style={{ color: '#666' }}>{currentVideo.description}</p>
             </div>

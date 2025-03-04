@@ -14,12 +14,12 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const [loading, setLoading] = useState(false);
 
   // Проверяем состояние просмотра при изменении видео
-  // useEffect(() => {
-  //   if (currentUser && course?.id && video?.id) {
-  //     const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
-  //     setCompleted(isCompleted);
-  //   }
-  // }, [currentUser, course, video]);
+  useEffect(() => {
+    if (currentUser && course?.id && video?.id) {
+      const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
+      setCompleted(isCompleted);
+    }
+  }, [currentUser, course, video]);
 
   const handleProgress = (state) => {
     setProgress(state.played);
@@ -123,13 +123,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       
       <div className={styles.videoActions}>
         <label className={styles.checkbox}>
-          {/* <input
+          <input
             type="checkbox"
             checked={completed}
             onChange={(e) => handleComplete(e.target.checked)}
             disabled={loading}
-          /> */}
-          {/* <span>{t('course.markCompleted')}</span> */}
+          />
+          <span>{t('course.markCompleted')}</span>
         </label>
       </div>
     </div>
