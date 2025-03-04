@@ -13,7 +13,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -47,15 +46,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       setCompleted(isCompleted);
     }
   }, [currentUser, course, video]);
-
-  const handleProgress = (state) => {
-    setProgress(state.played);
-    
-    // Auto-mark as completed when user watches 90% of the video
-    if (state.played >= 0.9 && !completed) {
-      handleComplete(true);
-    }
-  };
 
   const handleComplete = async (value) => {
     if (loading || completed === value) return;
@@ -120,45 +110,10 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               onEnded={handleEnded}
               onTimeUpdate={(e) => {
                 const played = e.target.currentTime / e.target.duration;
-                handleProgress({ played });
               }}
               onError={(e) => console.error("Ошибка видео:", e)}
               crossOrigin="anonymous"
             />
-            <div style={{ marginTop: '10px', fontSize: '0.8rem' }}>
-              <p>Отладочная информация:</p>
-              <p>URL видео: <code>{fullVideoUrl}</code></p>
-              <p>
-                <a 
-                  href={fullVideoUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{ color: 'blue', textDecoration: 'underline' }}
-                >
-                  Открыть видео напрямую
-                </a>
-              </p>
-              <button
-                onClick={() => {
-                  if (videoRef.current) {
-                    console.log("Видео элемент:", videoRef.current);
-                    videoRef.current.load();
-                    videoRef.current.play().catch(e => console.error("Ошибка воспроизведения:", e));
-                  }
-                }}
-                style={{ 
-                  padding: '5px 10px', 
-                  background: '#4f46e5', 
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginTop: '5px'
-                }}
-              >
-                Принудительно воспроизвести
-              </button>
-            </div>
           </>
         ) : (
           // Используем ReactPlayer для YouTube и других внешних ресурсов
@@ -172,8 +127,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
             onPlay={handlePlay}
             onPause={handlePause}
             onEnded={handleEnded}
-            onProgress={handleProgress}
-            progressInterval={1000}
             config={{
               youtube: {
                 playerVars: {
@@ -200,18 +153,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
             )}
           </div>
         </div>
-      </div>
-      
-      <div className={styles.videoActions}>
-        <label className={styles.checkbox}>
-          <input
-            type="checkbox"
-            checked={completed}
-            onChange={(e) => handleComplete(e.target.checked)}
-            disabled={loading}
-          />
-          <span>{t('course.markCompleted')}</span>
-        </label>
       </div>
     </div>
   );

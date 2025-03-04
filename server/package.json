@@ -6,7 +6,6 @@
     "scripts": {
         "start": "node index.js",
         "dev": "nodemon index.js",
-        "init-data": "node init-data.js",
         "init-db": "node init-db.js"
     },
     "dependencies": {

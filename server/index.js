@@ -59,11 +59,9 @@ app.use((req, res, next) => {
 // Маршруты
 const authRouter = require('./routes/auth');
 const coursesRouter = require('./routes/courses');
-const progressRouter = require('./routes/progress');
 
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
-app.use('/api/progress', progressRouter);
 
 // Обслуживание статических файлов в production
 if (process.env.NODE_ENV === 'production') {

@@ -52,7 +52,7 @@ const Header = () => {
             {dropdownOpen && (
               <div className={styles.dropdown}>
                 <button className={styles.dropdownItem} onClick={handleLogout}>
-                  {t('nav.logout')}
+                  {t('logout')}
                 </button>
                 
                 <div className={styles.languages}>

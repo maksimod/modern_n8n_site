@@ -147,24 +147,6 @@ const CoursePage = () => {
                 <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
               </div>
               <p className={styles.videoDescription}>{currentVideo.description}</p>
-              
-              {/* Отладочная информация - можно удалить после проверки */}
-              {currentVideo.localVideo && (
-                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
-                  <p>Отладочная информация:</p>
-                  <p>URL видео: {getFullVideoUrl(currentVideo)}</p>
-                  <p>
-                    <a 
-                      href={getFullVideoUrl(currentVideo)} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      style={{ color: 'blue', textDecoration: 'underline' }}
-                    >
-                      Открыть видео напрямую
-                    </a>
-                  </p>
-                </div>
-              )}
             </div>
           ) : (
             <div className={styles.selectVideo}>{t('selectVideo')}</div>

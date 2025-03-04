@@ -63,31 +63,3 @@ export const getCurrentUser = () => {
   if (!userStr) return null;
   return JSON.parse(userStr);
 };
-
-export const updateUserProgress = async (userId, courseId, videoId, completed) => {
-  try {
-    const response = await api.post(`/api/progress/${courseId}/${videoId}`, { completed });
-    
-    // Обновляем информацию о прогрессе в локальном хранилище
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      
-      if (!user.progress) {
-        user.progress = {};
-      }
-      
-      if (!user.progress[courseId]) {
-        user.progress[courseId] = {};
-      }
-      
-      user.progress[courseId][videoId] = completed;
-      localStorage.setItem('user', JSON.stringify(user));
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error updating progress:', error);
-    throw error;
-  }
-};

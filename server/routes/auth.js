@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
-const { userModel, progressModel } = require('../models/data-model');
+const { userModel } = require('../models/data-model');
 const auth = require('../middleware/auth');
 
 // @route   POST api/auth/register
@@ -62,7 +62,6 @@ router.post(
             user: {
               id: user.id,
               username: user.username,
-              progress: {} // Пустой объект прогресса для нового пользователя
             }
           });
         }
@@ -103,9 +102,6 @@ router.post(
       }
       
       console.log('User authenticated:', { id: user.id, username: user.username });
-
-      // Получаем прогресс пользователя
-      const progress = progressModel.getUserFormattedProgress(user.id);
       
       // Создаем и возвращаем JWT токен
       const payload = {
@@ -125,7 +121,6 @@ router.post(
             user: {
               id: user.id,
               username: user.username,
-              progress
             }
           });
         }
@@ -148,15 +143,11 @@ router.get('/user', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    // Получаем прогресс пользователя
-    const progress = progressModel.getUserFormattedProgress(user.id);
-    
     // Не возвращаем пароль
     const { password, ...userWithoutPassword } = user;
     
     res.json({
       ...userWithoutPassword,
-      progress
     });
   } catch (err) {
     console.error(err.message);
