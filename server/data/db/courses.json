@@ -10,7 +10,7 @@
         "title": "Интерфейс",
         "description": "Обзор интерфейса n8n",
         "duration": "12:25",
-        "localVideo": "test.mp4",
+        "videoUrl": "https://www.youtube.com/watch?v=1gyb8gt2VnU",
         "isPrivate": false,
         "orderIndex": 0
       },
@@ -40,6 +40,123 @@
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "isPrivate": false,
         "orderIndex": 3
+      },
+      {
+        "id": "n8n-data-transformation",
+        "title": "Узлы «Data transformation»",
+        "description": "Преобразование данных",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 4
+      },
+      {
+        "id": "n8n-flow",
+        "title": "Узлы «Flow»",
+        "description": "Управление потоком данных",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 5
+      },
+      {
+        "id": "n8n-core",
+        "title": "Узлы \"Core\"",
+        "description": "Базовые узлы Core",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 6
+      },
+      {
+        "id": "n8n-json",
+        "title": "JSON",
+        "description": "Работа с JSON форматом",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 7
+      },
+      {
+        "id": "n8n-work-with-data",
+        "title": "Работа с данными",
+        "description": "Продвинутые методы работы с данными",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 8
+      },
+      {
+        "id": "n8n-postgres",
+        "title": "Postgres",
+        "description": "Интеграция с PostgreSQL",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 9
+      },
+      {
+        "id": "n8n-google-cloud-console",
+        "title": "Google cloud console",
+        "description": "Подключение к Google Cloud",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 10
+      },
+      {
+        "id": "n8n-google-sheets",
+        "title": "Google sheets",
+        "description": "Работа с Google Sheets",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 11
+      },
+      {
+        "id": "n8n-google-drive",
+        "title": "Google drive",
+        "description": "Интеграция с Google Drive",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 12
+      },
+      {
+        "id": "n8n-practice-easy",
+        "title": "Практика: простой workflow",
+        "description": "Создание простого рабочего процесса",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 13
+      },
+      {
+        "id": "n8n-telegram-trigger",
+        "title": "Практика: Telegram Trigger",
+        "description": "Настройка Telegram триггера",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 14
+      },
+      {
+        "id": "n8n-telegram-bot",
+        "title": "Практика: телеграм бот",
+        "description": "Создание телеграм бота",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 15
+      },
+      {
+        "id": "n8n-practice-hard",
+        "title": "Практика: сложный workflow",
+        "description": "Создание продвинутого рабочего процесса",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 16
       }
     ]
   },
@@ -54,7 +171,7 @@
         "title": "Interface",
         "description": "Overview of n8n interface",
         "duration": "12:25",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
         "isPrivate": false,
         "orderIndex": 0
       },
@@ -66,32 +183,141 @@
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "isPrivate": false,
         "orderIndex": 1
-      }
-    ]
-  },
-  {
-    "id": "react-basics",
-    "title": "React Basics",
-    "description": "Learn the fundamentals of React library",
-    "language": "en",
-    "videos": [
-      {
-        "id": "react-intro",
-        "title": "Introduction to React",
-        "description": "What is React and why use it",
-        "duration": "8:20",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
-        "orderIndex": 0
       },
       {
-        "id": "react-components",
-        "title": "React Components",
-        "description": "Creating and using components",
-        "duration": "14:10",
+        "id": "n8n-action-in-app",
+        "title": "Action in app nodes",
+        "description": "Working with Action in app",
+        "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": true,
-        "orderIndex": 1
+        "isPrivate": false,
+        "orderIndex": 2
+      },
+      {
+        "id": "n8n-credentials",
+        "title": "Credentials",
+        "description": "Setting up credentials",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 3
+      },
+      {
+        "id": "n8n-data-transformation",
+        "title": "Data transformation nodes",
+        "description": "Data transformations",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 4
+      },
+      {
+        "id": "n8n-flow",
+        "title": "Flow nodes",
+        "description": "Managing data flow",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 5
+      },
+      {
+        "id": "n8n-core",
+        "title": "Core nodes",
+        "description": "Basic Core nodes",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 6
+      },
+      {
+        "id": "n8n-json",
+        "title": "JSON",
+        "description": "Working with JSON format",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 7
+      },
+      {
+        "id": "n8n-work-with-data",
+        "title": "Working with data",
+        "description": "Advanced data processing methods",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 8
+      },
+      {
+        "id": "n8n-postgres",
+        "title": "Postgres",
+        "description": "PostgreSQL integration",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 9
+      },
+      {
+        "id": "n8n-google-cloud-console",
+        "title": "Google cloud console",
+        "description": "Connecting to Google Cloud",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 10
+      },
+      {
+        "id": "n8n-google-sheets",
+        "title": "Google sheets",
+        "description": "Working with Google Sheets",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 11
+      },
+      {
+        "id": "n8n-google-drive",
+        "title": "Google drive",
+        "description": "Google Drive integration",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 12
+      },
+      {
+        "id": "n8n-practice-easy",
+        "title": "Practice: simple workflow",
+        "description": "Creating a simple workflow",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 13
+      },
+      {
+        "id": "n8n-telegram-trigger",
+        "title": "Practice: Telegram Trigger",
+        "description": "Setting up Telegram Trigger",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 14
+      },
+      {
+        "id": "n8n-telegram-bot",
+        "title": "Practice: telegram bot",
+        "description": "Creating a telegram bot",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 15
+      },
+      {
+        "id": "n8n-practice-hard",
+        "title": "Practice: complex workflow",
+        "description": "Creating an advanced workflow",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 16
       }
     ]
   }

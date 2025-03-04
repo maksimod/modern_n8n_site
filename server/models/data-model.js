@@ -7,7 +7,6 @@ const bcrypt = require('bcryptjs');
 const DATA_DIR = path.join(__dirname, '../data/db');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const COURSES_FILE = path.join(DATA_DIR, 'courses.json');
-const PROGRESS_FILE = path.join(DATA_DIR, 'progress.json');
 
 // Инициализация структуры данных
 const ensureDataFilesExist = () => {
@@ -23,10 +22,6 @@ const ensureDataFilesExist = () => {
 
   if (!fs.existsSync(COURSES_FILE)) {
     fs.writeFileSync(COURSES_FILE, JSON.stringify([]));
-  }
-
-  if (!fs.existsSync(PROGRESS_FILE)) {
-    fs.writeFileSync(PROGRESS_FILE, JSON.stringify([]));
   }
 };
 
@@ -136,73 +131,12 @@ const courseModel = {
   }
 };
 
-// Операции с прогрессом
-const progressModel = {
-  getUserProgress: (userId) => {
-    const progressData = getData(PROGRESS_FILE);
-    return progressData.filter(p => p.user_id === userId);
-  },
-  
-  getCourseProgress: (userId, courseId) => {
-    const progressData = getData(PROGRESS_FILE);
-    return progressData.filter(p => p.user_id === userId && p.course_id === courseId);
-  },
-  
-  updateProgress: (userId, courseId, videoId, completed) => {
-    const progressData = getData(PROGRESS_FILE);
-    
-    // Поиск существующей записи
-    const existingIndex = progressData.findIndex(
-      p => p.user_id === userId && p.course_id === courseId && p.video_id === videoId
-    );
-    
-    if (existingIndex !== -1) {
-      // Обновление существующей записи
-      progressData[existingIndex].is_completed = completed;
-      progressData[existingIndex].updated_at = new Date().toISOString();
-    } else {
-      // Создание новой записи
-      progressData.push({
-        id: progressData.length > 0 ? Math.max(...progressData.map(p => p.id)) + 1 : 1,
-        user_id: userId,
-        course_id: courseId,
-        video_id: videoId,
-        is_completed: completed,
-        updated_at: new Date().toISOString()
-      });
-    }
-    
-    saveData(PROGRESS_FILE, progressData);
-    
-    // Возвращаем обновленный прогресс для курса
-    return progressModel.getCourseProgress(userId, courseId);
-  },
-  
-  // Форматированный прогресс для пользователя
-  getUserFormattedProgress: (userId) => {
-    const progressData = progressModel.getUserProgress(userId);
-    const formattedProgress = {};
-    
-    progressData.forEach(item => {
-      if (!formattedProgress[item.course_id]) {
-        formattedProgress[item.course_id] = {};
-      }
-      
-      formattedProgress[item.course_id][item.video_id] = item.is_completed;
-    });
-    
-    return formattedProgress;
-  }
-};
-
 // Инициализируем структуру данных при запуске
 ensureDataFilesExist();
 
 module.exports = {
   userModel,
   courseModel,
-  progressModel,
   USERS_FILE,
   COURSES_FILE,
-  PROGRESS_FILE
 };
