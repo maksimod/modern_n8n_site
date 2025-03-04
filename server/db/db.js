@@ -1,40 +1,26 @@
 // server/db/db.js
 const { Pool } = require('pg');
 
-// Настройки кодировки для преобразования текста
-process.env.PGCLIENTENCODING = 'UTF8';
-
-// Получение конфигурации из переменных окружения
+// Создаем пул соединений с базой данных
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'videocourses',
+  password: process.env.DB_PASSWORD || 'postgres',
+  port: process.env.DB_PORT || 5432,
+  // Явно указываем кодировку
+  options: "-c client_encoding=UTF8"
 });
 
-// Добавьте функцию для обработки кириллицы
-const fixEncoding = (text) => {
-  if (typeof text !== 'string') return text;
-  return text.replace(/\uFFFD/g, ''); // Удаление некорректных символов
-};
-
-// Доработка функции запроса для обработки результатов
+// Простая обертка для выполнения запросов
 const query = async (text, params) => {
-  const result = await pool.query(text, params);
-  
-  // Обработка результатов для исправления кодировки
-  if (result.rows && result.rows.length > 0) {
-    result.rows = result.rows.map(row => {
-      const fixedRow = {};
-      for (const key in row) {
-        fixedRow[key] = fixEncoding(row[key]);
-      }
-      return fixedRow;
-    });
+  try {
+    const res = await pool.query(text, params);
+    return res;
+  } catch (error) {
+    console.error('Ошибка выполнения запроса:', error);
+    throw error;
   }
-  
-  return result;
 };
 
 module.exports = {

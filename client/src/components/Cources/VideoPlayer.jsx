@@ -14,12 +14,12 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const [loading, setLoading] = useState(false);
 
   // Проверяем состояние просмотра при изменении видео
-  useEffect(() => {
-    if (currentUser && course?.id && video?.id) {
-      const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
-      setCompleted(isCompleted);
-    }
-  }, [currentUser, course, video]);
+  // useEffect(() => {
+  //   if (currentUser && course?.id && video?.id) {
+  //     const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
+  //     setCompleted(isCompleted);
+  //   }
+  // }, [currentUser, course, video]);
 
   const handleProgress = (state) => {
     setProgress(state.played);
@@ -33,6 +33,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const handleComplete = async (value) => {
     if (loading || completed === value) return;
     
+    if (!currentUser) {
+      // Если пользователь не авторизован, перенаправляем на страницу входа
+      alert('Необходимо авторизоваться для отметки просмотра');
+      navigate('/auth');
+      return;
+    }
+    
     setLoading(true);
     try {
       if (currentUser && course?.id && video?.id) {
@@ -44,6 +51,12 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       }
     } catch (error) {
       console.error('Error marking video as completed:', error);
+      
+      // Проверяем наличие ошибки авторизации
+      if (error.response && error.response.status === 401) {
+        alert('Сессия истекла. Пожалуйста, войдите снова.');
+        navigate('/auth');
+      }
     } finally {
       setLoading(false);
     }
@@ -110,13 +123,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       
       <div className={styles.videoActions}>
         <label className={styles.checkbox}>
-          <input
+          {/* <input
             type="checkbox"
             checked={completed}
             onChange={(e) => handleComplete(e.target.checked)}
             disabled={loading}
-          />
-          <span>{t('course.markCompleted')}</span>
+          /> */}
+          {/* <span>{t('course.markCompleted')}</span> */}
         </label>
       </div>
     </div>

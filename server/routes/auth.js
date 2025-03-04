@@ -45,20 +45,25 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ message: 'Validation error: ' + errors.array().map(e => e.msg).join(', ') });
     }
 
     const { username, password } = req.body;
 
     try {
-      // Check if user already exists
+      // Добавим отладочную информацию
+      console.log('Регистрация пользователя:', username);
+      
+      // Проверяем существование пользователя
       const userCheck = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+      console.log('Результат проверки пользователя:', userCheck.rows.length);
       
       if (userCheck.rows.length > 0) {
+        console.log('Пользователь уже существует');
         return res.status(400).json({ message: 'User already exists' });
       }
 
-      // Create new user
+      // Создаем нового пользователя
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -67,9 +72,16 @@ router.post(
         [username, hashedPassword]
       );
       
+      console.log('Пользователь создан:', newUser.rows[0]);
+      
+      if (!newUser.rows[0]) {
+        console.log('Ошибка при создании пользователя: пустой результат');
+        return res.status(500).json({ message: 'Error creating user' });
+      }
+      
       const user = newUser.rows[0];
 
-      // Create and return JWT token
+      // Создаем и отправляем JWT токен
       const payload = {
         user: {
           id: user.id
@@ -78,22 +90,27 @@ router.post(
 
       jwt.sign(
         payload,
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'fallbacksecretkey', // Добавляем запасной ключ
         { expiresIn: '7d' },
         (err, token) => {
-          if (err) throw err;
+          if (err) {
+            console.error('Ошибка при создании токена:', err);
+            throw err;
+          }
+          console.log('Токен создан, отправляем ответ');
           res.json({
             token,
             user: {
               id: user.id,
-              username: user.username
+              username: user.username,
+              progress: {} // Добавляем пустой объект прогресса
             }
           });
         }
       );
     } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server error');
+      console.error('Ошибка при регистрации:', err);
+      res.status(500).json({ message: 'Server error: ' + err.message });
     }
   }
 );
@@ -165,7 +182,7 @@ router.post(
 
       jwt.sign(
         payload,
-        process.env.JWT_SECRET,
+        process.env.JWT_SECRET || 'fallbacksecretkey',
         { expiresIn: '7d' },
         (err, token) => {
           if (err) throw err;

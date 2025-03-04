@@ -27,6 +27,12 @@ const CoursePage = () => {
         const courseData = await getCourseById(courseId, language);
         setCourse(courseData);
         
+        // Если язык курса не совпадает с выбранным языком, уведомляем пользователя
+        if (courseData && courseData.language !== language) {
+          console.log(`Курс доступен только на языке: ${courseData.language}`);
+          // Можно добавить уведомление для пользователя
+        }
+        
         if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
           if (courseData.videos.length > 0) {
             setSearchParams({ video: courseData.videos[0].id });
@@ -47,7 +53,7 @@ const CoursePage = () => {
         setLoading(false);
       }
     };
-
+  
     fetchCourse();
   }, [courseId, videoId, language, setSearchParams, currentUser]);
 

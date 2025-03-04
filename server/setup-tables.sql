@@ -1,12 +1,3 @@
--- Удаление базы данных, если существует
-DROP DATABASE IF EXISTS videocourses;
-
--- Создание базы данных с явным указанием кодировки UTF-8
-CREATE DATABASE videocourses WITH ENCODING 'UTF8' LC_COLLATE 'ru_RU.UTF-8' LC_CTYPE 'ru_RU.UTF-8';
-
--- Подключение к базе данных
-\c videocourses
-
 -- Создание таблицы пользователей
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,

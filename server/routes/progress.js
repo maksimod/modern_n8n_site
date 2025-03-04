@@ -1,3 +1,4 @@
+console.log("test1");
 // server/routes/progress.js
 const express = require('express');
 const router = express.Router();
@@ -9,12 +10,14 @@ const auth = require('../middleware/auth');
 // @access  Private
 router.post('/:courseId/:videoId', auth, async (req, res) => {
   try {
+    console.log("test1");
     const { courseId, videoId } = req.params;
     const { completed } = req.body;
     const userId = req.user.id;
     
     // Проверяем существование курса и видео
-    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
+    const language = req.query.language || 'ru';
+    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1 AND language = $2', [courseId, language]);
     const videoCheck = await db.query('SELECT * FROM videos WHERE id = $1 AND course_id = $2', [videoId, courseId]);
     
     if (courseCheck.rows.length === 0) {
@@ -74,7 +77,8 @@ router.get('/:courseId', auth, async (req, res) => {
     const userId = req.user.id;
     
     // Проверяем существование курса
-    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1', [courseId]);
+    const language = req.query.language || 'ru';
+    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1 AND language = $2', [courseId, language]);
     
     if (courseCheck.rows.length === 0) {
       return res.status(404).json({ message: 'Course not found' });

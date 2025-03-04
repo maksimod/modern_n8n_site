@@ -29,6 +29,10 @@ export const login = async (username, password) => {
   try {
     const response = await api.post('/api/auth/login', { username, password });
     
+    if (!response.data || !response.data.token) {
+      throw new Error('Invalid response from server');
+    }
+    
     // Сохраняем токен и данные пользователя
     localStorage.setItem('token', response.data.token);
     localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -36,7 +40,15 @@ export const login = async (username, password) => {
     return response.data.user;
   } catch (error) {
     console.error('Login error:', error);
-    throw new Error(error.response?.data?.message || 'Login failed');
+    
+    // Более подробная информация об ошибке
+    if (error.response) {
+      throw new Error(error.response.data?.message || 'Login failed with status: ' + error.response.status);
+    } else if (error.request) {
+      throw new Error('No response from server. Check your internet connection.');
+    } else {
+      throw new Error(error.message || 'Login failed');
+    }
   }
 };
 

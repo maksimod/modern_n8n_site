@@ -66,7 +66,7 @@ const Sidebar = () => {
                     {course.description}
                   </p>
                   
-                  {progress > 0 && (
+                  {/* {progress > 0 && (
                     <div className={courseStyles.progressContainer}>
                       <div 
                         className={courseStyles.progressBar}
@@ -76,7 +76,7 @@ const Sidebar = () => {
                         {progress}% {t('course.completed')}
                       </span>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </Link>
             </li>
