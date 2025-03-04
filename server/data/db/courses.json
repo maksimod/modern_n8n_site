@@ -10,7 +10,7 @@
         "title": "Интерфейс",
         "description": "Обзор интерфейса n8n",
         "duration": "12:25",
-        "videoUrl": "https://www.youtube.com/watch?v=1gyb8gt2VnU",
+        "localVideo": "test.mp4",
         "isPrivate": false,
         "orderIndex": 0
       },
