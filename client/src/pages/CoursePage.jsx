@@ -3,10 +3,9 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourseById, getVideoById, markVideoAsCompleted, getCourseProgress } from '../services/course.service';
+import { getCourseById, getVideoById } from '../services/course.service';
 import Header from '../components/Layout/Header';
-import styles from '../styles/courses.module.css'; // Убедитесь, что этот файл существует
-import debug from 'debug';
+import styles from '../styles/courses.module.css';
 
 const CoursePage = () => {
   const { t } = useTranslation();
@@ -19,7 +18,6 @@ const CoursePage = () => {
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [completedVideos, setCompletedVideos] = useState({});
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -27,11 +25,7 @@ const CoursePage = () => {
         setLoading(true);
         const courseData = await getCourseById(courseId, language);
         setCourse(courseData);
-        
-        if (courseData && courseData.language !== language) {
-          console.log(`Курс доступен только на языке: ${courseData.language}`);
-        }
-        
+
         if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
           if (courseData.videos.length > 0) {
             setSearchParams({ video: courseData.videos[0].id });
@@ -39,11 +33,6 @@ const CoursePage = () => {
         } else if (videoId && courseData) {
           const videoData = await getVideoById(courseId, videoId, language);
           setCurrentVideo(videoData);
-          
-          if (currentUser) {
-            const progress = await getCourseProgress(currentUser.id, courseId);
-            setCompletedVideos(progress || {});
-          }
         }
       } catch (error) {
         console.error('Ошибка загрузки курса:', error);
@@ -54,27 +43,6 @@ const CoursePage = () => {
   
     fetchCourse();
   }, [courseId, videoId, language, setSearchParams, currentUser]);
-
-  const handleMarkAsCompleted = async (videoId, completed) => {
-    console.log("1");
-    // process.stdout.write('Отладочная информация\n');
-    // process.stderr.write('Ошибка: что-то пошло не так\n');
-    if (!isAuthenticated) {
-      return;
-    }
-    console.log(isAuthenticated);
-    try {
-      await markVideoAsCompleted(currentUser.id, courseId, videoId);
-      console.log("ok");
-      debugger;
-      setCompletedVideos(prev => ({
-        ...prev,
-        [videoId]: completed
-      }));
-    } catch (error) {
-      console.error('Ошибка при отметке видео:', error);
-    }
-  };
 
   if (loading) {
     return <div className={styles.loading}>{t('loading')}</div>;
@@ -98,7 +66,6 @@ const CoursePage = () => {
           
           <div>
             {course.videos.map((video, index) => {
-              const isCompleted = !!completedVideos[video.id];
               const isActive = currentVideo && currentVideo.id === video.id;
               
               return (
@@ -115,12 +82,6 @@ const CoursePage = () => {
                         <span className={styles.videoDuration}>{video.duration}</span>
                       </div>
                     </div>
-                    <input 
-                      type="checkbox" 
-                      checked={isCompleted} 
-                      onChange={(e) => handleMarkAsCompleted(video.id, e.target.checked)}
-                      className={styles.videoCheckbox}
-                    />
                   </Link>
                 </div>
               );

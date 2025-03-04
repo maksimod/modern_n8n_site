@@ -7,32 +7,6 @@ const { check, validationResult } = require('express-validator');
 const db = require('../db/db');
 const auth = require('../middleware/auth');
 
-// Создаем тестового пользователя при запуске сервера
-(async () => {
-  try {
-    // Генерируем хеш пароля
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('admin123', salt);
-    
-    // Проверяем, существует ли пользователь
-    const userCheck = await db.query('SELECT * FROM users WHERE username = $1', ['admin2']);
-    
-    if (userCheck.rows.length === 0) {
-      // Если пользователя нет, создаем нового
-      const newUser = await db.query(
-        'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
-        ['admin2', hashedPassword]
-      );
-      
-      console.log('Created test user admin2 with password admin123');
-    } else {
-      console.log('Test user admin2 already exists');
-    }
-  } catch (err) {
-    console.error('Error creating test user:', err);
-  }
-})();
-
 // @route   POST api/auth/register
 // @desc    Register a user
 // @access  Public

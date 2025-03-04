@@ -1,17 +1,24 @@
 /* styles/courses.module.css */
 
+/* Основной контейнер страницы */
 .coursePageContainer {
   display: flex;
   max-width: 1400px;
   margin: 0 auto;
+  height: calc(100vh - 80px); /* Высота контейнера, минус высота Header */
 }
 
+/* Сайдбар */
 .courseSidebar {
-  width: 350px; /* Увеличена ширина sidebar */
+  width: 350px; /* Ширина сайдбара */
   padding: 20px;
   border-right: 1px solid #ddd;
+  overflow-y: auto; /* Добавляем скроллер */
+  flex-shrink: 0; /* Запрещаем сайдбару сжиматься */
+  background-color: #f9f9f9;
 }
 
+/* Ссылка "Назад к курсам" */
 .backToCoursesLink {
   display: flex;
   align-items: center;
@@ -20,19 +27,22 @@
   text-decoration: none;
 }
 
+/* Заголовок курса */
 .courseTitle {
   margin-bottom: 20px;
   font-size: 1.5rem;
 }
 
+/* Контейнер для видео в сайдбаре */
 .videoItemContainer {
   margin-bottom: 10px;
 }
 
+/* Элемент видео в сайдбаре */
 .videoItem {
   display: flex;
-  align-items: center; /* Выравнивание по вертикали */
-  justify-content: space-between; /* Распределение элементов по строке */
+  align-items: center;
+  justify-content: space-between;
   padding: 15px;
   border-radius: 8px;
   border: 1px solid #ddd;
@@ -51,6 +61,7 @@
   border-left: 4px solid #4f46e5;
 }
 
+/* Номер видео */
 .videoIndex {
   min-width: 28px;
   height: 28px;
@@ -64,12 +75,14 @@
   font-size: 0.875rem;
 }
 
+/* Детали видео */
 .videoDetails {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
+/* Строка с заголовком и длительностью видео */
 .videoTitleRow {
   display: flex;
   justify-content: space-between;
@@ -88,28 +101,36 @@
   padding: 2px 8px;
   background-color: #f1f5f9;
   border-radius: 4px;
-  white-space: nowrap; /* Предотвращает перенос на новую строку */
+  white-space: nowrap;
 }
 
+/* Чекбокс для отметки видео */
 .videoCheckbox {
   transform: scale(1.2);
   margin-left: 10px;
 }
 
+/* Контейнер для видео (правая часть) */
 .videoContent {
   flex: 1;
   padding: 20px;
+  max-width: 800px; /* Ограничиваем ширину контейнера с видео */
+  margin: 0 auto; /* Центрируем контейнер */
+  overflow-y: auto; /* Добавляем скроллер для контента */
 }
 
+/* Обертка для видео */
 .videoWrapper {
   position: relative;
-  padding-top: 56.25%;
+  padding-top: 56.25%; /* Соотношение сторон 16:9 */
   background-color: #000;
   margin-bottom: 20px;
   border-radius: 8px;
   overflow: hidden;
+  max-width: 800px; /* Ограничиваем ширину видео */
 }
 
+/* iframe с видео */
 .videoIframe {
   position: absolute;
   top: 0;
@@ -119,6 +140,7 @@
   border: none;
 }
 
+/* Информация о видео */
 .videoInfo {
   display: flex;
   justify-content: space-between;
@@ -131,6 +153,7 @@
   font-size: 0.875rem;
 }
 
+/* Сообщение "Выберите видео" */
 .selectVideo {
   padding: 40px;
   text-align: center;
@@ -139,12 +162,14 @@
   color: #777;
 }
 
+/* Сообщение "Загрузка" */
 .loading {
   padding: 40px;
   text-align: center;
   color: #777;
 }
 
+/* Сообщение "Курс не найден" */
 .notFound {
   padding: 40px;
   text-align: center;

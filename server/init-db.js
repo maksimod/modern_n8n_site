@@ -108,7 +108,7 @@ async function initDatabase() {
     // Вставка видео для русской версии
     await dbPool.query(`
         INSERT INTO videos (id, course_id, title, description, duration, video_url, is_private, order_index, language) VALUES
-        ('n8n-interface', 'n8n-basics', 'Интерфейс', 'Обзор интерфейса n8n', '12:25', 'https://www.youtube.com/watch?v=ypJT_r_GSSM', FALSE, 0, 'ru'),
+        ('n8n-interface', 'n8n-basics', 'Интерфейс', 'Обзор интерфейса n8n', '12:25', 'https://www.youtube.com/watch?v=1gyb8gt2VnU', FALSE, 0, 'ru'),
         ('n8n-triggers', 'n8n-basics', 'Триггеры', 'Использование триггеров в n8n', '12:30', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', FALSE, 1, 'ru'),
         ('n8n-action-in-app', 'n8n-basics', 'Узлы «Action in app»', 'Работа с Action in app', '12:30', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', FALSE, 2, 'ru'),
         ('n8n-credentials', 'n8n-basics', 'Credentials', 'Настройка учетных данных', '12:30', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', FALSE, 3, 'ru'),
@@ -156,17 +156,6 @@ async function initDatabase() {
         ('express-basics', 'nodejs-basics', 'Express Basics', 'Building server applications with Express', '16:20', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', TRUE, 1, 'en')
       `);
       console.log('Видео добавлены для русского и английского языков');
-    
-    // Тестовый пользователь
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('admin', salt);
-    
-    await dbPool.query(`
-      INSERT INTO users (username, password) VALUES
-      ('admin', $1);
-    `, [hashedPassword]);
-    
-    console.log('Тестовый пользователь создан: admin/admin');
     
     console.log('База данных успешно инициализирована!');
     await dbPool.end();
