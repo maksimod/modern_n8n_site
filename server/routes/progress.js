@@ -1,8 +1,7 @@
-console.log("test1");
 // server/routes/progress.js
 const express = require('express');
 const router = express.Router();
-const db = require('../db/db');
+const { courseModel, progressModel } = require('../models/data-model');
 const auth = require('../middleware/auth');
 
 // @route   POST api/progress/:courseId/:videoId
@@ -18,50 +17,27 @@ router.post('/:courseId/:videoId', auth, async (req, res) => {
     
     // Проверяем существование курса и видео
     const language = req.query.language || 'ru';
-    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1 AND language = $2', [courseId, language]);
+    const course = courseModel.findById(courseId, language);
     
-    if (courseCheck.rows.length === 0) {
+    if (!course) {
       console.log('Курс не найден');
       return res.status(404).json({ message: 'Course not found' });
     }
     
-    const videoCheck = await db.query('SELECT * FROM videos WHERE id = $1 AND course_id = $2', [videoId, courseId]);
+    const video = course.videos.find(v => v.id === videoId);
     
-    if (videoCheck.rows.length === 0) {
+    if (!video) {
       console.log('Видео не найдено');
       return res.status(404).json({ message: 'Video not found' });
     }
     
-    // Проверяем существует ли уже прогресс
-    const progressCheck = await db.query(
-      'SELECT * FROM user_progress WHERE user_id = $1 AND course_id = $2 AND video_id = $3',
-      [userId, courseId, videoId]
-    );
-    
-    if (progressCheck.rows.length > 0) {
-      // Обновляем существующий прогресс
-      await db.query(
-        'UPDATE user_progress SET is_completed = $1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $2 AND course_id = $3 AND video_id = $4',
-        [completed, userId, courseId, videoId]
-      );
-    } else {
-      // Создаем новую запись прогресса
-      await db.query(
-        'INSERT INTO user_progress (user_id, course_id, video_id, is_completed) VALUES ($1, $2, $3, $4)',
-        [userId, courseId, videoId, completed]
-      );
-    }
-    
-    // Получаем весь прогресс пользователя по курсу
-    const progressResult = await db.query(
-      'SELECT video_id, is_completed FROM user_progress WHERE user_id = $1 AND course_id = $2',
-      [userId, courseId]
-    );
+    // Обновляем прогресс
+    const progressResults = progressModel.updateProgress(userId, courseId, videoId, completed);
     
     // Форматируем прогресс для ответа
     const progress = {};
     
-    progressResult.rows.forEach(row => {
+    progressResults.forEach(row => {
       progress[row.video_id] = row.is_completed;
     });
     
@@ -82,22 +58,19 @@ router.get('/:courseId', auth, async (req, res) => {
     
     // Проверяем существование курса
     const language = req.query.language || 'ru';
-    const courseCheck = await db.query('SELECT * FROM courses WHERE id = $1 AND language = $2', [courseId, language]);
+    const course = courseModel.findById(courseId, language);
     
-    if (courseCheck.rows.length === 0) {
+    if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
     
     // Получаем прогресс пользователя по курсу
-    const progressResult = await db.query(
-      'SELECT video_id, is_completed FROM user_progress WHERE user_id = $1 AND course_id = $2',
-      [userId, courseId]
-    );
+    const progressResults = progressModel.getCourseProgress(userId, courseId);
     
     // Форматируем прогресс для ответа
     const progress = {};
     
-    progressResult.rows.forEach(row => {
+    progressResults.forEach(row => {
       progress[row.video_id] = row.is_completed;
     });
     

@@ -7,7 +7,7 @@
         "start": "node index.js",
         "dev": "nodemon index.js",
         "test": "echo \"Error: no test specified\" && exit 1",
-        "init-db": "node init-db.js"
+        "init-data": "node init-data.js"
     },
     "dependencies": {
         "bcryptjs": "^2.4.3",
@@ -16,9 +16,7 @@
         "express": "^4.21.2",
         "express-validator": "^7.2.1",
         "jsonwebtoken": "^9.0.2",
-        "morgan": "^1.10.0",
-        "pg": "^8.13.3",
-        "pg-pool": "^3.6.1"
+        "morgan": "^1.10.0"
     },
     "devDependencies": {
         "nodemon": "^2.0.22"

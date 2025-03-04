@@ -7,6 +7,9 @@ import { getCourseById, getVideoById } from '../services/course.service';
 import Header from '../components/Layout/Header';
 import styles from '../styles/courses.module.css';
 
+// Константа для базового URL сервера
+const SERVER_URL = 'http://localhost:5000';
+
 const CoursePage = () => {
   const { t } = useTranslation();
   const { courseId } = useParams();
@@ -24,15 +27,20 @@ const CoursePage = () => {
       try {
         setLoading(true);
         const courseData = await getCourseById(courseId, language);
-        setCourse(courseData);
+        
+        if (courseData) {
+          setCourse(courseData);
 
-        if (courseData && (!videoId || !courseData.videos.find(v => v.id === videoId))) {
-          if (courseData.videos.length > 0) {
-            setSearchParams({ video: courseData.videos[0].id });
+          if (!videoId || !courseData.videos.find(v => v.id === videoId)) {
+            if (courseData.videos.length > 0) {
+              setSearchParams({ video: courseData.videos[0].id });
+            }
+          } else if (videoId && courseData) {
+            const videoData = await getVideoById(courseId, videoId, language);
+            if (videoData) {
+              setCurrentVideo(videoData);
+            }
           }
-        } else if (videoId && courseData) {
-          const videoData = await getVideoById(courseId, videoId, language);
-          setCurrentVideo(videoData);
         }
       } catch (error) {
         console.error('Ошибка загрузки курса:', error);
@@ -52,6 +60,25 @@ const CoursePage = () => {
     return <div className={styles.notFound}>Курс не найден</div>;
   }
 
+  // Формируем полный URL для видео
+  const getFullVideoUrl = (video) => {
+    if (!video) return null;
+    
+    // Если есть локальное видео, формируем полный URL к серверу
+    if (video.localVideo) {
+      // Убеждаемся, что путь начинается с /videos/
+      const videoPath = video.localVideo.startsWith('/videos/') 
+        ? video.localVideo 
+        : `/videos/${video.localVideo}`;
+      
+      // Возвращаем полный URL сервера
+      return `${SERVER_URL}${videoPath}`;
+    }
+    
+    // Для внешних видео возвращаем URL как есть
+    return video.videoUrl;
+  };
+
   return (
     <div>
       <Header />
@@ -62,7 +89,7 @@ const CoursePage = () => {
             <span>← Назад к курсам</span>
           </Link>
           
-          <h2 className={styles.courseTitle}>Основы n8n</h2>
+          <h2 className={styles.courseTitle}>{course.title}</h2>
           
           <div>
             {course.videos.map((video, index) => {
@@ -93,19 +120,51 @@ const CoursePage = () => {
           {currentVideo ? (
             <div>
               <div className={styles.videoWrapper}>
-                <iframe
-                  src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
-                  title={currentVideo.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className={styles.videoIframe}
-                ></iframe>
+                {currentVideo.localVideo ? (
+                  // Для локальных видео используем HTML5 video тег с полным URL сервера
+                  <video
+                    src={getFullVideoUrl(currentVideo)}
+                    className={styles.videoIframe}
+                    controls
+                    autoPlay={false}
+                    title={currentVideo.title}
+                  ></video>
+                ) : currentVideo.videoUrl ? (
+                  // Для YouTube используем iframe
+                  <iframe
+                    src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
+                    title={currentVideo.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className={styles.videoIframe}
+                  ></iframe>
+                ) : (
+                  <div className={styles.noVideoSource}>Видео недоступно</div>
+                )}
               </div>
               
               <div className={styles.videoInfo}>
                 <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
               </div>
               <p className={styles.videoDescription}>{currentVideo.description}</p>
+              
+              {/* Отладочная информация - можно удалить после проверки */}
+              {currentVideo.localVideo && (
+                <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '20px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                  <p>Отладочная информация:</p>
+                  <p>URL видео: {getFullVideoUrl(currentVideo)}</p>
+                  <p>
+                    <a 
+                      href={getFullVideoUrl(currentVideo)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: 'blue', textDecoration: 'underline' }}
+                    >
+                      Открыть видео напрямую
+                    </a>
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <div className={styles.selectVideo}>{t('selectVideo')}</div>

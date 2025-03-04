@@ -1,3 +1,6 @@
+// server/middleware/auth.js
+const jwt = require('jsonwebtoken');
+
 module.exports = function(req, res, next) {
   // Получаем токен из заголовка
   const token = req.header('Authorization');
@@ -11,7 +14,7 @@ module.exports = function(req, res, next) {
   
   try {
     // Верифицируем токен
-    const decoded = jwt.verify(tokenValue, process.env.JWT_SECRET);
+    const decoded = jwt.verify(tokenValue, process.env.JWT_SECRET || 'fallbacksecretkey');
     
     // Проверяем наличие информации о пользователе в токене
     if (!decoded || !decoded.user) {

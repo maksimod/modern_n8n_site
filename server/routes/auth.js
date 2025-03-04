@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
-const db = require('../db/db');
+const { userModel, progressModel } = require('../models/data-model');
 const auth = require('../middleware/auth');
 
 // @route   POST api/auth/register
@@ -25,36 +25,21 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      // Добавим отладочную информацию
       console.log('Регистрация пользователя:', username);
       
       // Проверяем существование пользователя
-      const userCheck = await db.query('SELECT * FROM users WHERE username = $1', [username]);
-      console.log('Результат проверки пользователя:', userCheck.rows.length);
+      const existingUser = userModel.findByUsername(username);
       
-      if (userCheck.rows.length > 0) {
+      if (existingUser) {
         console.log('Пользователь уже существует');
         return res.status(400).json({ message: 'User already exists' });
       }
 
       // Создаем нового пользователя
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-
-      const newUser = await db.query(
-        'INSERT INTO users (username, password) VALUES ($1, $2) RETURNING id, username',
-        [username, hashedPassword]
-      );
+      const user = await userModel.create(username, password);
       
-      console.log('Пользователь создан:', newUser.rows[0]);
+      console.log('Пользователь создан:', user);
       
-      if (!newUser.rows[0]) {
-        console.log('Ошибка при создании пользователя: пустой результат');
-        return res.status(500).json({ message: 'Error creating user' });
-      }
-      
-      const user = newUser.rows[0];
-
       // Создаем и отправляем JWT токен
       const payload = {
         user: {
@@ -64,7 +49,7 @@ router.post(
 
       jwt.sign(
         payload,
-        process.env.JWT_SECRET || 'fallbacksecretkey', // Добавляем запасной ключ
+        process.env.JWT_SECRET || 'fallbacksecretkey', // Запасной ключ
         { expiresIn: '7d' },
         (err, token) => {
           if (err) {
@@ -77,7 +62,7 @@ router.post(
             user: {
               id: user.id,
               username: user.username,
-              progress: {} // Добавляем пустой объект прогресса
+              progress: {} // Пустой объект прогресса для нового пользователя
             }
           });
         }
@@ -110,44 +95,19 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      // Find user
-      const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
-      console.log('User query result:', result.rows.length > 0 ? 'User found' : 'User NOT found');
+      // Аутентификация пользователя
+      const user = await userModel.authenticate(username, password);
       
-      if (result.rows.length === 0) {
+      if (!user) {
         return res.status(400).json({ message: 'Invalid credentials' });
       }
-
-      const user = result.rows[0];
-      console.log('User found:', { id: user.id, username: user.username });
-
-      // Check password
-      console.log('Comparing passwords...');
-      const isMatch = await bcrypt.compare(password, user.password);
-      console.log('Password match result:', isMatch);
       
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
+      console.log('User authenticated:', { id: user.id, username: user.username });
 
-      // Get user progress
-      const progressResult = await db.query(
-        `SELECT course_id, video_id, is_completed
-         FROM user_progress
-         WHERE user_id = $1`,
-        [user.id]
-      );
+      // Получаем прогресс пользователя
+      const progress = progressModel.getUserFormattedProgress(user.id);
       
-      const progress = {};
-      
-      progressResult.rows.forEach(row => {
-        if (!progress[row.course_id]) {
-          progress[row.course_id] = {};
-        }
-        progress[row.course_id][row.video_id] = row.is_completed;
-      });
-
-      // Create and return JWT token
+      // Создаем и возвращаем JWT токен
       const payload = {
         user: {
           id: user.id
@@ -182,34 +142,20 @@ router.post(
 // @access  Private
 router.get('/user', auth, async (req, res) => {
   try {
-    const userResult = await db.query('SELECT id, username FROM users WHERE id = $1', [req.user.id]);
+    const user = userModel.findById(req.user.id);
     
-    if (userResult.rows.length === 0) {
+    if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    const user = userResult.rows[0];
+    // Получаем прогресс пользователя
+    const progress = progressModel.getUserFormattedProgress(user.id);
     
-    // Get user progress
-    const progressResult = await db.query(
-      `SELECT course_id, video_id, is_completed
-       FROM user_progress
-       WHERE user_id = $1`,
-      [user.id]
-    );
-    
-    const progress = {};
-    
-    progressResult.rows.forEach(row => {
-      if (!progress[row.course_id]) {
-        progress[row.course_id] = {};
-      }
-      progress[row.course_id][row.video_id] = row.is_completed;
-    });
+    // Не возвращаем пароль
+    const { password, ...userWithoutPassword } = user;
     
     res.json({
-      id: user.id,
-      username: user.username,
+      ...userWithoutPassword,
       progress
     });
   } catch (err) {
@@ -225,8 +171,8 @@ router.get('/check-username/:username', async (req, res) => {
   const { username } = req.params;
   
   try {
-    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
-    res.json({ available: result.rows.length === 0 });
+    const user = userModel.findByUsername(username);
+    res.json({ available: !user });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

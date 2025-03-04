@@ -1,8 +1,9 @@
 // server/routes/courses.js
 const express = require('express');
 const router = express.Router();
-const db = require('../db/db');
-const auth = require('../middleware/auth');
+const path = require('path');
+const fs = require('fs');
+const { courseModel } = require('../models/data-model');
 
 // @route   GET api/courses
 // @desc    Get all courses
@@ -12,39 +13,49 @@ router.get('/', async (req, res) => {
     const language = req.query.language || 'ru';
     console.log('Запрошенный язык:', language);
 
-    const coursesResult = await db.query(
-      'SELECT * FROM courses WHERE language = $1',
-      [language]
-    );
-
-    const courses = [];
+    const courses = courseModel.getAll(language);
     
-    // Для каждого курса получаем его видео
-    for (const course of coursesResult.rows) {
-      const videosResult = await db.query(
-        'SELECT * FROM videos WHERE course_id = $1 AND language = $2 ORDER BY order_index',
-        [course.id, language]
-      );
+    // Форматирование ответа
+    const formattedCourses = courses.map(course => {
+      const formattedVideos = course.videos.map(video => {
+        // Проверка наличия локального видео
+        if (video.localVideo) {
+          const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
+          const hasLocalVideo = fs.existsSync(videoPath);
+          
+          if (hasLocalVideo) {
+            return {
+              id: video.id,
+              title: video.title,
+              description: video.description || '',
+              duration: video.duration,
+              localVideo: `/videos/${video.localVideo}`,
+              isPrivate: video.isPrivate
+            };
+          }
+        }
+        
+        // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          videoUrl: video.videoUrl,
+          isPrivate: video.isPrivate
+        };
+      });
       
-      const formattedVideos = videosResult.rows.map(video => ({
-        id: video.id,
-        title: video.title,
-        description: video.description || '',
-        duration: video.duration,
-        videoUrl: video.video_url,
-        isPrivate: video.is_private
-      }));
-      
-      courses.push({
+      return {
         id: course.id,
         title: course.title,
         description: course.description,
         language: course.language,
         videos: formattedVideos
-      });
-    }
+      };
+    });
     
-    res.json(courses);
+    res.json(formattedCourses);
   } catch (err) {
     console.error('Error fetching courses:', err);
     res.status(500).send('Server Error');
@@ -54,7 +65,6 @@ router.get('/', async (req, res) => {
 // @route   GET api/courses/:courseId
 // @desc    Get course by ID
 // @access  Public
-// server/routes/courses.js - обновленный метод получения курса
 router.get('/:courseId', async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -63,68 +73,51 @@ router.get('/:courseId', async (req, res) => {
     console.log(`Запрос курса: ${courseId}, язык: ${language}`);
     
     // Получаем курс на нужном языке
-    const courseResult = await db.query(
-      'SELECT * FROM courses WHERE id = $1 AND language = $2',
-      [courseId, language]
-    );
+    let course = courseModel.findById(courseId, language);
     
-    if (courseResult.rows.length === 0) {
+    if (!course) {
       console.log(`Курс не найден: ${courseId}, язык: ${language}`);
       
-      // Если курс не найден на запрошенном языке, пробуем найти на любом другом
-      const anyCourseResult = await db.query(
-        'SELECT * FROM courses WHERE id = $1 LIMIT 1',
-        [courseId]
-      );
+      // Если курс не найден на запрошенном языке, ищем на другом языке
+      const allCourses = courseModel.getAll();
+      course = allCourses.find(c => c.id === courseId);
       
-      if (anyCourseResult.rows.length === 0) {
+      if (!course) {
         return res.status(404).json({ message: 'Course not found' });
       }
       
-      // Берем курс на доступном языке
-      const course = anyCourseResult.rows[0];
       console.log(`Найден курс на языке: ${course.language}`);
+    }
+    
+    // Форматируем видео с проверкой наличия локальных файлов
+    const formattedVideos = course.videos.map(video => {
+      // Проверка наличия локального видео
+      if (video.localVideo) {
+        const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
+        const hasLocalVideo = fs.existsSync(videoPath);
+        
+        if (hasLocalVideo) {
+          return {
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            duration: video.duration,
+            localVideo: `/videos/${video.localVideo}`,
+            isPrivate: video.isPrivate
+          };
+        }
+      }
       
-      // Находим все видео для этого курса на том же языке
-      const videosResult = await db.query(
-        'SELECT * FROM videos WHERE course_id = $1 AND language = $2 ORDER BY order_index',
-        [courseId, course.language]
-      );
-      
-      const formattedVideos = videosResult.rows.map(video => ({
+      // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
+      return {
         id: video.id,
         title: video.title,
         description: video.description || '',
         duration: video.duration,
-        videoUrl: video.video_url,
-        isPrivate: video.is_private
-      }));
-      
-      return res.json({
-        id: course.id,
-        title: course.title,
-        description: course.description,
-        language: course.language, // Добавляем информацию о языке
-        videos: formattedVideos
-      });
-    }
-    
-    const course = courseResult.rows[0];
-    
-    // Получаем видео для курса на том же языке
-    const videosResult = await db.query(
-      'SELECT * FROM videos WHERE course_id = $1 AND language = $2 ORDER BY order_index',
-      [courseId, language]
-    );
-    
-    const formattedVideos = videosResult.rows.map(video => ({
-      id: video.id,
-      title: video.title,
-      description: video.description || '',
-      duration: video.duration,
-      videoUrl: video.video_url,
-      isPrivate: video.is_private
-    }));
+        videoUrl: video.videoUrl,
+        isPrivate: video.isPrivate
+      };
+    });
     
     res.json({
       id: course.id,
@@ -142,51 +135,94 @@ router.get('/:courseId', async (req, res) => {
 // @route   GET api/courses/:courseId/videos/:videoId
 // @desc    Get video by ID
 // @access  Public
-// server/routes/courses.js - обновленный метод получения видео
 router.get('/:courseId/videos/:videoId', async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
     const language = req.query.language || 'ru';
     
-    const videoResult = await db.query(
-      'SELECT * FROM videos WHERE id = $1 AND course_id = $2 AND language = $3',
-      [videoId, courseId, language]
-    );
+    // Поиск курса
+    const course = courseModel.findById(courseId, language);
     
-    if (videoResult.rows.length === 0) {
-      // Если видео не найдено на запрошенном языке, пробуем найти на любом доступном
-      const anyVideoResult = await db.query(
-        'SELECT * FROM videos WHERE id = $1 AND course_id = $2 LIMIT 1',
-        [videoId, courseId]
-      );
+    if (!course) {
+      // Если курс не найден на запрошенном языке, ищем на другом языке
+      const allCourses = courseModel.getAll();
+      const alternativeCourse = allCourses.find(c => c.id === courseId);
       
-      if (anyVideoResult.rows.length === 0) {
+      if (!alternativeCourse) {
+        return res.status(404).json({ message: 'Course not found' });
+      }
+      
+      // Поиск видео в альтернативном курсе
+      const video = alternativeCourse.videos.find(v => v.id === videoId);
+      
+      if (!video) {
         return res.status(404).json({ message: 'Video not found' });
       }
       
-      const video = anyVideoResult.rows[0];
+      // Проверка наличия локального видео
+      if (video.localVideo) {
+        const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
+        const hasLocalVideo = fs.existsSync(videoPath);
+        
+        if (hasLocalVideo) {
+          return res.json({
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            duration: video.duration,
+            localVideo: `/videos/${video.localVideo}`,
+            isPrivate: video.isPrivate,
+            language: alternativeCourse.language
+          });
+        }
+      }
       
+      // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
       return res.json({
         id: video.id,
         title: video.title,
         description: video.description || '',
         duration: video.duration,
-        videoUrl: video.video_url,
-        isPrivate: video.is_private,
-        language: video.language
+        videoUrl: video.videoUrl,
+        isPrivate: video.isPrivate,
+        language: alternativeCourse.language
       });
     }
     
-    const video = videoResult.rows[0];
+    // Поиск видео в найденном курсе
+    const video = course.videos.find(v => v.id === videoId);
     
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Проверка наличия локального видео
+    if (video.localVideo) {
+      const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
+      const hasLocalVideo = fs.existsSync(videoPath);
+      
+      if (hasLocalVideo) {
+        return res.json({
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          localVideo: `/videos/${video.localVideo}`,
+          isPrivate: video.isPrivate,
+          language: course.language
+        });
+      }
+    }
+    
+    // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
     res.json({
       id: video.id,
       title: video.title,
       description: video.description || '',
       duration: video.duration,
-      videoUrl: video.video_url,
-      isPrivate: video.is_private,
-      language: video.language
+      videoUrl: video.videoUrl,
+      isPrivate: video.isPrivate,
+      language: course.language
     });
   } catch (err) {
     console.error('Error fetching video:', err);

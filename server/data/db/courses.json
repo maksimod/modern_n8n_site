@@ -1,0 +1,98 @@
+[
+  {
+    "id": "n8n-basics",
+    "title": "Основы n8n",
+    "description": "Изучите основы n8n",
+    "language": "ru",
+    "videos": [
+      {
+        "id": "n8n-interface",
+        "title": "Интерфейс",
+        "description": "Обзор интерфейса n8n",
+        "duration": "12:25",
+        "localVideo": "test.mp4",
+        "isPrivate": false,
+        "orderIndex": 0
+      },
+      {
+        "id": "n8n-triggers",
+        "title": "Триггеры",
+        "description": "Использование триггеров в n8n",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 1
+      },
+      {
+        "id": "n8n-action-in-app",
+        "title": "Узлы «Action in app»",
+        "description": "Работа с Action in app",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 2
+      },
+      {
+        "id": "n8n-credentials",
+        "title": "Credentials",
+        "description": "Настройка учетных данных",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 3
+      }
+    ]
+  },
+  {
+    "id": "n8n-basics",
+    "title": "The basics of n8n",
+    "description": "Learn the basics of n8n",
+    "language": "en",
+    "videos": [
+      {
+        "id": "n8n-interface",
+        "title": "Interface",
+        "description": "Overview of n8n interface",
+        "duration": "12:25",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 0
+      },
+      {
+        "id": "n8n-triggers",
+        "title": "Triggers",
+        "description": "Using triggers in n8n",
+        "duration": "12:30",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 1
+      }
+    ]
+  },
+  {
+    "id": "react-basics",
+    "title": "React Basics",
+    "description": "Learn the fundamentals of React library",
+    "language": "en",
+    "videos": [
+      {
+        "id": "react-intro",
+        "title": "Introduction to React",
+        "description": "What is React and why use it",
+        "duration": "8:20",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": false,
+        "orderIndex": 0
+      },
+      {
+        "id": "react-components",
+        "title": "React Components",
+        "description": "Creating and using components",
+        "duration": "14:10",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "isPrivate": true,
+        "orderIndex": 1
+      }
+    ]
+  }
+]

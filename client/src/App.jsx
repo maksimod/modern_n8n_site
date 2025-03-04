@@ -6,6 +6,8 @@ import HomePage from './pages/HomePage';
 import CoursePage from './pages/CoursePage';
 import AuthPage from './pages/AuthPage';
 import PrivateRoute from './components/PrivateRoute';
+import VideoTest from './components/VideoTest';
+
 
 function App() {
   return (
@@ -13,6 +15,7 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+          <Route path="/video-test" element={<VideoTest />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/" element={
               <PrivateRoute>
