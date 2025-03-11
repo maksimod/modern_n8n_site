@@ -28,6 +28,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
   const [isCreating, setIsCreating] = useState(!video);
+  const [uploadResponse, setUploadResponse] = useState(null);
   
   // Инициализируем форму при монтировании или изменении видео
   useEffect(() => {
@@ -75,7 +76,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     }));
   };
   
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setFormData(prev => ({
@@ -83,6 +84,30 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         uploadedFile: file,
         videoType: VIDEO_TYPES.LOCAL // Automatically switch to local video type
       }));
+      
+      // Сразу загружаем файл на сервер
+      try {
+        setLoading(true);
+        setUploadProgress(0);
+        
+        const uploadResult = await uploadVideoFile(file, (progress) => {
+          setUploadProgress(progress);
+        });
+        
+        console.log("Upload result:", uploadResult);
+        setUploadResponse(uploadResult);
+        
+        // Обновляем форму с полученным путем к файлу
+        setFormData(prev => ({
+          ...prev,
+          localVideo: uploadResult.filePath
+        }));
+      } catch (err) {
+        console.error('Error uploading file:', err);
+        setError(`Error uploading file: ${err.message || 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -126,25 +151,17 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         finalVideoData.localVideo = null;
       } 
       else if (formData.videoType === VIDEO_TYPES.LOCAL) {
-        // If we have a new file, upload it
-        if (formData.uploadedFile) {
-          try {
-            const uploadResult = await uploadVideoFile(formData.uploadedFile, (progress) => {
-              setUploadProgress(progress);
-            });
-            
-            finalVideoData.localVideo = uploadResult.filePath;
-            finalVideoData.videoUrl = null;
-          } catch (uploadError) {
-            setError(t('Error uploading file: ') + uploadError.message);
-            setLoading(false);
-            return;
-          }
-        } else if (formData.localVideo) {
-          // Keep existing local video
+        // Используем результат загрузки, если он есть
+        if (uploadResponse && uploadResponse.filePath) {
+          finalVideoData.localVideo = uploadResponse.filePath;
+          finalVideoData.videoUrl = null;
+        } 
+        // Или используем существующий локальный путь
+        else if (formData.localVideo) {
           finalVideoData.localVideo = formData.localVideo;
           finalVideoData.videoUrl = null;
-        } else {
+        } 
+        else {
           setError(t('Please select a video file to upload'));
           setLoading(false);
           return;
@@ -155,6 +172,8 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         finalVideoData.videoUrl = null;
         finalVideoData.localVideo = null;
       }
+      
+      console.log("Final video data to save:", finalVideoData);
       
       // Close the editor and return the video data
       onClose(finalVideoData, !isCreating);
@@ -271,9 +290,16 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
             <div className={styles.adminFormField}>
               <label className={styles.adminLabel}>{t('admin.uploadVideo')}</label>
               
-              {formData.localVideo && !formData.uploadedFile && (
+              {formData.localVideo && !formData.uploadedFile && !uploadResponse && (
                 <div style={{ marginBottom: '10px' }}>
                   <p>Current file: {formData.localVideo}</p>
+                </div>
+              )}
+              
+              {uploadResponse && (
+                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: '#e8f4f8', borderRadius: '4px' }}>
+                  <p>Uploaded file: {uploadResponse.originalName}</p>
+                  <p>File path: {uploadResponse.filePath}</p>
                 </div>
               )}
               
@@ -284,7 +310,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
                 className={styles.adminInputFile}
               />
               
-              {formData.uploadedFile && (
+              {formData.uploadedFile && !uploadResponse && (
                 <div style={{ marginTop: '10px' }}>
                   <p>Selected file: {formData.uploadedFile.name}</p>
                 </div>

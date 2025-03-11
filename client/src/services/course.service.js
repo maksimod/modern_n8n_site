@@ -120,6 +120,7 @@ export const deleteVideo = async (courseId, videoId) => {
 // Upload video file
 export const uploadVideoFile = async (file, onProgress) => {
   try {
+    console.log('Uploading file:', file.name);
     const formData = new FormData();
     formData.append('video', file);
     
@@ -131,10 +132,12 @@ export const uploadVideoFile = async (file, onProgress) => {
         if (onProgress) {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
           onProgress(percentCompleted);
+          console.log('Upload progress:', percentCompleted + '%');
         }
       }
     });
     
+    console.log('Upload response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error uploading video:', error);

@@ -397,8 +397,16 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    // Get the path relative to the videos directory
-    const relativePath = '/videos/' + path.basename(req.file.path);
+    // Получаем путь относительно директории videos
+    const fileName = path.basename(req.file.path);
+    const relativePath = `/videos/${fileName}`;
+    
+    console.log('File uploaded:', {
+      originalName: req.file.originalname,
+      savedAs: fileName,
+      fullPath: req.file.path,
+      relativePath: relativePath
+    });
     
     res.json({
       message: 'File uploaded successfully',
@@ -408,7 +416,7 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
     });
   } catch (err) {
     console.error('Error uploading file:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error: ' + err.message });
   }
 });
 
