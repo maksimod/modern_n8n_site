@@ -4,6 +4,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { courseModel } = require('../models/data-model');
+const { VIDEO_TYPES } = require('../config'); // Добавляем импорт констант
 
 // @route   GET api/courses
 // @desc    Get all courses
@@ -91,32 +92,43 @@ router.get('/:courseId', async (req, res) => {
     
     // Форматируем видео с проверкой наличия локальных файлов
     const formattedVideos = course.videos.map(video => {
-      // Проверка наличия локального видео
-      if (video.localVideo) {
-        const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
-        const hasLocalVideo = fs.existsSync(videoPath);
-        
-        if (hasLocalVideo) {
-          return {
-            id: video.id,
-            title: video.title,
-            description: video.description || '',
-            duration: video.duration,
-            localVideo: `/videos/${video.localVideo}`,
-            isPrivate: video.isPrivate
-          };
-        }
-      }
+      // Сохраняем тип видео, если он есть
+      const videoType = video.videoType || 
+                       (video.localVideo ? VIDEO_TYPES.LOCAL : 
+                        (video.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT));
       
-      // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
-      return {
-        id: video.id,
-        title: video.title,
-        description: video.description || '',
-        duration: video.duration,
-        videoUrl: video.videoUrl,
-        isPrivate: video.isPrivate
-      };
+      // Определяем данные видео на основе типа
+      if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          localVideo: `/videos/${video.localVideo.split('/').pop()}`,
+          videoType: VIDEO_TYPES.LOCAL,
+          isPrivate: video.isPrivate
+        };
+      } else if (videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl) {
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          videoUrl: video.videoUrl,
+          videoType: VIDEO_TYPES.EXTERNAL,
+          isPrivate: video.isPrivate
+        };
+      } else {
+        // Текстовое видео или неопределенный тип
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          videoType: VIDEO_TYPES.TEXT,
+          isPrivate: video.isPrivate
+        };
+      }
     });
     
     res.json({

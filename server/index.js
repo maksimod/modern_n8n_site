@@ -65,6 +65,46 @@ app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
 app.use('/api/admin', adminRouter);
 
+// Добавьте этот роут в server/index.js перед другими роутами
+app.get('/debug/courses', (req, res) => {
+  try {
+    const coursesPath = path.join(__dirname, 'data/db/courses.json');
+    if (fs.existsSync(coursesPath)) {
+      const content = fs.readFileSync(coursesPath, 'utf8');
+      const courses = JSON.parse(content);
+      
+      // Найдем видео с локальными файлами
+      const localVideos = [];
+      courses.forEach(course => {
+        if (course.videos) {
+          course.videos.forEach(video => {
+            if (video.localVideo) {
+              localVideos.push({
+                courseId: course.id,
+                videoId: video.id,
+                title: video.title,
+                videoType: video.videoType,
+                localVideo: video.localVideo
+              });
+            }
+          });
+        }
+      });
+      
+      res.json({
+        fileSize: content.length,
+        coursesCount: courses.length,
+        localVideosCount: localVideos.length,
+        localVideos
+      });
+    } else {
+      res.json({ error: 'Courses file not found' });
+    }
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 // Специальный маршрут для скачивания видео
 app.get('/download/:filename', (req, res) => {
   const filename = req.params.filename;

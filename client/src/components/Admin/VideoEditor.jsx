@@ -148,18 +148,18 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         }
         
         finalVideoData.videoUrl = formData.videoUrl;
-        finalVideoData.localVideo = null;
+        finalVideoData.localVideo = '';
       } 
       else if (formData.videoType === VIDEO_TYPES.LOCAL) {
         // Используем результат загрузки, если он есть
-        if (uploadResponse && uploadResponse.filePath) {
-          finalVideoData.localVideo = uploadResponse.filePath;
-          finalVideoData.videoUrl = null;
+        if (formData.uploadedFile && formData.localVideo) {
+          finalVideoData.localVideo = formData.localVideo;
+          finalVideoData.videoUrl = '';
         } 
         // Или используем существующий локальный путь
         else if (formData.localVideo) {
           finalVideoData.localVideo = formData.localVideo;
-          finalVideoData.videoUrl = null;
+          finalVideoData.videoUrl = '';
         } 
         else {
           setError(t('Please select a video file to upload'));
@@ -169,9 +169,12 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       }
       else if (formData.videoType === VIDEO_TYPES.TEXT) {
         // For text-only lessons, clear both video fields
-        finalVideoData.videoUrl = null;
-        finalVideoData.localVideo = null;
+        finalVideoData.videoUrl = '';
+        finalVideoData.localVideo = '';
       }
+      
+      // Сохраняем тип видео
+      finalVideoData.videoType = formData.videoType;
       
       console.log("Final video data to save:", finalVideoData);
       

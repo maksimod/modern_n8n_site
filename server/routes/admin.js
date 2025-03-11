@@ -8,6 +8,8 @@ const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
+const { VIDEO_TYPES } = require('../config'); // Добавляем импорт констант
+
 
 // Configure multer for video uploads
 const storage = multer.diskStorage({
@@ -159,10 +161,28 @@ router.put('/courses/:courseId', [auth, isAdmin], async (req, res) => {
     const { courseId } = req.params;
     const { title, description, language, videos } = req.body;
     
-    // Проверяем наличие обязательных полей
-    if (!title || !language) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
+    console.log("Updating course:", courseId);
+    console.log("Videos data before processing:", videos);
+    
+    // Обработка видео перед сохранением
+    const processedVideos = videos ? videos.map(video => {
+      // Обработка типов видео
+      let videoType = video.videoType || 'text';
+      
+      // Очистка путей к файлам от префиксов
+      let localVideo = video.localVideo || '';
+      if (localVideo.startsWith('/videos/')) {
+        localVideo = localVideo.substring(8);
+      }
+      
+      return {
+        ...video,
+        videoType,
+        localVideo
+      };
+    }) : [];
+    
+    console.log("Videos after processing:", processedVideos);
     
     // Получаем существующие курсы
     const courses = getCourses();
@@ -180,7 +200,7 @@ router.put('/courses/:courseId', [auth, isAdmin], async (req, res) => {
       title,
       description: description || '',
       language,
-      videos: videos || []
+      videos: processedVideos
     };
     
     // Сохраняем курсы
@@ -397,8 +417,10 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       return res.status(400).json({ message: 'No file uploaded' });
     }
     
-    // Получаем путь относительно директории videos
+    // Получаем ТОЛЬКО имя файла без пути
     const fileName = path.basename(req.file.path);
+    
+    // Формируем относительный путь для отображения
     const relativePath = `/videos/${fileName}`;
     
     console.log('File uploaded:', {
@@ -408,9 +430,10 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       relativePath: relativePath
     });
     
+    // Но возвращаем ТОЛЬКО имя файла, без пути /videos/
     res.json({
       message: 'File uploaded successfully',
-      filePath: relativePath,
+      filePath: fileName, // Только имя файла!
       originalName: req.file.originalname,
       size: req.file.size
     });

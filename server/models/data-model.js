@@ -29,6 +29,7 @@ const ensureDataFilesExist = () => {
 const getData = (filePath) => {
   try {
     const data = fs.readFileSync(filePath, 'utf8');
+    console.log(`Reading data from ${filePath}, size: ${data.length} bytes`);
     return JSON.parse(data);
   } catch (error) {
     console.error(`Ошибка чтения файла ${filePath}:`, error);
@@ -39,6 +40,7 @@ const getData = (filePath) => {
 // Сохранить данные в файл
 const saveData = (filePath, data) => {
   try {
+    console.log(`Saving data to ${filePath}, object keys:`, Object.keys(data[0] || {}));
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     return true;
   } catch (error) {
