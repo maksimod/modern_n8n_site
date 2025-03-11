@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProgress } from '../../contexts/ProgressContext';
 import { markVideoAsCompleted, isVideoCompleted } from '../../services/course.service';
 import { useNavigate } from 'react-router-dom';
 import { SERVER_URL } from '../../config';
@@ -10,6 +11,7 @@ import styles from '../../styles/courses.module.css';
 const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
+  const { updateVideoProgress, isVideoCompleted } = useProgress();
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -18,32 +20,18 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
 
   // Определяем тип видео и URL
   const isLocalVideo = !!video?.localVideo;
+  const isTextLesson = video?.videoType === 'text';
   
   // Важно: используем явный URL с сервера для локальных видео
   const fullVideoUrl = isLocalVideo 
     ? `${SERVER_URL}${video.localVideo}`
     : (video?.videoUrl || '');
   
-  // Вывод адреса для отладки
-  useEffect(() => {
-    console.log('Вид видео:', isLocalVideo ? 'Локальное' : 'Внешнее');
-    console.log('URL видео:', fullVideoUrl);
-    console.log('Оригинальный путь:', video?.localVideo);
-    console.log('Все свойства видео:', video);
-    // Пробуем открыть видео напрямую
-    if (isLocalVideo) {
-      const img = new Image();
-      img.onload = () => console.log('URL доступен!');
-      img.onerror = () => console.error('URL недоступен!');
-      img.src = fullVideoUrl;
-    }
-  }, [video, isLocalVideo, fullVideoUrl]);
-
   // Проверяем состояние просмотра при изменении видео
   useEffect(() => {
     if (currentUser && course?.id && video?.id) {
-      const isCompleted = isVideoCompleted(currentUser, course.id, video.id);
-      setCompleted(isCompleted);
+      const completed = isVideoCompleted(course.id, video.id);
+      setCompleted(completed);
     }
   }, [currentUser, course, video]);
 
@@ -59,7 +47,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     setLoading(true);
     try {
       if (currentUser && course?.id && video?.id) {
-        await markVideoAsCompleted(currentUser.id, course.id, video.id, value);
+        await updateVideoProgress(course.id, video.id, value);
         setCompleted(value);
         if (onVideoComplete) {
           onVideoComplete(video.id, value);
@@ -77,28 +65,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
-  const handlePlay = () => {
-    setIsPlaying(true);
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-  };
-
-  const handleEnded = () => {
-    setIsPlaying(false);
-    handleComplete(true);
-  };
-  
   // Функция для скачивания видео
   const handleDownload = () => {
     if (!isLocalVideo || !fullVideoUrl) return;
     
-    // Создаем временную ссылку для скачивания
     const link = document.createElement('a');
     link.href = fullVideoUrl;
     
-    // Устанавливаем имя файла
     const fileName = video.title 
       ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
       : 'video.mp4';
@@ -106,7 +79,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     link.setAttribute('download', fileName);
     link.setAttribute('target', '_blank');
     
-    // Добавляем в DOM, кликаем и удаляем
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -116,29 +88,36 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     return <div className={styles.videoContainer}>Video not found</div>;
   }
 
+  // Для текстовых уроков
+  if (isTextLesson) {
+    return (
+      <div className={styles.textLessonContainer}>
+        <div className={styles.videoInfo}>
+          <h2 className={styles.videoTitle}>{video.title}</h2>
+          <p className={styles.videoDescription}>{video.description}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.videoSection}>
       <div className={styles.videoContainer}>
         {isLocalVideo ? (
-          // Используем HTML5 video для локальных файлов
-          <>
-            <video
-              ref={videoRef}
-              className={styles.videoPlayer}
-              controls
-              src={fullVideoUrl}
-              onPlay={handlePlay}
-              onPause={handlePause}
-              onEnded={handleEnded}
-              onTimeUpdate={(e) => {
-                const played = e.target.currentTime / e.target.duration;
-              }}
-              onError={(e) => console.error("Ошибка видео:", e)}
-              crossOrigin="anonymous"
-            />
-          </>
+          <video
+            ref={videoRef}
+            className={styles.videoPlayer}
+            controls
+            src={fullVideoUrl}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false);
+              handleComplete(true);
+            }}
+            crossOrigin="anonymous"
+          />
         ) : (
-          // Используем ReactPlayer для YouTube и других внешних ресурсов
           <ReactPlayer
             url={fullVideoUrl}
             className={styles.videoPlayer}
@@ -146,17 +125,11 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
             height="100%"
             controls
             playing={isPlaying}
-            onPlay={handlePlay}
-            onPause={handlePause}
-            onEnded={handleEnded}
-            config={{
-              youtube: {
-                playerVars: {
-                  autoplay: 0,
-                  modestbranding: 1,
-                  rel: 0
-                }
-              }
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false);
+              handleComplete(true);
             }}
           />
         )}

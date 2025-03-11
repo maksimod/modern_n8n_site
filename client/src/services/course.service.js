@@ -36,15 +36,39 @@ export const getVideoById = async (courseId, videoId, language = 'ru') => {
 };
 
 // Функция для проверки, просмотрено ли видео
-export const isVideoCompleted = (user, courseId, videoId) => {
-  // Здесь должна быть логика проверки из localStorage
-  return false;
+export const isVideoCompleted = async (user, courseId, videoId) => {
+  try {
+    const response = await api.get(`/api/progress/${courseId}/${videoId}`);
+    return response.data.status;
+  } catch (error) {
+    console.error('Error checking video completion', error);
+    return false;
+  }
 };
+
 
 // Функция для отметки видео как просмотренного
 export const markVideoAsCompleted = async (userId, courseId, videoId, completed) => {
-  // Здесь должна быть логика сохранения в localStorage
-  return true;
+  try {
+    const response = await api.post(`/api/progress/${courseId}/${videoId}`, { 
+      isCompleted: completed 
+    });
+    return response.data.status;
+  } catch (error) {
+    console.error('Error marking video as completed', error);
+    return false;
+  }
+};
+
+// Получение прогресса по курсу
+export const getCourseProgress = async (courseId) => {
+  try {
+    const response = await api.get(`/api/progress/${courseId}`);
+    return response.data.progress;
+  } catch (error) {
+    console.error('Error getting course progress', error);
+    return { completedVideos: [], totalVideos: 0 };
+  }
 };
 
 // ADMIN METHODS

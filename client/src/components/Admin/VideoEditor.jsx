@@ -8,6 +8,62 @@ import { VIDEO_TYPES } from '../../config';
 import styles from '../../styles/courses.module.css';
 import { v4 as uuidv4 } from 'uuid';
 
+// Добавим кастомный компонент для текстовых уроков
+const TextLessonEditor = ({ video, onSave }) => {
+  const [title, setTitle] = useState(video?.title || '');
+  const [description, setDescription] = useState(video?.description || '');
+
+  const handleSave = () => {
+    if (!title.trim()) {
+      alert('Пожалуйста, введите название урока');
+      return;
+    }
+
+    onSave({
+      id: video?.id || uuidv4(),
+      title,
+      description,
+      videoType: VIDEO_TYPES.TEXT,
+      localVideo: '',
+      videoUrl: ''
+    });
+  };
+
+  return (
+    <div className={styles.textLessonEditor}>
+      <div className={styles.adminFormField}>
+        <label className={styles.adminLabel}>Название текстового урока</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className={styles.adminInput}
+          required
+        />
+      </div>
+
+      <div className={styles.adminFormField}>
+        <label className={styles.adminLabel}>Описание урока</label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className={styles.adminTextarea}
+          rows={6}
+        />
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+        <button 
+          onClick={handleSave} 
+          className={styles.adminButton}
+        >
+          Сохранить текстовый урок
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const VideoEditor = ({ video, courseId, onClose, language }) => {
   const { t } = useTranslation();
   const { isAdmin } = useAuth();
@@ -131,6 +187,24 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     setError(null);
     
     try {
+      // Если выбран тип TEXT, специальная обработка
+      if (formData.videoType === VIDEO_TYPES.TEXT) {
+        const finalVideoData = {
+          id: formData.id || uuidv4(),
+          title: formData.title,
+          description: formData.description || '',
+          videoType: VIDEO_TYPES.TEXT,
+          duration: '00:00',
+          localVideo: '',
+          videoUrl: '',
+          isPrivate: formData.isPrivate || false
+        };
+  
+        console.log("Final text lesson data:", finalVideoData);
+        onClose(finalVideoData, !isCreating);
+        return;
+      }
+      
       let finalVideoData = {
         id: formData.id,
         title: formData.title,
@@ -139,7 +213,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         isPrivate: formData.isPrivate
       };
       
-      // Handle different video types
+      // Обработка внешних видео
       if (formData.videoType === VIDEO_TYPES.EXTERNAL) {
         if (!formData.videoUrl.trim()) {
           setError(t('Please enter a video URL'));
@@ -149,17 +223,21 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         
         finalVideoData.videoUrl = formData.videoUrl;
         finalVideoData.localVideo = '';
+        finalVideoData.videoType = VIDEO_TYPES.EXTERNAL;
       } 
+      // Обработка локальных видео
       else if (formData.videoType === VIDEO_TYPES.LOCAL) {
         // Используем результат загрузки, если он есть
         if (formData.uploadedFile && formData.localVideo) {
           finalVideoData.localVideo = formData.localVideo;
           finalVideoData.videoUrl = '';
+          finalVideoData.videoType = VIDEO_TYPES.LOCAL;
         } 
         // Или используем существующий локальный путь
         else if (formData.localVideo) {
           finalVideoData.localVideo = formData.localVideo;
           finalVideoData.videoUrl = '';
+          finalVideoData.videoType = VIDEO_TYPES.LOCAL;
         } 
         else {
           setError(t('Please select a video file to upload'));
@@ -167,18 +245,10 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
           return;
         }
       }
-      else if (formData.videoType === VIDEO_TYPES.TEXT) {
-        // For text-only lessons, clear both video fields
-        finalVideoData.videoUrl = '';
-        finalVideoData.localVideo = '';
-      }
-      
-      // Сохраняем тип видео
-      finalVideoData.videoType = formData.videoType;
       
       console.log("Final video data to save:", finalVideoData);
       
-      // Close the editor and return the video data
+      // Закрываем редактор и возвращаем данные
       onClose(finalVideoData, !isCreating);
     } catch (err) {
       console.error('Error saving video:', err);

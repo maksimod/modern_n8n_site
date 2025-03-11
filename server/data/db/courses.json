@@ -10,8 +10,9 @@
         "title": "Интерфейс",
         "description": "Обзор интерфейса n8n",
         "duration": "12:25",
-        "localVideo": "8b335861-ab6f-4d4c-94b5-1c412544fd2a.mp4",
         "isPrivate": false,
+        "videoUrl": "",
+        "localVideo": "",
         "videoType": "text"
       },
       {
@@ -29,10 +30,9 @@
         "title": "Узлы «Action in app»",
         "description": "Работа с Action in app",
         "duration": "12:30",
-        "isPrivate": false,
         "localVideo": "58c0103b-e768-4faa-97ea-c7459e190a8c.mp4",
-        "videoUrl": "",
-        "videoType": "local"
+        "isPrivate": false,
+        "videoType": "text"
       },
       {
         "id": "n8n-credentials",
