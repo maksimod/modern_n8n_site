@@ -14,11 +14,11 @@ export const register = async (username, password) => {
   try {
     const response = await api.post('/api/auth/register', { username, password });
     
-    // Сохраняем токен и данные пользователя
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    
-    return { user: response.data.user, token: response.data.token };
+    // Возвращаем объект с токеном и пользователем
+    return { 
+      user: response.data.user, 
+      token: response.data.token 
+    };
   } catch (error) {
     console.error('Registration error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
@@ -33,11 +33,11 @@ export const login = async (username, password) => {
       throw new Error('Invalid response from server');
     }
     
-    // Сохраняем токен и данные пользователя
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    
-    return { user: response.data.user, token: response.data.token };
+    // Возвращаем объект с токеном и пользователем
+    return { 
+      user: response.data.user, 
+      token: response.data.token 
+    };
   } catch (error) {
     console.error('Login error:', error);
     
@@ -53,13 +53,16 @@ export const login = async (username, password) => {
 };
 
 export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
   return Promise.resolve(true);
 };
 
 export const getCurrentUser = () => {
   const userStr = localStorage.getItem('user');
   if (!userStr) return null;
-  return JSON.parse(userStr);
+  try {
+    return JSON.parse(userStr);
+  } catch (error) {
+    console.error('Error parsing user data:', error);
+    return null;
+  }
 };

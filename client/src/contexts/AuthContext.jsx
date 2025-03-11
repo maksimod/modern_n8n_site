@@ -10,23 +10,27 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [token, setToken] = useState(null); // Добавляем состояние для токена
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false); // Состояние для проверки админа
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Проверяем, есть ли сохраненный пользователь
-    const user = getCurrentUser();
-    if (user) {
-      setCurrentUser(user);
-      // Проверяем, является ли пользователь администратором (username === 'admin')
-      setIsAdmin(user.username === 'admin');
-      
-      // Также проверяем сохраненный токен
-      const storedToken = localStorage.getItem('token');
-      if (storedToken) {
+    // Проверяем, есть ли сохраненный пользователь и токен
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
+    
+    if (storedUser && storedToken) {
+      try {
+        const user = JSON.parse(storedUser);
+        setCurrentUser(user);
         setToken(storedToken);
+        // Проверяем, является ли пользователь администратором
+        setIsAdmin(user.username === 'admin');
+      } catch (err) {
+        console.error('Ошибка при парсинге данных пользователя:', err);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
       }
     }
     setLoading(false);
@@ -36,8 +40,17 @@ export const AuthProvider = ({ children }) => {
   const registerUser = async (username, password) => {
     try {
       setError(null);
-      const user = await register(username, password);
+      const response = await register(username, password);
+      const { user, token } = response;
+      
+      // Сохраняем пользователя и токен
       setCurrentUser(user);
+      setToken(token);
+      
+      // Обновляем localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', token);
+      
       // Проверяем, является ли пользователь администратором
       setIsAdmin(user.username === 'admin');
       return user;
@@ -52,14 +65,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setError(null);
       const response = await login(username, password);
-      const user = response.user;
-      const token = response.token; // Получаем токен из ответа
+      const { user, token } = response;
+      
+      // Сохраняем пользователя и токен
       setCurrentUser(user);
+      setToken(token);
+      
+      // Обновляем localStorage
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', token);
+      
       // Проверяем, является ли пользователь администратором
       setIsAdmin(user.username === 'admin');
-      
-      setToken(token); // Устанавливаем токен в контексте
-      localStorage.setItem('token', token); // Сохраняем токен в локальном хранилище
       return user;
     } catch (err) {
       setError(err.message);
@@ -71,9 +88,12 @@ export const AuthProvider = ({ children }) => {
   const logoutUser = () => {
     logout();
     setCurrentUser(null);
-    setToken(null); // Удаляем токен при выходе
-    setIsAdmin(false); // Сбрасываем статус админа
-    localStorage.removeItem('token'); // Удаляем токен из локального хранилища
+    setToken(null);
+    setIsAdmin(false);
+    
+    // Очищаем localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   // Функция для проверки username
@@ -88,9 +108,9 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
-    token, // Добавляем токен в контекст
-    isAuthenticated: !!currentUser,
-    isAdmin, // Добавляем статус админа в контекст
+    token,
+    isAuthenticated: !!currentUser && !!token,
+    isAdmin,
     loading,
     error,
     register: registerUser,

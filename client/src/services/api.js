@@ -11,13 +11,11 @@ const api = axios.create({
 // Добавляем перехватчик для добавления токена авторизации
 api.interceptors.request.use(
   (config) => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // Получаем токен напрямую из localStorage
+    const token = localStorage.getItem('token');
   
-    console.log(user);
-    console.log(user.token)
-    if (user && user.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
-      console.log("ok")
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     return config;
@@ -31,8 +29,13 @@ api.interceptors.response.use(
   (error) => {
     // При 401 ошибке (неавторизован) перенаправляем на страницу логина
     if (error.response && error.response.status === 401) {
+      // Очищаем данные пользователя и токен
       localStorage.removeItem('user');
-      window.location.href = '/auth';
+      localStorage.removeItem('token');
+      
+      // Перенаправляем на страницу авторизации, сохраняя текущий URL
+      const currentPath = window.location.pathname + window.location.search;
+      window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
     }
     return Promise.reject(error);
   }

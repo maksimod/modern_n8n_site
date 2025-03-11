@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,13 +16,21 @@ const AuthPage = () => {
   const { login, register, isAuthenticated } = useAuth();
   const { language, switchLanguage, supportedLanguages } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   
-  // Если пользователь уже авторизован, перенаправляем на главную
+  // Получаем URL для перенаправления из query params
+  const getRedirectUrl = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get('redirect') || '/';
+  };
+  
+  // Если пользователь уже авторизован, перенаправляем
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      const redirectUrl = getRedirectUrl();
+      navigate(redirectUrl);
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location]);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,7 +53,10 @@ const AuthPage = () => {
       } else {
         await register(username, password);
       }
-      navigate('/');
+      
+      // Перенаправляем пользователя после авторизации
+      const redirectUrl = getRedirectUrl();
+      navigate(redirectUrl);
     } catch (err) {
       setError(err.message);
     } finally {
