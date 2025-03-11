@@ -46,12 +46,51 @@ const upload = multer({
   }
 });
 
+// Путь к файлу с курсами
+const COURSES_FILE = path.join(__dirname, '../data/db/courses.json');
+
+// Функция для чтения курсов из файла
+const getCourses = () => {
+  try {
+    if (!fs.existsSync(COURSES_FILE)) {
+      // Если файл не существует, создаем его с пустым массивом
+      const dataDir = path.dirname(COURSES_FILE);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      fs.writeFileSync(COURSES_FILE, JSON.stringify([]));
+      return [];
+    }
+    
+    const data = fs.readFileSync(COURSES_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading courses file:', error);
+    return [];
+  }
+};
+
+// Функция для сохранения курсов в файл
+const saveCourses = (courses) => {
+  try {
+    const dataDir = path.dirname(COURSES_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(COURSES_FILE, JSON.stringify(courses, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving courses file:', error);
+    return false;
+  }
+};
+
 // Get all courses (Admin view)
 router.get('/courses', [auth, isAdmin], async (req, res) => {
   try {
-    // Here we'd typically get courses from database
-    // For now, reusing the existing courses route
-    res.redirect('/api/courses');
+    const language = req.query.language || 'ru';
+    const courses = getCourses().filter(course => course.language === language);
+    res.json(courses);
   } catch (err) {
     console.error('Error in admin/courses:', err);
     res.status(500).json({ message: 'Server error' });
@@ -75,20 +114,39 @@ router.post('/courses', [
   try {
     const { id, title, description, language, videos } = req.body;
     
-    // Here we would save to the database
-    // For now, we'll use a mock implementation
+    // Проверяем наличие обязательных полей
+    if (!id || !title || !language) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
     
-    // Generate a simple course object
-    const newCourse = {
-      id: id || uuidv4(),
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Проверяем, существует ли курс с таким ID и language
+    const existingCourseIndex = courses.findIndex(c => c.id === id && c.language === language);
+    
+    // Создаем объект курса
+    const courseData = {
+      id,
       title,
       description: description || '',
       language: language || 'ru',
       videos: videos || []
     };
     
-    // Return the created course
-    res.status(201).json(newCourse);
+    if (existingCourseIndex !== -1) {
+      // Обновляем существующий курс
+      courses[existingCourseIndex] = courseData;
+    } else {
+      // Добавляем новый курс
+      courses.push(courseData);
+    }
+    
+    // Сохраняем курсы
+    saveCourses(courses);
+    
+    // Возвращаем созданный/обновленный курс
+    res.status(201).json(courseData);
   } catch (err) {
     console.error('Error creating course:', err);
     res.status(500).json({ message: 'Server error' });
@@ -101,17 +159,35 @@ router.put('/courses/:courseId', [auth, isAdmin], async (req, res) => {
     const { courseId } = req.params;
     const { title, description, language, videos } = req.body;
     
-    // Here we would update the course in the database
-    // For now, we'll use a mock implementation
+    // Проверяем наличие обязательных полей
+    if (!title || !language) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
     
-    // Return the updated course
-    res.json({
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Ищем курс для обновления
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Обновляем курс
+    courses[courseIndex] = {
       id: courseId,
       title,
-      description,
+      description: description || '',
       language,
-      videos
-    });
+      videos: videos || []
+    };
+    
+    // Сохраняем курсы
+    saveCourses(courses);
+    
+    // Возвращаем обновленный курс
+    res.json(courses[courseIndex]);
   } catch (err) {
     console.error(`Error updating course ${req.params.courseId}:`, err);
     res.status(500).json({ message: 'Server error' });
@@ -122,9 +198,20 @@ router.put('/courses/:courseId', [auth, isAdmin], async (req, res) => {
 router.delete('/courses/:courseId', [auth, isAdmin], async (req, res) => {
   try {
     const { courseId } = req.params;
+    const language = req.query.language || 'ru';
     
-    // Here we would delete the course from the database
-    // For now, we'll use a mock implementation
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Фильтруем курсы, исключая удаляемый
+    const filteredCourses = courses.filter(c => !(c.id === courseId && c.language === language));
+    
+    if (filteredCourses.length === courses.length) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Сохраняем обновленный список курсов
+    saveCourses(filteredCourses);
     
     res.json({ message: 'Course deleted successfully' });
   } catch (err) {
@@ -138,17 +225,44 @@ router.post('/courses/:courseId/videos', [auth, isAdmin], async (req, res) => {
   try {
     const { courseId } = req.params;
     const videoData = req.body;
+    const language = req.query.language || videoData.language || 'ru';
     
-    // Here we would add the video to the course in the database
-    // For now, we'll use a mock implementation
+    // Проверяем наличие обязательных полей
+    if (!videoData.id || !videoData.title) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
     
-    // Generate video ID if not provided
-    const newVideo = {
-      ...videoData,
-      id: videoData.id || uuidv4()
-    };
+    // Получаем существующие курсы
+    const courses = getCourses();
     
-    res.status(201).json(newVideo);
+    // Ищем курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Добавляем видео к курсу
+    if (!courses[courseIndex].videos) {
+      courses[courseIndex].videos = [];
+    }
+    
+    // Проверяем, существует ли видео с таким ID
+    const existingVideoIndex = courses[courseIndex].videos.findIndex(v => v.id === videoData.id);
+    
+    if (existingVideoIndex !== -1) {
+      // Обновляем существующее видео
+      courses[courseIndex].videos[existingVideoIndex] = videoData;
+    } else {
+      // Добавляем новое видео
+      courses[courseIndex].videos.push(videoData);
+    }
+    
+    // Сохраняем курсы
+    saveCourses(courses);
+    
+    // Возвращаем добавленное/обновленное видео
+    res.status(201).json(videoData);
   } catch (err) {
     console.error('Error adding video:', err);
     res.status(500).json({ message: 'Server error' });
@@ -160,14 +274,45 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
   try {
     const { courseId, videoId } = req.params;
     const videoData = req.body;
+    const language = req.query.language || videoData.language || 'ru';
     
-    // Here we would update the video in the database
-    // For now, we'll use a mock implementation
+    // Проверяем наличие обязательных полей
+    if (!videoData.title) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
     
-    res.json({
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Ищем курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Ищем видео
+    if (!courses[courseIndex].videos) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    const videoIndex = courses[courseIndex].videos.findIndex(v => v.id === videoId);
+    
+    if (videoIndex === -1) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Обновляем видео
+    courses[courseIndex].videos[videoIndex] = {
       ...videoData,
-      id: videoId
-    });
+      id: videoId // Убеждаемся, что ID остается неизменным
+    };
+    
+    // Сохраняем курсы
+    saveCourses(courses);
+    
+    // Возвращаем обновленное видео
+    res.json(courses[courseIndex].videos[videoIndex]);
   } catch (err) {
     console.error(`Error updating video ${req.params.videoId}:`, err);
     res.status(500).json({ message: 'Server error' });
@@ -178,9 +323,35 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
 router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
+    const language = req.query.language || 'ru';
     
-    // Here we would delete the video from the database
-    // For now, we'll use a mock implementation
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Ищем курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Ищем видео
+    if (!courses[courseIndex].videos) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Фильтруем видео, исключая удаляемое
+    const filteredVideos = courses[courseIndex].videos.filter(v => v.id !== videoId);
+    
+    if (filteredVideos.length === courses[courseIndex].videos.length) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Обновляем список видео
+    courses[courseIndex].videos = filteredVideos;
+    
+    // Сохраняем курсы
+    saveCourses(courses);
     
     res.json({ message: 'Video deleted successfully' });
   } catch (err) {
@@ -194,9 +365,23 @@ router.put('/courses/:courseId/videos/positions', [auth, isAdmin], async (req, r
   try {
     const { courseId } = req.params;
     const { positions } = req.body;
+    const language = req.query.language || 'ru';
     
-    // Here we would update the positions in the database
-    // For now, we'll use a mock implementation
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Ищем курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Обновляем позиции видео
+    // Здесь можно реализовать логику обновления позиций
+    
+    // Сохраняем курсы
+    saveCourses(courses);
     
     res.json({ message: 'Video positions updated successfully' });
   } catch (err) {

@@ -70,10 +70,13 @@ const CourseEditor = ({ course, onClose, language }) => {
     setError(null);
     
     try {
+      // Создаем глубокую копию данных для отправки
+      const dataToSend = JSON.parse(JSON.stringify(formData));
+      
       if (isCreating) {
-        await createCourse(formData);
+        await createCourse(dataToSend);
       } else {
-        await updateCourse(formData.id, formData);
+        await updateCourse(dataToSend.id, dataToSend);
       }
       
       // Close the editor and refresh the course list

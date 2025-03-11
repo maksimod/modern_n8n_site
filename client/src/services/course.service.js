@@ -52,6 +52,7 @@ export const markVideoAsCompleted = async (userId, courseId, videoId, completed)
 // Create new course
 export const createCourse = async (courseData) => {
   try {
+    console.log('Creating course with data:', courseData);
     const response = await api.post('/api/admin/courses', courseData);
     return response.data;
   } catch (error) {
@@ -63,6 +64,7 @@ export const createCourse = async (courseData) => {
 // Update course
 export const updateCourse = async (courseId, courseData) => {
   try {
+    console.log('Updating course with data:', courseData);
     const response = await api.put(`/api/admin/courses/${courseId}`, courseData);
     return response.data;
   } catch (error) {
