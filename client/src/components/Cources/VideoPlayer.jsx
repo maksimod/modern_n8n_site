@@ -1,3 +1,4 @@
+// client/src/components/Cources/VideoPlayer.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useTranslation } from 'react-i18next';
@@ -74,7 +75,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     const fileName = video.title 
       ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
       : 'video.mp4';
-    
+
     link.setAttribute('download', fileName);
     link.setAttribute('target', '_blank');
     
@@ -82,7 +83,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     link.click();
     document.body.removeChild(link);
   };
-
+  
   if (!video) {
     return <div className={styles.videoContainer}>Video not found</div>;
   }

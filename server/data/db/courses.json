@@ -8,12 +8,12 @@
       {
         "id": "n8n-interface",
         "title": "Интерфейс",
-        "description": "Обзор интерфейса n8n",
-        "duration": "12:25",
-        "isPrivate": false,
-        "videoUrl": "",
+        "description": "Интерфейс",
+        "videoType": "text",
+        "duration": "00:00",
         "localVideo": "",
-        "videoType": "text"
+        "videoUrl": "",
+        "isPrivate": false
       },
       {
         "id": "n8n-triggers",
