@@ -7,7 +7,7 @@ import styles from '../../styles/layout.module.css';
 
 const Header = () => {
   const { t } = useTranslation();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const { language, switchLanguage, supportedLanguages } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -38,6 +38,13 @@ const Header = () => {
       <div className={styles.navList}>
         {currentUser && (
           <div className={styles.userMenu}>
+            {/* Add Admin Dashboard link if the user is an admin */}
+            {isAdmin && (
+              <Link to="/admin" className={styles.adminLink}>
+                {t('admin.dashboard')}
+              </Link>
+            )}
+          
             <button 
               className={styles.userButton} 
               onClick={toggleDropdown}
@@ -51,6 +58,17 @@ const Header = () => {
 
             {dropdownOpen && (
               <div className={styles.dropdown}>
+                {/* Add Admin Dashboard link in dropdown as well if user is admin */}
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className={styles.dropdownItem}
+                    onClick={closeDropdown}
+                  >
+                    {t('admin.dashboard')}
+                  </Link>
+                )}
+              
                 <button className={styles.dropdownItem} onClick={handleLogout}>
                   {t('logout')}
                 </button>

@@ -89,6 +89,28 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     setIsPlaying(false);
     handleComplete(true);
   };
+  
+  // Функция для скачивания видео
+  const handleDownload = () => {
+    if (!isLocalVideo || !fullVideoUrl) return;
+    
+    // Создаем временную ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = fullVideoUrl;
+    
+    // Устанавливаем имя файла
+    const fileName = video.title 
+      ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
+      : 'video.mp4';
+    
+    link.setAttribute('download', fileName);
+    link.setAttribute('target', '_blank');
+    
+    // Добавляем в DOM, кликаем и удаляем
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (!video) {
     return <div className={styles.videoContainer}>Video not found</div>;
@@ -150,6 +172,17 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
                 {t('Private')}
               </span>
+            )}
+            
+            {/* Добавляем кнопку скачивания только для локальных видео */}
+            {isLocalVideo && (
+              <button 
+                className={styles.downloadButton}
+                onClick={handleDownload}
+                title={t('course.download')}
+              >
+                {t('course.download')}
+              </button>
             )}
           </div>
         </div>

@@ -13,12 +13,16 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null); // Добавляем состояние для токена
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false); // Состояние для проверки админа
 
   useEffect(() => {
     // Проверяем, есть ли сохраненный пользователь
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      // Проверяем, является ли пользователь администратором (username === 'admin')
+      setIsAdmin(user.username === 'admin');
+      
       // Также проверяем сохраненный токен
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
@@ -34,6 +38,8 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const user = await register(username, password);
       setCurrentUser(user);
+      // Проверяем, является ли пользователь администратором
+      setIsAdmin(user.username === 'admin');
       return user;
     } catch (err) {
       setError(err.message);
@@ -49,6 +55,9 @@ export const AuthProvider = ({ children }) => {
       const user = response.user;
       const token = response.token; // Получаем токен из ответа
       setCurrentUser(user);
+      // Проверяем, является ли пользователь администратором
+      setIsAdmin(user.username === 'admin');
+      
       setToken(token); // Устанавливаем токен в контексте
       localStorage.setItem('token', token); // Сохраняем токен в локальном хранилище
       return user;
@@ -63,6 +72,7 @@ export const AuthProvider = ({ children }) => {
     logout();
     setCurrentUser(null);
     setToken(null); // Удаляем токен при выходе
+    setIsAdmin(false); // Сбрасываем статус админа
     localStorage.removeItem('token'); // Удаляем токен из локального хранилища
   };
 
@@ -80,6 +90,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     token, // Добавляем токен в контекст
     isAuthenticated: !!currentUser,
+    isAdmin, // Добавляем статус админа в контекст
     loading,
     error,
     register: registerUser,

@@ -8,7 +8,7 @@ import { getCourses } from '../services/course.service';
 const HomePage = () => {
   const { t } = useTranslation();
   const { language, switchLanguage, supportedLanguages } = useLanguage();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isAdmin } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,6 +64,24 @@ const HomePage = () => {
             <span style={{ fontSize: '14px', color: '#666' }}>
               {currentUser.username}
             </span>
+            
+            {/* Display admin link for admin users */}
+            {isAdmin && (
+              <Link 
+                to="/admin"
+                style={{
+                  padding: '8px 16px',
+                  background: '#4f46e5',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  textDecoration: 'none'
+                }}
+              >
+                {t('admin.dashboard')}
+              </Link>
+            )}
+            
             <button
               onClick={handleLogout}
               style={{

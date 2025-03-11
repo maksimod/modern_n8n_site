@@ -175,3 +175,197 @@
   text-align: center;
   color: #777;
 }
+
+/* Кнопка скачивания видео */
+.downloadButton {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.downloadButton:hover {
+  background-color: #4338ca;
+}
+
+.downloadButton:before {
+  content: "↓";
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+/* Стили для администратора */
+.adminControls {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.adminTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1e293b;
+}
+
+.adminActionRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.adminButton {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButton:hover {
+  background-color: #4338ca;
+}
+
+.adminButtonSecondary {
+  background-color: #64748b;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButtonSecondary:hover {
+  background-color: #475569;
+}
+
+.adminButtonDanger {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButtonDanger:hover {
+  background-color: #dc2626;
+}
+
+.adminFormField {
+  margin-bottom: 15px;
+}
+
+.adminLabel {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.adminInput, .adminTextarea, .adminSelect {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.adminTextarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.adminInputFile {
+  margin-top: 5px;
+}
+
+.videoCardCompleted {
+  border-left: 4px solid #10b981;
+}
+
+.privateVideo {
+  background-color: #ef4444;
+  color: white;
+}
+
+.videoCardBadge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.textLessonIndicator {
+  background-color: #0ea5e9;
+  color: white;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+/* Admin course list styles */
+.adminCourseList {
+  margin-top: 20px;
+}
+
+.adminCourseItem {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  background-color: white;
+}
+
+.adminCourseHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.adminCourseTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.adminVideoList {
+  margin-top: 15px;
+}
+
+.adminVideoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background-color: #f8fafc;
+}
+
+.adminVideoInfo {
+  flex: 1;
+}
+
+.adminVideoActions {
+  display: flex;
+  gap: 8px;
+}

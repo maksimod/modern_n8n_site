@@ -78,6 +78,31 @@ const CoursePage = () => {
     // Для внешних видео возвращаем URL как есть
     return video.videoUrl;
   };
+  
+  // Функция для скачивания видео
+  const handleDownload = (video) => {
+    if (!video || !video.localVideo) return;
+    
+    const fullVideoUrl = getFullVideoUrl(video);
+    if (!fullVideoUrl) return;
+    
+    // Создаем временную ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = fullVideoUrl;
+    
+    // Устанавливаем имя файла
+    const fileName = video.title 
+      ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
+      : 'video.mp4';
+    
+    link.setAttribute('download', fileName);
+    link.setAttribute('target', '_blank');
+    
+    // Добавляем в DOM, кликаем и удаляем
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div>
@@ -147,6 +172,16 @@ const CoursePage = () => {
                 <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
               </div>
               <p className={styles.videoDescription}>{currentVideo.description}</p>
+              
+              {/* Добавляем кнопку скачивания только для локальных видео */}
+              {currentVideo.localVideo && (
+                <button 
+                  className={styles.downloadButton}
+                  onClick={() => handleDownload(currentVideo)}
+                >
+                  {t('course.download')}
+                </button>
+              )}
             </div>
           ) : (
             <div className={styles.selectVideo}>{t('selectVideo')}</div>

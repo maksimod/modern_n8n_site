@@ -51,6 +51,9 @@ const resources = {
       "course.courses": "Курсы",
       "course.continueCourse": "Продолжить курс",
       "course.startCourse": "Начать курс",
+      "course.download": "Скачать",
+      "Private": "Приватный",
+      "selectVideo": "Выберите видео из списка",
       // Авторизация
       "login": "Вход",
       "register": "Регистрация",
@@ -72,7 +75,35 @@ const resources = {
       "selectVideo": "Выберите видео из списка",
       "backToCourses": "← Назад к курсам",
       "previous": "Предыдущее",
-      "next": "Следующее"
+      "next": "Следующее",
+
+      // Admin
+      "admin.dashboard": "Панель администратора",
+      "admin.courses": "Управление курсами",
+      "admin.createCourse": "Создать новый курс",
+      "admin.editCourse": "Редактировать курс",
+      "admin.deleteCourse": "Удалить курс",
+      "admin.addVideo": "Добавить видео",
+      "admin.editVideo": "Редактировать видео",
+      "admin.deleteVideo": "Удалить видео",
+      "admin.title": "Заголовок",
+      "admin.description": "Описание",
+      "admin.language": "Язык",
+      "admin.duration": "Длительность",
+      "admin.isPrivate": "Приватный",
+      "admin.videoType": "Тип видео",
+      "admin.externalUrl": "Внешняя ссылка",
+      "admin.localFile": "Локальный файл",
+      "admin.textLesson": "Только текст",
+      "admin.save": "Сохранить",
+      "admin.cancel": "Отмена",
+      "admin.confirm": "Подтвердить",
+      "admin.moveUp": "Переместить вверх",
+      "admin.moveDown": "Переместить вниз",
+      "admin.uploadVideo": "Загрузить видео",
+      "admin.confirmDelete": "Вы уверены, что хотите удалить?",
+      "admin.confirmDeleteCourse": "Вы уверены, что хотите удалить этот курс?",
+      "admin.confirmDeleteVideo": "Вы уверены, что хотите удалить это видео?",
     }
   }
 };

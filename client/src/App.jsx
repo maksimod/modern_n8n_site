@@ -5,8 +5,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import HomePage from './pages/HomePage';
 import CoursePage from './pages/CoursePage';
 import AuthPage from './pages/AuthPage';
+import AdminDashboard from './pages/AdminDashboard';
 import PrivateRoute from './components/PrivateRoute';
-
+import AdminRoute from './components/AdminRoute';
 
 function App() {
   return (
@@ -24,6 +25,11 @@ function App() {
               <PrivateRoute>
                 <CoursePage />
               </PrivateRoute>
+            } />
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             } />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

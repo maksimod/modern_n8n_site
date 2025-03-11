@@ -59,9 +59,25 @@ app.use((req, res, next) => {
 // Маршруты
 const authRouter = require('./routes/auth');
 const coursesRouter = require('./routes/courses');
+const adminRouter = require('./routes/admin');
 
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
+app.use('/api/admin', adminRouter);
+
+// Специальный маршрут для скачивания видео
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, 'data/videos', filename);
+  
+  // Проверяем, существует ли файл
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ message: 'File not found' });
+  }
+  
+  // Отправляем файл для скачивания
+  res.download(filePath);
+});
 
 // Обслуживание статических файлов в production
 if (process.env.NODE_ENV === 'production') {
