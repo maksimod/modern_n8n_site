@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,10 +6,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { getCourseById, getVideoById } from '../services/course.service';
 import Header from '../components/Layout/Header';
-import CourseItem from '../components/Cources/CourceItem';
+import { VIDEO_TYPES, SERVER_URL } from '../config';
 import styles from '../styles/courses.module.css';
-
-const SERVER_URL = 'http://localhost:5000';
 
 const CoursePage = () => {
   const { t } = useTranslation();
@@ -18,42 +16,109 @@ const CoursePage = () => {
   const videoId = searchParams.get('video');
   const { language } = useLanguage();
   const { currentUser } = useAuth();
-  const { updateVideoProgress, isVideoCompleted } = useProgress();
+  const { updateVideoProgress, isVideoCompleted, loadCourseProgress } = useProgress();
   
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  
+  // Используем реф для отслеживания, загрузился ли прогресс
+  const progressLoadedRef = useRef(false);
+  
+  // Первый эффект - загружаем курс и текущее видео
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchCourse = async () => {
       try {
         setLoading(true);
         const courseData = await getCourseById(courseId, language);
         
+        if (!isMounted) return;
+        
         if (courseData) {
           setCourse(courseData);
-
-          if (!videoId || !courseData.videos.find(v => v.id === videoId)) {
-            if (courseData.videos.length > 0) {
-              setSearchParams({ video: courseData.videos[0].id });
-            }
-          } else if (videoId && courseData) {
+          
+          // Если есть видео в URL и оно существует в курсе
+          if (videoId && courseData.videos.find(v => v.id === videoId)) {
             const videoData = await getVideoById(courseId, videoId, language);
+            if (!isMounted) return;
             if (videoData) {
               setCurrentVideo(videoData);
+            }
+          } else if (courseData.videos.length > 0) {
+            // Если нет видео в URL, устанавливаем первое видео из курса
+            if (isMounted) {
+              setSearchParams({ video: courseData.videos[0].id });
             }
           }
         }
       } catch (error) {
-        console.error('Ошибка загрузки курса:', error);
+        console.error('Error loading course:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-  
+    
     fetchCourse();
-  }, [courseId, videoId, language, setSearchParams, currentUser]);
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, language]); // Удалили videoId из зависимостей
+  
+  // Отдельный эффект для загрузки прогресса - запускается ОДИН раз при монтировании
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchProgress = async () => {
+      if (currentUser && courseId && !progressLoadedRef.current) {
+        try {
+          await loadCourseProgress(courseId);
+          if (isMounted) {
+            progressLoadedRef.current = true;
+          }
+        } catch (error) {
+          console.error('Error loading progress:', error);
+        }
+      }
+    };
+    
+    fetchProgress();
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, courseId]); // Удалили loadCourseProgress из зависимостей
+  
+  // Эффект для загрузки конкретного видео при изменении videoId
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchVideo = async () => {
+      if (courseId && videoId && course) {
+        if (course.videos.find(v => v.id === videoId)) {
+          const videoData = await getVideoById(courseId, videoId, language);
+          if (isMounted && videoData) {
+            setCurrentVideo(videoData);
+          }
+        }
+      }
+    };
+    
+    fetchVideo();
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId, course]);
 
+  // Function to get full video URL
   const getFullVideoUrl = (video) => {
     if (!video) return null;
     
@@ -68,6 +133,7 @@ const CoursePage = () => {
     return video.videoUrl;
   };
   
+  // Function to handle video download
   const handleDownload = (video) => {
     if (!video || !video.localVideo) return;
     
@@ -89,6 +155,7 @@ const CoursePage = () => {
     document.body.removeChild(link);
   };
 
+  // Function to toggle video completion status
   const handleVideoCompletionToggle = (videoId) => {
     if (!currentUser || !course) return;
 
@@ -111,7 +178,7 @@ const CoursePage = () => {
       <div className={styles.coursePageContainer}>
         <div className={styles.courseSidebar}>
           <Link to="/" className={styles.backToCoursesLink}>
-            <span>← Назад к курсам</span>
+            <span>← {t('backToCourses')}</span>
           </Link>
           
           <h2 className={styles.courseTitle}>{course.title}</h2>
@@ -160,44 +227,79 @@ const CoursePage = () => {
         
         <div className={styles.videoContent}>
           {currentVideo ? (
-            <div>
-              <div className={styles.videoWrapper}>
-                {currentVideo.localVideo ? (
-                  <video
-                    src={getFullVideoUrl(currentVideo)}
-                    className={styles.videoIframe}
-                    controls
-                    autoPlay={false}
-                    title={currentVideo.title}
-                    onEnded={() => handleVideoCompletionToggle(currentVideo.id)}
-                  ></video>
-                ) : currentVideo.videoUrl ? (
-                  <iframe
-                    src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
-                    title={currentVideo.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className={styles.videoIframe}
-                  ></iframe>
-                ) : (
-                  <div className={styles.noVideoSource}>Видео недоступно</div>
+            currentVideo.videoType === VIDEO_TYPES.TEXT ? (
+              <div className={styles.textLessonContainer}>
+                <div className={styles.videoInfo}>
+                  <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
+                  
+                  <div className={styles.videoCompletionControls}>
+                    <label className={styles.completionCheckbox}>
+                      <input 
+                        type="checkbox" 
+                        checked={isVideoCompleted(course.id, currentVideo.id)}
+                        onChange={() => handleVideoCompletionToggle(currentVideo.id)}
+                      />
+                      {isVideoCompleted(course.id, currentVideo.id) ? t('course.completed') : t('course.markCompleted')}
+                    </label>
+                  </div>
+                  
+                  <div className={styles.textLessonContent}>
+                    <p className={styles.videoDescription}>{currentVideo.description}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className={styles.videoWrapper}>
+                  {currentVideo.localVideo ? (
+                    <video
+                      src={getFullVideoUrl(currentVideo)}
+                      className={styles.videoIframe}
+                      controls
+                      autoPlay={false}
+                      title={currentVideo.title}
+                      onEnded={() => handleVideoCompletionToggle(currentVideo.id)}
+                    ></video>
+                  ) : currentVideo.videoUrl ? (
+                    <iframe
+                      src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
+                      title={currentVideo.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className={styles.videoIframe}
+                    ></iframe>
+                  ) : (
+                    <div className={styles.noVideoSource}>Видео недоступно</div>
+                  )}
+                </div>
+                
+                <div className={styles.videoInfo}>
+                  <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
+                  
+                  <div className={styles.videoCompletionControls}>
+                    <label className={styles.completionCheckbox}>
+                      <input 
+                        type="checkbox" 
+                        checked={isVideoCompleted(course.id, currentVideo.id)}
+                        onChange={() => handleVideoCompletionToggle(currentVideo.id)}
+                      />
+                      {isVideoCompleted(course.id, currentVideo.id) ? t('course.completed') : t('course.markCompleted')}
+                    </label>
+                  </div>
+                  
+                  <p className={styles.videoDescription}>{currentVideo.description}</p>
+                </div>
+                
+                {currentVideo.localVideo && (
+                  <button 
+                    className={styles.downloadButton}
+                    onClick={() => handleDownload(currentVideo)}
+                  >
+                    {t('course.download')}
+                  </button>
                 )}
               </div>
-              
-              <div className={styles.videoInfo}>
-                <h2 className={styles.videoTitle}>{currentVideo.title}</h2>
-              </div>
-              <p className={styles.videoDescription}>{currentVideo.description}</p>
-              
-              {currentVideo.localVideo && (
-                <button 
-                  className={styles.downloadButton}
-                  onClick={() => handleDownload(currentVideo)}
-                >
-                  {t('course.download')}
-                </button>
-              )}
-            </div>
+            )
           ) : (
             <div className={styles.selectVideo}>{t('selectVideo')}</div>
           )}

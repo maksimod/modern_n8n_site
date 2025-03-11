@@ -48,11 +48,13 @@ export const isVideoCompleted = async (user, courseId, videoId) => {
 
 
 // Функция для отметки видео как просмотренного
-export const markVideoAsCompleted = async (userId, courseId, videoId, completed) => {
+export const markVideoAsCompleted = async (courseId, videoId, isCompleted) => {
   try {
+    console.log('Sending progress update:', { courseId, videoId, isCompleted });
     const response = await api.post(`/api/progress/${courseId}/${videoId}`, { 
-      isCompleted: completed 
+      isCompleted 
     });
+    console.log('Progress update response:', response.data);
     return response.data.success;
   } catch (error) {
     console.error('Error marking video as completed', error);
@@ -63,11 +65,35 @@ export const markVideoAsCompleted = async (userId, courseId, videoId, completed)
 // Получение прогресса по курсу
 export const getCourseProgress = async (courseId) => {
   try {
+    console.log("Requesting progress for course:", courseId);
     const response = await api.get(`/api/progress/${courseId}`);
-    return response.data.progress || {};
+    console.log('Progress API response:', response.data);
+    
+    // Если прогресс приходит в нужном формате - возвращаем его
+    if (response.data && response.data.progress) {
+      return response.data;
+    }
+    
+    // Если прогресс приходит в другом формате - адаптируем его
+    if (response.data && typeof response.data === 'object') {
+      // Если API возвращает прогресс напрямую, без обертки .progress
+      return {
+        success: true,
+        progress: response.data
+      };
+    }
+    
+    // В крайнем случае возвращаем пустой объект
+    return {
+      success: true,
+      progress: {}
+    };
   } catch (error) {
     console.error('Error getting course progress', error);
-    return {};
+    return {
+      success: false,
+      progress: {}
+    };
   }
 };
 

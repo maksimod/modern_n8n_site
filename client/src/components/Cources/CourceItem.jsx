@@ -24,7 +24,7 @@ const CourseItem = ({ course, currentVideo }) => {
         return (
           <div key={video.id} className={styles.videoItemContainer}>
             <Link 
-              to={`/course/${courseId}?video=${video.id}`}
+              to={`/course/${course.id}?video=${video.id}`}
               className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''} ${
                 completed ? styles.videoCardCompleted : ''
               }`}

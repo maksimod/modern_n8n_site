@@ -3,9 +3,8 @@ import ReactPlayer from 'react-player';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
-import { markVideoAsCompleted, isVideoCompleted } from '../../services/course.service';
 import { useNavigate } from 'react-router-dom';
-import { SERVER_URL } from '../../config';
+import { SERVER_URL, VIDEO_TYPES } from '../../config';
 import styles from '../../styles/courses.module.css';
 
 const VideoPlayer = ({ course, video, onVideoComplete }) => {
@@ -18,28 +17,28 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Определяем тип видео и URL
+  // Determine video type and URL
   const isLocalVideo = !!video?.localVideo;
-  const isTextLesson = video?.videoType === 'text';
+  const isTextLesson = video?.videoType === VIDEO_TYPES.TEXT;
   
-  // Важно: используем явный URL с сервера для локальных видео
+  // Important: use explicit server URL for local videos
   const fullVideoUrl = isLocalVideo 
     ? `${SERVER_URL}${video.localVideo}`
     : (video?.videoUrl || '');
   
-  // Проверяем состояние просмотра при изменении видео
+  // Check view status when video changes
   useEffect(() => {
     if (currentUser && course?.id && video?.id) {
       const completed = isVideoCompleted(course.id, video.id);
       setCompleted(completed);
     }
-  }, [currentUser, course, video]);
+  }, [currentUser, course, video, isVideoCompleted]);
 
   const handleComplete = async (value) => {
     if (loading || completed === value) return;
     
     if (!currentUser) {
-      alert('Необходимо авторизоваться для отметки просмотра');
+      alert('You need to be logged in to mark videos as viewed');
       navigate('/auth');
       return;
     }
@@ -57,7 +56,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       console.error('Error marking video as completed:', error);
       
       if (error.response && error.response.status === 401) {
-        alert('Сессия истекла. Пожалуйста, войдите снова.');
+        alert('Session expired. Please log in again.');
         navigate('/auth');
       }
     } finally {
@@ -65,7 +64,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
-  // Функция для скачивания видео
+  // Function for downloading videos
   const handleDownload = () => {
     if (!isLocalVideo || !fullVideoUrl) return;
     
@@ -88,13 +87,27 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     return <div className={styles.videoContainer}>Video not found</div>;
   }
 
-  // Для текстовых уроков
+  // For text lessons - display text-only view without video player
   if (isTextLesson) {
     return (
-      <div className={styles.textLessonContainer}>
-        <div className={styles.videoInfo}>
-          <h2 className={styles.videoTitle}>{video.title}</h2>
-          <p className={styles.videoDescription}>{video.description}</p>
+      <div className={styles.videoSection}>
+        <div className={styles.textLessonContainer}>
+          <div className={styles.videoInfo}>
+            <h2 className={styles.videoTitle}>{video.title}</h2>
+            <div className={styles.videoCompletionControls}>
+              <label className={styles.completionCheckbox}>
+                <input 
+                  type="checkbox" 
+                  checked={completed}
+                  onChange={() => handleComplete(!completed)}
+                />
+                {completed ? t('course.completed') : t('course.markCompleted')}
+              </label>
+            </div>
+            <div className={styles.textLessonContent}>
+              <p className={styles.videoDescription}>{video.description}</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -138,16 +151,26 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       <div className={styles.videoDetails}>
         <div className={styles.videoInfo}>
           <h2 className={styles.videoTitle}>{video.title}</h2>
+          <div className={styles.videoCompletionControls}>
+            <label className={styles.completionCheckbox}>
+              <input 
+                type="checkbox" 
+                checked={completed}
+                onChange={() => handleComplete(!completed)}
+              />
+              {completed ? t('course.completed') : t('course.markCompleted')}
+            </label>
+          </div>
           <p className={styles.videoDescription}>{video.description}</p>
           <div className={styles.videoDuration}>
-            <span>Длительность: {video.duration}</span>
+            <span>Duration: {video.duration}</span>
             {video.isPrivate && (
               <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
                 {t('Private')}
               </span>
             )}
             
-            {/* Добавляем кнопку скачивания только для локальных видео */}
+            {/* Add download button only for local videos */}
             {isLocalVideo && (
               <button 
                 className={styles.downloadButton}

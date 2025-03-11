@@ -1,12 +1,17 @@
 {
+  "2": {
+    "n8n-basics": {
+      "n8n-action-in-app": true,
+      "n8n-data-transformation": false,
+      "n8n-interface": true,
+      "n8n-triggers": true,
+      "n8n-flow": true
+    }
+  },
   "4": {
     "n8n-basics": {
       "n8n-triggers": true,
-      "n8n-interface": true,
-      "n8n-action-in-app": false,
-      "n8n-credentials": true,
-      "n8n-flow": true,
-      "n8n-core": true
+      "n8n-credentials": true
     }
   }
 }

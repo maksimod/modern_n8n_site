@@ -44,13 +44,12 @@ router.get('/:courseId', auth, (req, res) => {
   const { courseId } = req.params;
   const userId = req.user.id;
 
-  console.log('Get progress route - received data:', { 
-    userId, 
-    courseId 
-  });
+  console.log('Progress GET request:', { userId, courseId });
 
   try {
     const progress = progressModel.getProgress(userId, courseId);
+    console.log('Progress data to return:', progress);
+    
     res.json({ 
       success: true, 
       progress 
