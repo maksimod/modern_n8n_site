@@ -5,6 +5,65 @@ const { courseModel } = require('../models/data-model');
 const progressModel = require('../models/progress.model');
 const auth = require('../middleware/auth');
 
+router.post('/:courseId/:videoId', auth, (req, res) => {
+  const { courseId, videoId } = req.params;
+  const { isCompleted } = req.body;
+  const userId = req.user.id;
+
+  console.log('Progress route - received data:', { 
+    userId, 
+    courseId, 
+    videoId, 
+    isCompleted 
+  });
+
+  try {
+    const result = progressModel.saveProgress(userId, courseId, videoId, isCompleted);
+    
+    if (result) {
+      res.json({ 
+        success: true, 
+        message: 'Progress saved successfully' 
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: 'Failed to save progress' 
+      });
+    }
+  } catch (error) {
+    console.error('Error in progress route:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
+router.get('/:courseId', auth, (req, res) => {
+  const { courseId } = req.params;
+  const userId = req.user.id;
+
+  console.log('Get progress route - received data:', { 
+    userId, 
+    courseId 
+  });
+
+  try {
+    const progress = progressModel.getProgress(userId, courseId);
+    res.json({ 
+      success: true, 
+      progress 
+    });
+  } catch (error) {
+    console.error('Error getting progress:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve progress' 
+    });
+  }
+});
+
 // @route   POST api/progress/:courseId/:videoId
 // @desc    Mark video as completed/uncompleted
 // @access  Private

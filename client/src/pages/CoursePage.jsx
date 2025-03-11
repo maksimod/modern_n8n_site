@@ -3,11 +3,12 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useProgress } from '../contexts/ProgressContext';
 import { getCourseById, getVideoById } from '../services/course.service';
 import Header from '../components/Layout/Header';
+import CourseItem from '../components/Cources/CourceItem';
 import styles from '../styles/courses.module.css';
 
-// Константа для базового URL сервера
 const SERVER_URL = 'http://localhost:5000';
 
 const CoursePage = () => {
@@ -16,7 +17,8 @@ const CoursePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const videoId = searchParams.get('video');
   const { language } = useLanguage();
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser } = useAuth();
+  const { updateVideoProgress, isVideoCompleted } = useProgress();
   
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
@@ -52,45 +54,29 @@ const CoursePage = () => {
     fetchCourse();
   }, [courseId, videoId, language, setSearchParams, currentUser]);
 
-  if (loading) {
-    return <div className={styles.loading}>{t('loading')}</div>;
-  }
-
-  if (!course) {
-    return <div className={styles.notFound}>Курс не найден</div>;
-  }
-
-  // Формируем полный URL для видео
   const getFullVideoUrl = (video) => {
     if (!video) return null;
     
-    // Если есть локальное видео, формируем полный URL к серверу
     if (video.localVideo) {
-      // Убеждаемся, что путь начинается с /videos/
       const videoPath = video.localVideo.startsWith('/videos/') 
         ? video.localVideo 
         : `/videos/${video.localVideo}`;
       
-      // Возвращаем полный URL сервера
       return `${SERVER_URL}${videoPath}`;
     }
     
-    // Для внешних видео возвращаем URL как есть
     return video.videoUrl;
   };
   
-  // Функция для скачивания видео
   const handleDownload = (video) => {
     if (!video || !video.localVideo) return;
     
     const fullVideoUrl = getFullVideoUrl(video);
     if (!fullVideoUrl) return;
     
-    // Создаем временную ссылку для скачивания
     const link = document.createElement('a');
     link.href = fullVideoUrl;
     
-    // Устанавливаем имя файла
     const fileName = video.title 
       ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
       : 'video.mp4';
@@ -98,11 +84,25 @@ const CoursePage = () => {
     link.setAttribute('download', fileName);
     link.setAttribute('target', '_blank');
     
-    // Добавляем в DOM, кликаем и удаляем
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleVideoCompletionToggle = (videoId) => {
+    if (!currentUser || !course) return;
+
+    const currentCompletionStatus = isVideoCompleted(course.id, videoId);
+    updateVideoProgress(course.id, videoId, !currentCompletionStatus);
+  };
+
+  if (loading) {
+    return <div className={styles.loading}>{t('loading')}</div>;
+  }
+
+  if (!course) {
+    return <div className={styles.notFound}>Курс не найден</div>;
+  }
 
   return (
     <div>
@@ -119,12 +119,20 @@ const CoursePage = () => {
           <div>
             {course.videos.map((video, index) => {
               const isActive = currentVideo && currentVideo.id === video.id;
+              const completed = isVideoCompleted(course.id, video.id);
               
               return (
-                <div key={video.id} className={styles.videoItemContainer}>
+                <div 
+                  key={video.id} 
+                  className={styles.videoItemContainer} 
+                  style={{ display: 'flex', alignItems: 'center' }}
+                >
                   <Link 
                     to={`/course/${courseId}?video=${video.id}`}
-                    className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''}`}
+                    className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''} ${
+                      completed ? styles.videoCardCompleted : ''
+                    }`}
+                    style={{ flex: 1 }}
                   >
                     <div className={styles.videoIndex}>{index + 1}</div>
                     
@@ -135,6 +143,15 @@ const CoursePage = () => {
                       </div>
                     </div>
                   </Link>
+
+                  <div className={styles.videoCheckboxContainer}>
+                    <input 
+                      type="checkbox" 
+                      className={styles.videoCheckbox}
+                      checked={completed}
+                      onChange={() => handleVideoCompletionToggle(video.id)}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -146,16 +163,15 @@ const CoursePage = () => {
             <div>
               <div className={styles.videoWrapper}>
                 {currentVideo.localVideo ? (
-                  // Для локальных видео используем HTML5 video тег с полным URL сервера
                   <video
                     src={getFullVideoUrl(currentVideo)}
                     className={styles.videoIframe}
                     controls
                     autoPlay={false}
                     title={currentVideo.title}
+                    onEnded={() => handleVideoCompletionToggle(currentVideo.id)}
                   ></video>
                 ) : currentVideo.videoUrl ? (
-                  // Для YouTube используем iframe
                   <iframe
                     src={currentVideo.videoUrl.replace('watch?v=', 'embed/')}
                     title={currentVideo.title}
@@ -173,7 +189,6 @@ const CoursePage = () => {
               </div>
               <p className={styles.videoDescription}>{currentVideo.description}</p>
               
-              {/* Добавляем кнопку скачивания только для локальных видео */}
               {currentVideo.localVideo && (
                 <button 
                   className={styles.downloadButton}

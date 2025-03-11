@@ -53,7 +53,7 @@ export const markVideoAsCompleted = async (userId, courseId, videoId, completed)
     const response = await api.post(`/api/progress/${courseId}/${videoId}`, { 
       isCompleted: completed 
     });
-    return response.data.status;
+    return response.data.success;
   } catch (error) {
     console.error('Error marking video as completed', error);
     return false;
@@ -64,10 +64,10 @@ export const markVideoAsCompleted = async (userId, courseId, videoId, completed)
 export const getCourseProgress = async (courseId) => {
   try {
     const response = await api.get(`/api/progress/${courseId}`);
-    return response.data.progress;
+    return response.data.progress || {};
   } catch (error) {
     console.error('Error getting course progress', error);
-    return { completedVideos: [], totalVideos: 0 };
+    return {};
   }
 };
 

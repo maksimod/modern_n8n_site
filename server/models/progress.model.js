@@ -2,69 +2,71 @@
 const fs = require('fs');
 const path = require('path');
 
-const PROGRESS_FILE = path.join(__dirname, '../data/db/progress.json');
-
-const ensureProgressFileExists = () => {
-  if (!fs.existsSync(PROGRESS_FILE)) {
-    fs.writeFileSync(PROGRESS_FILE, JSON.stringify({}));
-  }
-};
-
-const getProgress = () => {
-  ensureProgressFileExists();
-  try {
-    const data = fs.readFileSync(PROGRESS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading progress file:', error);
-    return {};
-  }
-};
-
-const saveProgress = (progress) => {
-  try {
-    fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2));
-  } catch (error) {
-    console.error('Error saving progress file:', error);
-  }
-};
+const PROGRESS_FILE = path.join(__dirname, '../data/db/user_progress.json');
 
 const progressModel = {
-  getUserCourseProgress: (userId, courseId) => {
-    const progress = getProgress();
-    return progress[userId]?.[courseId] || {};
-  },
+  saveProgress: (userId, courseId, videoId, isCompleted) => {
+    try {
+      console.log('Saving progress:', { userId, courseId, videoId, isCompleted });
+      
+      let progress = {};
+      
+      // Создаем директорию, если не существует
+      const dir = path.dirname(PROGRESS_FILE);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      // Читаем существующий прогресс
+      if (fs.existsSync(PROGRESS_FILE)) {
+        try {
+          progress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8'));
+        } catch (parseError) {
+          console.error('Error parsing progress file:', parseError);
+          progress = {};
+        }
+      }
 
-  markVideoAsCompleted: (userId, courseId, videoId, isCompleted) => {
-    const progress = getProgress();
-    
-    if (!progress[userId]) {
-      progress[userId] = {};
+      // Создаем структуру, если не существует
+      if (!progress[userId]) {
+        progress[userId] = {};
+      }
+      if (!progress[userId][courseId]) {
+        progress[userId][courseId] = {};
+      }
+
+      // Сохраняем статус видео
+      progress[userId][courseId][videoId] = isCompleted;
+
+      // Записываем обратно в файл
+      fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2));
+      
+      console.log('Progress saved successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in saveProgress:', error);
+      return false;
     }
-    
-    if (!progress[userId][courseId]) {
-      progress[userId][courseId] = {};
+  },
+
+  getProgress: (userId, courseId) => {
+    try {
+      console.log('Getting progress:', { userId, courseId });
+      
+      if (!fs.existsSync(PROGRESS_FILE)) {
+        console.log('Progress file does not exist');
+        return {};
+      }
+
+      const progress = JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8'));
+      const userProgress = progress[userId]?.[courseId] || {};
+      
+      console.log('Retrieved progress:', userProgress);
+      return userProgress;
+    } catch (error) {
+      console.error('Error in getProgress:', error);
+      return {};
     }
-    
-    progress[userId][courseId][videoId] = isCompleted;
-    
-    saveProgress(progress);
-    return true;
-  },
-
-  isVideoCompleted: (userId, courseId, videoId) => {
-    const progress = getProgress();
-    return progress[userId]?.[courseId]?.[videoId] || false;
-  },
-
-  getCourseCompletionStatus: (userId, courseId) => {
-    const progress = getProgress();
-    const courseProgress = progress[userId]?.[courseId] || {};
-    
-    return {
-      completedVideos: Object.keys(courseProgress).filter(videoId => courseProgress[videoId]),
-      totalVideos: Object.keys(courseProgress).length
-    };
   }
 };
 

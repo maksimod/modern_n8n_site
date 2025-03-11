@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const morgan = require('morgan');
+const progressRouter = require('./routes/progress');
 require('dotenv').config();
 
 // Создаем приложение Express
@@ -12,6 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+app.use('/api/progress', progressRouter);
 
 app.use((req, res, next) => {
   if (req.url.endsWith('.mp4')) {
