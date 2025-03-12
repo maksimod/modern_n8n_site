@@ -4,11 +4,18 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/', // Устанавливаем базовый путь как корневой
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: false,
+    minify: true,
+  },
   server: {
-    port: 3000,
-    hmr: true, // Включаем горячую замену модулей
+    port: 4000,
+    hmr: true,
     watch: {
-      usePolling: true, // Использовать опрос для отслеживания изменений файлов
+      usePolling: true,
     }
   }
 })

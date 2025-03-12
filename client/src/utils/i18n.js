@@ -34,7 +34,7 @@ const resources = {
       "courseContents": "Course Content",
       "duration": "Duration",
       "selectVideo": "Select a video from the list",
-      "backToCourses": "← Back to courses",
+      "backToCourses": "Back to courses",
       "previous": "Previous",
       "next": "Next"
     }
@@ -73,7 +73,7 @@ const resources = {
       "courseContents": "Содержание курса",
       "duration": "Продолжительность",
       "selectVideo": "Выберите видео из списка",
-      "backToCourses": "← Назад к курсам",
+      "backToCourses": "Назад к курсам",
       "previous": "Предыдущее",
       "next": "Следующее",
 

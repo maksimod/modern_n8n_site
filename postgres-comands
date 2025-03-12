@@ -1,0 +1,49 @@
+sudo -u postgres psql
+
+sudo -u postgres psql -c "CREATE USER videocourses WITH PASSWORD 'yourpassword';"
+sudo -u postgres psql -c "CREATE DATABASE videocourses WITH ENCODING 'UTF8' TEMPLATE template0;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE videocourses TO videocourses;"
+
+-- Переключаемся на базу данных videocourses
+\c videocourses
+
+-- Создаем таблицу пользователей
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Создаем таблицу курсов
+CREATE TABLE IF NOT EXISTS courses (
+  id VARCHAR(255) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  language VARCHAR(10) NOT NULL DEFAULT 'ru',
+  PRIMARY KEY (id, language)
+);
+
+-- Создаем таблицу видео
+CREATE TABLE IF NOT EXISTS videos (
+  id VARCHAR(255) NOT NULL,
+  course_id VARCHAR(255) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  duration VARCHAR(50),
+  video_url TEXT,
+  is_private BOOLEAN DEFAULT FALSE,
+  order_index INTEGER,
+  language VARCHAR(10) NOT NULL DEFAULT 'ru',
+  PRIMARY KEY (id, language)
+);
+
+-- Назначаем необходимые права пользователю videocourses
+GRANT ALL PRIVILEGES ON TABLE users TO videocourses;
+GRANT ALL PRIVILEGES ON TABLE courses TO videocourses;
+GRANT ALL PRIVILEGES ON TABLE videos TO videocourses;
+GRANT ALL PRIVILEGES ON SEQUENCE users_id_seq TO videocourses;
+
+-- Настраиваем права для будущих объектов
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO videocourses;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO videocourses;
