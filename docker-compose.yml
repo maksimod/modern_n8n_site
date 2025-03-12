@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: video-platform-client
+    restart: unless-stopped
+    ports:
+      - "4000:80"  # Изменено с 80:80 на 4000:80
+    depends_on:
+      - server
+    networks:
+      - app-network-videocourses
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: video-platform-server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    ports:
+      - "4001:5000"  # Изменено с 5000:5000 на 4001:5000
+    volumes:
+      - ./video-data:/app/data/videos # Монтирование директории с видео
+      - ./db-data:/app/data/db # Монтирование директории с базой данных
+    networks:
+      - app-network-videocourses
+
+networks:
+  app-network-videocourses:  # Уникальное имя сети
+    driver: bridge
+
+volumes:
+  video-data:
+    driver: local
+  db-data:
+    driver: local

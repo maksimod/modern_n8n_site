@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+// Получаем базовый URL сервера из переменных окружения или используем значение по умолчанию
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Создаем экземпляр axios с базовым URL сервера
 const api = axios.create({
-  baseURL: 'http://localhost:5000', // URL сервера
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
