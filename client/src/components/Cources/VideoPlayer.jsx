@@ -94,16 +94,17 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       <div className={styles.videoSection}>
         <div className={styles.textLessonContainer}>
           <div className={styles.videoInfo}>
-            <h2 className={styles.videoTitle}>{video.title}</h2>
-            <div className={styles.videoCompletionControls}>
-              <label className={styles.completionCheckbox}>
-                <input 
-                  type="checkbox" 
-                  checked={completed}
-                  onChange={() => handleComplete(!completed)}
-                />
-                {completed ? t('course.completed') : t('course.markCompleted')}
-              </label>
+            <div className={styles.videoHeaderRow}>
+              <h2 className={styles.videoTitle}>{video.title}</h2>
+              {isLocalVideo && (
+                <button 
+                  className={styles.downloadButton}
+                  onClick={handleDownload}
+                  title={t('course.download')}
+                >
+                  {t('course.download')}
+                </button>
+              )}
             </div>
             <div className={styles.textLessonContent}>
               <p className={styles.videoDescription}>{video.description}</p>
@@ -151,27 +152,8 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       
       <div className={styles.videoDetails}>
         <div className={styles.videoInfo}>
-          <h2 className={styles.videoTitle}>{video.title}</h2>
-          <div className={styles.videoCompletionControls}>
-            <label className={styles.completionCheckbox}>
-              <input 
-                type="checkbox" 
-                checked={completed}
-                onChange={() => handleComplete(!completed)}
-              />
-              {completed ? t('course.completed') : t('course.markCompleted')}
-            </label>
-          </div>
-          <p className={styles.videoDescription}>{video.description}</p>
-          <div className={styles.videoDuration}>
-            <span>Duration: {video.duration}</span>
-            {video.isPrivate && (
-              <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
-                {t('Private')}
-              </span>
-            )}
-            
-            {/* Add download button only for local videos */}
+          <div className={styles.videoHeaderRow}>
+            <h2 className={styles.videoTitle}>{video.title}</h2>
             {isLocalVideo && (
               <button 
                 className={styles.downloadButton}
@@ -180,6 +162,15 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               >
                 {t('course.download')}
               </button>
+            )}
+          </div>
+          <p className={styles.videoDescription}>{video.description}</p>
+          <div className={styles.videoDuration}>
+            <span>Duration: {video.duration}</span>
+            {video.isPrivate && (
+              <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
+                {t('Private')}
+              </span>
             )}
           </div>
         </div>

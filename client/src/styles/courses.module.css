@@ -424,3 +424,77 @@
   gap: 1.5rem;
   width: 100%;
 }
+
+/* Добавьте или обновите эти стили в client/src/styles/courses.module.css */
+
+.videoHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.videoTitle {
+  margin: 0;
+  flex-grow: 1;
+}
+
+.videoDescription {
+  color: #666;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  display: block;
+  width: 100%;
+}
+
+.downloadButton {
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.2s ease;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.downloadButton:hover {
+  background-color: #4338ca;
+}
+
+.downloadButton:before {
+  content: "↓";
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+.videoCompletionControls {
+  display: none; /* Скрываем элемент отметки о просмотре */
+}
+
+.textLessonContainer {
+  background-color: #f9fafb;
+  padding: 2rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.textLessonContent {
+  margin-top: 1rem;
+  line-height: 1.6;
+  color: #1f2937;
+  width: 100%;
+}
+
+.videoContentArea {
+  padding: 1rem 0;
+  width: 100%;
+}

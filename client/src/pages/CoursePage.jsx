@@ -1,3 +1,4 @@
+// client/src/pages/CoursePage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -13,23 +14,45 @@ import styles from '../styles/courses.module.css';
 const TextLessonView = ({ video, courseId, completed, onToggleComplete }) => {
   const { t } = useTranslation();
   
+  // Получаем полный URL для видео
+  const fullVideoUrl = video.localVideo 
+    ? `${SERVER_URL}${video.localVideo}`
+    : video.videoUrl;
+  
+  // Функция для скачивания
+  const handleDownload = () => {
+    if (!video.localVideo) return;
+    
+    const link = document.createElement('a');
+    link.href = fullVideoUrl;
+    
+    const fileName = video.title 
+      ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
+      : 'video.mp4';
+    
+    link.setAttribute('download', fileName);
+    link.setAttribute('target', '_blank');
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   return (
     <div className={styles.textLessonContainer}>
-      <div className={styles.videoInfo}>
+      <div className={styles.videoHeaderRow}>
         <h2 className={styles.videoTitle}>{video.title}</h2>
-        <div className={styles.videoCompletionControls}>
-          <label className={styles.completionCheckbox}>
-            <input 
-              type="checkbox" 
-              checked={completed}
-              onChange={onToggleComplete}
-            />
-            {completed ? t('course.completed') : t('course.markCompleted')}
-          </label>
-        </div>
-        <div className={styles.textLessonContent}>
-          <p className={styles.videoDescription}>{video.description}</p>
-        </div>
+        {video.localVideo && (
+          <button 
+            className={styles.downloadButton}
+            onClick={handleDownload}
+          >
+            {t('course.download')}
+          </button>
+        )}
+      </div>
+      <div className={styles.textLessonContent}>
+        <p className={styles.videoDescription}>{video.description}</p>
       </div>
     </div>
   );
@@ -66,29 +89,20 @@ const VideoLessonView = ({ video, courseId, completed, onToggleComplete, onDownl
         )}
       </div>
       
-      <div className={styles.videoInfo}>
-        <h2 className={styles.videoTitle}>{video.title}</h2>
-        <div className={styles.videoCompletionControls}>
-          <label className={styles.completionCheckbox}>
-            <input 
-              type="checkbox" 
-              checked={completed}
-              onChange={onToggleComplete}
-            />
-            {completed ? t('course.completed') : t('course.markCompleted')}
-          </label>
+      <div className={styles.videoContentArea}>
+        <div className={styles.videoHeaderRow}>
+          <h2 className={styles.videoTitle}>{video.title}</h2>
+          {video.localVideo && (
+            <button 
+              className={styles.downloadButton}
+              onClick={onDownload}
+            >
+              {t('course.download')}
+            </button>
+          )}
         </div>
         <p className={styles.videoDescription}>{video.description}</p>
       </div>
-      
-      {video.localVideo && (
-        <button 
-          className={styles.downloadButton}
-          onClick={onDownload}
-        >
-          {t('course.download')}
-        </button>
-      )}
     </div>
   );
 };
