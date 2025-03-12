@@ -1,68 +1,11 @@
-// client/src/components/Admin/VideoEditor.jsx
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadVideoFile } from '../../services/course.service';
 import Header from '../Layout/Header';
 import { VIDEO_TYPES } from '../../config';
-import styles from '../../styles/courses.module.css';
+import styles from '../../styles/admin.module.css';
 import { v4 as uuidv4 } from 'uuid';
-
-// Добавим кастомный компонент для текстовых уроков
-const TextLessonEditor = ({ video, onSave }) => {
-  const [title, setTitle] = useState(video?.title || '');
-  const [description, setDescription] = useState(video?.description || '');
-
-  const handleSave = () => {
-    if (!title.trim()) {
-      alert('Пожалуйста, введите название урока');
-      return;
-    }
-
-    onSave({
-      id: video?.id || uuidv4(),
-      title,
-      description,
-      videoType: VIDEO_TYPES.TEXT,
-      localVideo: '',
-      videoUrl: ''
-    });
-  };
-
-  return (
-    <div className={styles.textLessonEditor}>
-      <div className={styles.adminFormField}>
-        <label className={styles.adminLabel}>Название текстового урока</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className={styles.adminInput}
-          required
-        />
-      </div>
-
-      <div className={styles.adminFormField}>
-        <label className={styles.adminLabel}>Описание урока</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className={styles.adminTextarea}
-          rows={6}
-        />
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-        <button 
-          onClick={handleSave} 
-          className={styles.adminButton}
-        >
-          Сохранить текстовый урок
-        </button>
-      </div>
-    </div>
-  );
-};
 
 const VideoEditor = ({ video, courseId, onClose, language }) => {
   const { t } = useTranslation();
@@ -190,11 +133,11 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       // Если выбран тип TEXT, специальная обработка
       if (formData.videoType === VIDEO_TYPES.TEXT) {
         const finalVideoData = {
-          id: formData.id || uuidv4(),
+          id: formData.id,
           title: formData.title,
           description: formData.description || '',
           videoType: VIDEO_TYPES.TEXT,
-          duration: '00:00',
+          duration: formData.duration || '00:00',
           localVideo: '',
           videoUrl: '',
           isPrivate: formData.isPrivate || false
@@ -261,9 +204,11 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     <div>
       <Header />
       
-      <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h1>{isCreating ? t('admin.addVideo') : t('admin.editVideo')}</h1>
+      <div className={styles.adminForm}>
+        <div className={styles.adminHeader}>
+          <h1 className={styles.adminTitle}>
+            {isCreating ? t('admin.addVideo') : t('admin.editVideo')}
+          </h1>
           
           <button 
             className={styles.adminButtonSecondary}
@@ -274,70 +219,81 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         </div>
         
         {error && (
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: '#ffe0e0', 
-            color: '#d32f2f', 
-            borderRadius: '8px',
-            marginBottom: '20px' 
-          }}>
+          <div className={styles.errorAlert}>
             {error}
           </div>
         )}
         
         <form onSubmit={handleSubmit}>
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.title')}</label>
+          <div className={styles.videoIdField}>
+            <label className={styles.videoIdLabel} htmlFor="id">ID</label>
             <input
               type="text"
+              id="id"
+              name="id"
+              value={formData.id}
+              onChange={handleChange}
+              className={styles.videoIdInput}
+            />
+          </div>
+          
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="title">{t('admin.title')}</label>
+            <input
+              type="text"
+              id="title"
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className={styles.adminInput}
+              className={styles.formInput}
               required
             />
           </div>
           
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.description')}</label>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="description">{t('admin.description')}</label>
             <textarea
+              id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              className={styles.adminTextarea}
+              className={styles.formTextarea}
+              rows={5}
             />
           </div>
           
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.duration')}</label>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="duration">{t('admin.duration')}</label>
             <input
               type="text"
+              id="duration"
               name="duration"
               value={formData.duration}
               onChange={handleChange}
-              className={styles.adminInput}
+              className={styles.formInput}
               placeholder="e.g. 10:30"
             />
           </div>
           
-          <div className={styles.adminFormField} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className={styles.formGroup} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <input
               type="checkbox"
+              id="isPrivate"
               name="isPrivate"
               checked={formData.isPrivate}
               onChange={handleChange}
-              id="isPrivate"
             />
             <label htmlFor="isPrivate">{t('admin.isPrivate')}</label>
           </div>
           
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.videoType')}</label>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="videoType">{t('admin.videoType')}</label>
             <select
+              id="videoType"
               name="videoType"
               value={formData.videoType}
               onChange={handleVideoTypeChange}
-              className={styles.adminSelect}
+              className={styles.formSelect}
             >
               <option value={VIDEO_TYPES.EXTERNAL}>{t('admin.externalUrl')}</option>
               <option value={VIDEO_TYPES.LOCAL}>{t('admin.localFile')}</option>
@@ -346,25 +302,26 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
           </div>
           
           {formData.videoType === VIDEO_TYPES.EXTERNAL && (
-            <div className={styles.adminFormField}>
-              <label className={styles.adminLabel}>YouTube URL</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel} htmlFor="videoUrl">YouTube URL</label>
               <input
                 type="text"
+                id="videoUrl"
                 name="videoUrl"
                 value={formData.videoUrl}
                 onChange={handleChange}
-                className={styles.adminInput}
+                className={styles.formInput}
                 placeholder="https://www.youtube.com/watch?v=..."
               />
             </div>
           )}
           
           {formData.videoType === VIDEO_TYPES.LOCAL && (
-            <div className={styles.adminFormField}>
-              <label className={styles.adminLabel}>{t('admin.uploadVideo')}</label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel} htmlFor="uploadVideo">{t('admin.uploadVideo')}</label>
               
               {formData.localVideo && !formData.uploadedFile && !uploadResponse && (
-                <div style={{ marginBottom: '10px' }}>
+                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: '#e8f4f8', borderRadius: '4px' }}>
                   <p>Current file: {formData.localVideo}</p>
                 </div>
               )}
@@ -376,12 +333,16 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
                 </div>
               )}
               
-              <input
-                type="file"
-                accept="video/mp4,video/webm,video/ogg"
-                onChange={handleFileChange}
-                className={styles.adminInputFile}
-              />
+              <div className={styles.fileUploadContainer}>
+                <input
+                  type="file"
+                  id="uploadVideo"
+                  accept="video/mp4,video/webm,video/ogg"
+                  onChange={handleFileChange}
+                  className={styles.formInput}
+                  style={{ padding: '0.5rem 0' }}
+                />
+              </div>
               
               {formData.uploadedFile && !uploadResponse && (
                 <div style={{ marginTop: '10px' }}>
@@ -391,14 +352,29 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
               
               {loading && uploadProgress > 0 && (
                 <div style={{ marginTop: '10px' }}>
-                  <progress value={uploadProgress} max="100" style={{ width: '100%' }}></progress>
-                  <p>{uploadProgress}% uploaded</p>
+                  <div style={{ 
+                    width: '100%', 
+                    height: '10px', 
+                    backgroundColor: '#e5e7eb',
+                    borderRadius: '5px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{ 
+                      width: `${uploadProgress}%`, 
+                      height: '100%', 
+                      backgroundColor: '#4f46e5',
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                  <p style={{ marginTop: '5px', fontSize: '0.875rem', color: '#4b5563' }}>
+                    {uploadProgress}% uploaded
+                  </p>
                 </div>
               )}
             </div>
           )}
           
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+          <div className={styles.formActions}>
             <button
               type="submit"
               className={styles.adminButton}

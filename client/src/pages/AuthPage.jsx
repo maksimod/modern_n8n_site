@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import styles from '../styles/AuthPage.module.css';
 
 const AuthPage = () => {
   const { t } = useTranslation();
@@ -70,72 +71,38 @@ const AuthPage = () => {
   };
   
   return (
-    <div style={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #4f46e5 0%, #0ea5e9 100%)',
-      padding: '1rem'
-    }}>
-      {/* Кнопки переключения языка */}
-      <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
+    <div className={styles.authPageContainer}>
+      <div className={styles.languageSwitcher}>
         {supportedLanguages.map(lang => (
           <button
             key={lang.code}
             onClick={() => switchLanguage(lang.code)}
-            style={{
-              padding: '8px 16px',
-              marginLeft: '10px',
-              background: language === lang.code ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
-              color: '#fff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            className={`${styles.languageButton} ${language === lang.code ? styles.activeLanguage : ''}`}
           >
             {lang.name}
           </button>
         ))}
       </div>
       
-      <div style={{
-        width: '100%',
-        maxWidth: '400px',
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '2rem 2rem 1rem', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '1.875rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+      <div className={styles.authCard}>
+        <div className={styles.authHeader}>
+          <h1 className={styles.authTitle}>
             {isLoginMode ? t('login') : t('register')}
           </h1>
-          <p style={{ color: '#4b5563' }}>
+          <p className={styles.authSubtitle}>
             {isLoginMode ? t('enterYourData') : t('createAccount')}
           </p>
         </div>
         
-        <form onSubmit={handleSubmit} style={{ padding: '1.5rem 2rem 2rem' }}>
+        <form className={styles.authForm} onSubmit={handleSubmit}>
           {error && (
-            <div style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: '#ef4444',
-              padding: '0.75rem',
-              borderRadius: '8px',
-              marginBottom: '1.5rem',
-              fontSize: '0.875rem'
-            }}>
+            <div className={styles.errorMessage}>
               {error}
             </div>
           )}
           
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label 
-              htmlFor="username" 
-              style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}
-            >
+          <div className={styles.inputGroup}>
+            <label htmlFor="username" className={styles.inputLabel}>
               {t('username')}
             </label>
             <input
@@ -143,22 +110,13 @@ const AuthPage = () => {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                transition: 'border-color 0.2s'
-              }}
+              className={styles.input}
+              disabled={loading}
             />
           </div>
           
-          <div style={{ marginBottom: isLoginMode ? '1.5rem' : '1rem' }}>
-            <label 
-              htmlFor="password" 
-              style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}
-            >
+          <div className={styles.inputGroup}>
+            <label htmlFor="password" className={styles.inputLabel}>
               {t('password')}
             </label>
             <input
@@ -166,23 +124,14 @@ const AuthPage = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                transition: 'border-color 0.2s'
-              }}
+              className={styles.input}
+              disabled={loading}
             />
           </div>
           
           {!isLoginMode && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label 
-                htmlFor="confirmPassword" 
-                style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}
-              >
+            <div className={styles.inputGroup}>
+              <label htmlFor="confirmPassword" className={styles.inputLabel}>
                 {t('confirmPassword')}
               </label>
               <input
@@ -190,55 +139,30 @@ const AuthPage = () => {
                 id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  fontSize: '1rem',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  transition: 'border-color 0.2s'
-                }}
+                className={styles.input}
+                disabled={loading}
               />
             </div>
           )}
           
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                fontSize: '1rem',
-                fontWeight: 500,
-                backgroundColor: '#4f46e5',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                transition: 'background-color 0.2s',
-                opacity: loading ? 0.7 : 1
-              }}
+          <button
+            type="submit"
+            className={styles.submitButton}
+            disabled={loading}
+          >
+            {loading 
+              ? t('loading')
+              : isLoginMode ? t('login') : t('register')}
+          </button>
+          
+          <div className={styles.toggleMode}>
+            {isLoginMode ? t('noAccount') : t('hasAccount')}
+            <span 
+              onClick={toggleMode}
+              className={styles.toggleLink}
             >
-              {loading 
-                ? t('loading')
-                : isLoginMode ? t('login') : t('register')}
-            </button>
-            
-            <div style={{ color: '#4b5563', fontSize: '0.875rem' }}>
-              {isLoginMode ? t('noAccount') : t('hasAccount')}
-              <span 
-                onClick={toggleMode}
-                style={{
-                  color: '#4f46e5',
-                  cursor: 'pointer',
-                  marginLeft: '0.25rem',
-                  fontWeight: 500
-                }}
-              >
-                {isLoginMode ? t('register') : t('login')}
-              </span>
-            </div>
+              {isLoginMode ? t('register') : t('login')}
+            </span>
           </div>
         </form>
       </div>

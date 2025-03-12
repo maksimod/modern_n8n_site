@@ -1,11 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LANGUAGES } from '../config';
 
 const LanguageContext = createContext(null);
 
-export const useLanguage = () => {
-  return useContext(LanguageContext);
-};
+export const useLanguage = () => useContext(LanguageContext);
 
 export const LanguageProvider = ({ children }) => {
   const { i18n } = useTranslation();
@@ -48,10 +47,7 @@ export const LanguageProvider = ({ children }) => {
   const value = {
     language,
     switchLanguage: handleLanguageChange,
-    supportedLanguages: [
-      { code: 'ru', name: 'Русский' },
-      { code: 'en', name: 'English' }
-    ]
+    supportedLanguages: SUPPORTED_LANGUAGES
   };
 
   return (

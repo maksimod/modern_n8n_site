@@ -1,7 +1,6 @@
-// client/src/components/Admin/VideoList.jsx
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import styles from '../../styles/courses.module.css';
+import styles from '../../styles/admin.module.css';
 import { VIDEO_TYPES } from '../../config';
 
 const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
@@ -9,7 +8,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
   
   if (!videos || videos.length === 0) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
+      <div className={styles.noCourses}>
         {t('No videos yet. Add some videos to this course.')}
       </div>
     );
@@ -29,19 +28,19 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
     switch (type) {
       case VIDEO_TYPES.LOCAL:
         return (
-          <span className={styles.videoCardBadge} style={{ backgroundColor: '#0ea5e9' }}>
+          <span className={`${styles.videoBadge} ${styles.videoBadgeLocal}`}>
             {t('admin.localFile')}
           </span>
         );
       case VIDEO_TYPES.EXTERNAL:
         return (
-          <span className={styles.videoCardBadge} style={{ backgroundColor: '#8b5cf6' }}>
+          <span className={`${styles.videoBadge} ${styles.videoBadgeExternal}`}>
             {t('admin.externalUrl')}
           </span>
         );
       case VIDEO_TYPES.TEXT:
         return (
-          <span className={styles.textLessonIndicator}>
+          <span className={`${styles.videoBadge} ${styles.videoBadgeText}`}>
             {t('admin.textLesson')}
           </span>
         );
@@ -51,29 +50,38 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
   };
   
   return (
-    <div className={styles.adminVideoList}>
+    <div className={styles.videoList}>
       {videos.map((video, index) => (
-        <div key={video.id} className={styles.adminVideoItem}>
-          <div className={styles.adminVideoInfo}>
-            <h4>{video.title}</h4>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+        <div key={video.id} className={styles.videoItem}>
+          <div className={styles.videoInfo}>
+            <h4 className={styles.videoTitle}>
+              {index + 1}. {video.title}
+            </h4>
+            <div>
               {getVideoTypeLabel(video)}
-              {video.duration && <span>{video.duration}</span>}
+              {video.duration && (
+                <span style={{ fontSize: '0.875rem', color: '#4b5563', marginLeft: '0.5rem' }}>
+                  {video.duration}
+                </span>
+              )}
               {video.isPrivate && (
-                <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
+                <span className={`${styles.videoBadge}`} style={{ backgroundColor: '#ef4444', color: 'white' }}>
                   {t('Private')}
                 </span>
               )}
+              <span style={{ fontSize: '0.75rem', color: '#6b7280', marginLeft: '0.5rem' }}>
+                ID: {video.id}
+              </span>
             </div>
           </div>
           
-          <div className={styles.adminVideoActions}>
+          <div className={styles.videoActions}>
             <button
               className={styles.adminButtonSecondary}
               onClick={() => onReorder(video.id, 'up')}
               disabled={index === 0}
               title={t('admin.moveUp')}
-              style={{ opacity: index === 0 ? 0.5 : 1 }}
+              style={{ opacity: index === 0 ? 0.5 : 1, padding: '0.375rem 0.75rem' }}
             >
               ↑
             </button>
@@ -83,7 +91,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
               onClick={() => onReorder(video.id, 'down')}
               disabled={index === videos.length - 1}
               title={t('admin.moveDown')}
-              style={{ opacity: index === videos.length - 1 ? 0.5 : 1 }}
+              style={{ opacity: index === videos.length - 1 ? 0.5 : 1, padding: '0.375rem 0.75rem' }}
             >
               ↓
             </button>
@@ -92,6 +100,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
               className={styles.adminButton}
               onClick={() => onEdit(video)}
               title={t('admin.editVideo')}
+              style={{ padding: '0.375rem 0.75rem' }}
             >
               {t('admin.editVideo')}
             </button>
@@ -100,6 +109,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
               className={styles.adminButtonDanger}
               onClick={() => onDelete(video.id)}
               title={t('admin.deleteVideo')}
+              style={{ padding: '0.375rem 0.75rem' }}
             >
               {t('admin.deleteVideo')}
             </button>

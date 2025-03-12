@@ -1,13 +1,13 @@
-// client/src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCourses, deleteCourse } from '../services/course.service';
 import Header from '../components/Layout/Header';
 import CourseEditor from '../components/Admin/CourseEditor';
-import styles from '../styles/courses.module.css';
+import styles from '../styles/admin.module.css';
+import componentStyles from '../styles/components.module.css';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -49,7 +49,7 @@ const AdminDashboard = () => {
   
   // Создание нового курса
   const handleCreateCourse = () => {
-    setCurrentCourse(null); // Reset current course to create new
+    setCurrentCourse(null);
     setShowCourseEditor(true);
   };
   
@@ -88,7 +88,15 @@ const AdminDashboard = () => {
   };
   
   if (loading) {
-    return <div className={styles.loading}>{t('loading')}</div>;
+    return (
+      <>
+        <Header />
+        <div className={componentStyles.loadingContainer}>
+          <div className={componentStyles.loadingSpinner}></div>
+          {t('loading')}
+        </div>
+      </>
+    );
   }
   
   // Показываем редактор курса, если открыт
@@ -104,12 +112,12 @@ const AdminDashboard = () => {
     <div>
       <Header />
       
-      <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h1>{t('admin.dashboard')}</h1>
+      <div className={componentStyles.container}>
+        <div className={componentStyles.pageHeader}>
+          <h1 className={componentStyles.pageTitle}>{t('admin.dashboard')}</h1>
           
           <button 
-            className={styles.adminButton}
+            className={`${componentStyles.button} ${componentStyles.buttonPrimary}`}
             onClick={handleCreateCourse}
           >
             {t('admin.createCourse')}
@@ -117,50 +125,48 @@ const AdminDashboard = () => {
         </div>
         
         {error && (
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: '#ffe0e0', 
-            color: '#d32f2f', 
-            borderRadius: '8px',
-            marginBottom: '20px' 
-          }}>
+          <div className={styles.errorAlert}>
             {error}
           </div>
         )}
         
-        <div className={styles.adminCourseList}>
+        <div className={styles.courseGrid}>
           {courses.length === 0 ? (
-            <p>No courses found.</p>
+            <p className={styles.noCourses}>No courses found.</p>
           ) : (
             courses.map(course => (
-              <div key={course.id} className={styles.adminCourseItem}>
-                <div className={styles.adminCourseHeader}>
-                  <h3 className={styles.adminCourseTitle}>{course.title}</h3>
-                  
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
-                      className={styles.adminButtonSecondary}
-                      onClick={() => navigate(`/course/${course.id}`)}
-                    >
-                      View
-                    </button>
-                    <button 
-                      className={styles.adminButton}
-                      onClick={() => handleEditCourse(course)}
-                    >
-                      {t('admin.editCourse')}
-                    </button>
-                    <button 
-                      className={styles.adminButtonDanger}
-                      onClick={() => handleDeleteCourse(course.id)}
-                    >
-                      {t('admin.deleteCourse')}
-                    </button>
-                  </div>
+              <div key={course.id} className={styles.courseCard}>
+                <div className={styles.courseHeader}>
+                  <h3 className={styles.courseTitle}>{course.title}</h3>
                 </div>
                 
-                <p>{course.description}</p>
-                <p>{course.videos?.length || 0} {t('videos')}</p>
+                <p className={styles.courseDescription}>{course.description}</p>
+                <div className={styles.courseMeta}>
+                  <span className={styles.videoCount}>
+                    {course.videos?.length || 0} {t('videos')}
+                  </span>
+                </div>
+                
+                <div className={styles.courseActions}>
+                  <button 
+                    className={`${componentStyles.button} ${componentStyles.buttonSecondary}`}
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
+                    {t('view')}
+                  </button>
+                  <button 
+                    className={`${componentStyles.button} ${componentStyles.buttonPrimary}`}
+                    onClick={() => handleEditCourse(course)}
+                  >
+                    {t('admin.editCourse')}
+                  </button>
+                  <button 
+                    className={`${componentStyles.button} ${componentStyles.buttonDanger}`}
+                    onClick={() => handleDeleteCourse(course.id)}
+                  >
+                    {t('admin.deleteCourse')}
+                  </button>
+                </div>
               </div>
             ))
           )}

@@ -1,4 +1,3 @@
-// client/src/components/Cources/VideoPlayer.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import ReactPlayer from 'react-player';
 import { useTranslation } from 'react-i18next';
@@ -85,7 +84,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   };
   
   if (!video) {
-    return <div className={styles.videoContainer}>Video not found</div>;
+    return <div className={styles.selectVideo}>{t('selectVideo')}</div>;
   }
 
   // For text lessons - display text-only view without video player
@@ -117,7 +116,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
 
   return (
     <div className={styles.videoSection}>
-      <div className={styles.videoContainer}>
+      <div className={styles.videoWrapper}>
         {isLocalVideo ? (
           <video
             ref={videoRef}
@@ -150,29 +149,27 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         )}
       </div>
       
-      <div className={styles.videoDetails}>
-        <div className={styles.videoInfo}>
-          <div className={styles.videoHeaderRow}>
-            <h2 className={styles.videoTitle}>{video.title}</h2>
-            {isLocalVideo && (
-              <button 
-                className={styles.downloadButton}
-                onClick={handleDownload}
-                title={t('course.download')}
-              >
-                {t('course.download')}
-              </button>
-            )}
-          </div>
-          <p className={styles.videoDescription}>{video.description}</p>
-          <div className={styles.videoDuration}>
-            <span>Duration: {video.duration}</span>
-            {video.isPrivate && (
-              <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
-                {t('Private')}
-              </span>
-            )}
-          </div>
+      <div className={styles.videoContentArea}>
+        <div className={styles.videoHeaderRow}>
+          <h2 className={styles.videoTitle}>{video.title}</h2>
+          {isLocalVideo && (
+            <button 
+              className={styles.downloadButton}
+              onClick={handleDownload}
+              title={t('course.download')}
+            >
+              {t('course.download')}
+            </button>
+          )}
+        </div>
+        <p className={styles.videoDescription}>{video.description}</p>
+        <div className={styles.videoDuration}>
+          {video.duration && <span>{t('duration')}: {video.duration}</span>}
+          {video.isPrivate && (
+            <span className={`${styles.videoCardBadge} ${styles.privateVideo}`}>
+              {t('Private')}
+            </span>
+          )}
         </div>
       </div>
     </div>

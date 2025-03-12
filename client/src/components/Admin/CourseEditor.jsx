@@ -1,14 +1,13 @@
-// client/src/components/Admin/CourseEditor.jsx
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { createCourse, updateCourse, getCourseById } from '../../services/course.service';
+import { createCourse, updateCourse } from '../../services/course.service';
 import Header from '../Layout/Header';
 import VideoEditor from './VideoEditor';
 import VideoList from './VideoList';
 import { SUPPORTED_LANGUAGES } from '../../config';
-import styles from '../../styles/courses.module.css';
-import { v4 as uuidv4 } from 'uuid'; // Need to install this package
+import styles from '../../styles/admin.module.css';
+import { v4 as uuidv4 } from 'uuid';
 
 const CourseEditor = ({ course, onClose, language }) => {
   const { t } = useTranslation();
@@ -168,9 +167,11 @@ const CourseEditor = ({ course, onClose, language }) => {
     <div>
       <Header />
       
-      <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-          <h1>{isCreating ? t('admin.createCourse') : t('admin.editCourse')}</h1>
+      <div className={styles.adminForm}>
+        <div className={styles.adminHeader}>
+          <h1 className={styles.adminTitle}>
+            {isCreating ? t('admin.createCourse') : t('admin.editCourse')}
+          </h1>
           
           <button 
             className={styles.adminButtonSecondary}
@@ -181,47 +182,58 @@ const CourseEditor = ({ course, onClose, language }) => {
         </div>
         
         {error && (
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: '#ffe0e0', 
-            color: '#d32f2f', 
-            borderRadius: '8px',
-            marginBottom: '20px' 
-          }}>
+          <div className={styles.errorAlert}>
             {error}
           </div>
         )}
         
         <form onSubmit={handleSubmit}>
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.title')}</label>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="id">{t('ID')}</label>
             <input
               type="text"
-              name="title"
-              value={formData.title}
+              id="id"
+              name="id"
+              value={formData.id}
               onChange={handleChange}
-              className={styles.adminInput}
+              className={styles.formInput}
               required
             />
           </div>
           
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.description')}</label>
-            <textarea
-              name="description"
-              value={formData.description}
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="title">{t('admin.title')}</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
-              className={styles.adminTextarea}
+              className={styles.formInput}
+              required
             />
           </div>
           
-          <div className={styles.adminFormField}>
-            <label className={styles.adminLabel}>{t('admin.language')}</label>
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="description">{t('admin.description')}</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              className={styles.formTextarea}
+              rows={5}
+            />
+          </div>
+          
+          <div className={styles.formGroup}>
+            <label className={styles.formLabel} htmlFor="language">{t('admin.language')}</label>
             <select
+              id="language"
               name="language"
               value={formData.language}
               onChange={handleChange}
-              className={styles.adminSelect}
+              className={styles.formSelect}
             >
               {SUPPORTED_LANGUAGES.map(lang => (
                 <option key={lang.code} value={lang.code}>
@@ -231,9 +243,9 @@ const CourseEditor = ({ course, onClose, language }) => {
             </select>
           </div>
           
-          <div style={{ marginTop: '30px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h2>{t('courseContents')}</h2>
+          <div className={styles.videoListSection}>
+            <div className={styles.videoListHeader}>
+              <h2 className={styles.videoListTitle}>{t('courseContents')}</h2>
               
               <button 
                 type="button"
@@ -252,7 +264,7 @@ const CourseEditor = ({ course, onClose, language }) => {
             />
           </div>
           
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+          <div className={styles.formActions}>
             <button
               type="submit"
               className={styles.adminButton}

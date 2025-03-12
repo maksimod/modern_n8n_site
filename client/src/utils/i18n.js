@@ -10,11 +10,20 @@ const resources = {
       "loading": "Loading...",
       "videos": "videos",
       "logout": "Logout",
+      "view": "View",
       "course.markCompleted": "Mark as completed",
       "course.completed": "Completed",
+      "course.download": "Download",
       "course.courses": "Courses",
       "course.continueCourse": "Continue course",
       "course.startCourse": "Start course",
+      "duration": "Duration",
+      "selectVideo": "Select a video from the list",
+      "backToCourses": "Back to courses",
+      "previous": "Previous",
+      "next": "Next",
+      "private": "Private",
+      
       // Авторизация
       "login": "Login",
       "register": "Register",
@@ -30,13 +39,32 @@ const resources = {
       "userExists": "User with this username already exists",
       "wrongCredentials": "Invalid username or password",
       
-      // Курсы
-      "courseContents": "Course Content",
-      "duration": "Duration",
-      "selectVideo": "Select a video from the list",
-      "backToCourses": "Back to courses",
-      "previous": "Previous",
-      "next": "Next"
+      // Администрирование
+      "admin.dashboard": "Admin Dashboard",
+      "admin.courses": "Manage Courses",
+      "admin.createCourse": "Create New Course",
+      "admin.editCourse": "Edit Course",
+      "admin.deleteCourse": "Delete Course",
+      "admin.addVideo": "Add Video",
+      "admin.editVideo": "Edit Video",
+      "admin.deleteVideo": "Delete Video",
+      "admin.title": "Title",
+      "admin.description": "Description",
+      "admin.language": "Language",
+      "admin.duration": "Duration",
+      "admin.isPrivate": "Private",
+      "admin.videoType": "Video Type",
+      "admin.externalUrl": "External URL",
+      "admin.localFile": "Local File",
+      "admin.textLesson": "Text Only",
+      "admin.save": "Save",
+      "admin.cancel": "Cancel",
+      "admin.confirm": "Confirm",
+      "admin.moveUp": "Move Up",
+      "admin.moveDown": "Move Down",
+      "admin.uploadVideo": "Upload Video",
+      "admin.confirmDeleteCourse": "Are you sure you want to delete this course?",
+      "admin.confirmDeleteVideo": "Are you sure you want to delete this video?"
     }
   },
   ru: {
@@ -46,14 +74,20 @@ const resources = {
       "loading": "Загрузка...",
       "videos": "видео",
       "logout": "Выход",
+      "view": "Просмотр",
       "course.markCompleted": "Отметить как просмотренное",
       "course.completed": "Просмотрено",
+      "course.download": "Скачать",
       "course.courses": "Курсы",
       "course.continueCourse": "Продолжить курс",
       "course.startCourse": "Начать курс",
-      "course.download": "Скачать",
-      "Private": "Приватный",
+      "duration": "Длительность",
       "selectVideo": "Выберите видео из списка",
+      "backToCourses": "Назад к курсам",
+      "previous": "Предыдущее",
+      "next": "Следующее",
+      "private": "Приватный",
+      
       // Авторизация
       "login": "Вход",
       "register": "Регистрация",
@@ -69,15 +103,7 @@ const resources = {
       "userExists": "Пользователь с таким именем уже существует",
       "wrongCredentials": "Неверное имя пользователя или пароль",
       
-      // Курсы
-      "courseContents": "Содержание курса",
-      "duration": "Продолжительность",
-      "selectVideo": "Выберите видео из списка",
-      "backToCourses": "Назад к курсам",
-      "previous": "Предыдущее",
-      "next": "Следующее",
-
-      // Admin
+      // Администрирование
       "admin.dashboard": "Панель администратора",
       "admin.courses": "Управление курсами",
       "admin.createCourse": "Создать новый курс",
@@ -101,9 +127,8 @@ const resources = {
       "admin.moveUp": "Переместить вверх",
       "admin.moveDown": "Переместить вниз",
       "admin.uploadVideo": "Загрузить видео",
-      "admin.confirmDelete": "Вы уверены, что хотите удалить?",
       "admin.confirmDeleteCourse": "Вы уверены, что хотите удалить этот курс?",
-      "admin.confirmDeleteVideo": "Вы уверены, что хотите удалить это видео?",
+      "admin.confirmDeleteVideo": "Вы уверены, что хотите удалить это видео?"
     }
   }
 };
@@ -112,7 +137,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: localStorage.getItem('language') || 'ru', // Язык по умолчанию
+    lng: localStorage.getItem('language') || 'ru',
     fallbackLng: 'ru',
     interpolation: {
       escapeValue: false

@@ -12,6 +12,7 @@ export default defineConfig({
     minify: true,
   },
   server: {
+    host: '0.0.0.0', // Важно для доступа с других устройств
     port: 4000,
     hmr: true,
     watch: {

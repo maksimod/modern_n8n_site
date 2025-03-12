@@ -10,7 +10,14 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: '*', // Разрешаем запросы с любого источника
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use('/api/progress', progressRouter);
@@ -139,7 +146,7 @@ app.use((err, req, res, next) => {
 
 // Запуск сервера
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Сервер запущен на порту ${PORT}`);
   console.log(`Окружение: ${process.env.NODE_ENV}`);
 });

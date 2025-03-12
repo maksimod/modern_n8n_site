@@ -1,16 +1,19 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import styles from '../styles/components.module.css';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
   
   if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center' }}>Загрузка...</div>;
+    return <div className={styles.loadingContainer}>Загрузка...</div>;
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/auth" />;
+    // Сохраняем текущий URL для перенаправления после входа
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} />;
   }
   
   return children;
