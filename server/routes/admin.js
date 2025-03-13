@@ -290,6 +290,7 @@ router.post('/courses/:courseId/videos', [auth, isAdmin], async (req, res) => {
 });
 
 // Update a video
+// Маршрут для обновления видео - замените полностью
 router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
@@ -319,47 +320,37 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
     
     // Получаем текущее видео
     const currentVideo = courses[courseIndex].videos[videoIndex];
-    if (currentVideo.localVideo && 
-      (videoData.videoType !== VIDEO_TYPES.LOCAL || !videoData.localVideo)) {
     
-    // Удаляем файл с сервера
-    const videoPath = path.join(__dirname, '../data/videos', currentVideo.localVideo);
-    console.log(`Attempting to delete file: ${videoPath}`);
-    
-    if (fs.existsSync(videoPath)) {
-      try {
-        fs.unlinkSync(videoPath);
-        console.log(`Successfully deleted file: ${videoPath}`);
-      } catch (fileError) {
-        console.error(`Error deleting file: ${fileError}`);
-      }
-    } else {
-      console.log(`File not found: ${videoPath}`);
-    }
-  }
-    // ВАЖНОЕ ИЗМЕНЕНИЕ: Проверяем, был ли локальный файл и изменился ли тип
-    if (currentVideo.localVideo && 
-        (!videoData.localVideo || 
-         currentVideo.localVideo !== videoData.localVideo ||
-         (videoData.videoType && videoData.videoType !== VIDEO_TYPES.LOCAL))) {
+    // Проверяем, нужно ли удалить видеофайл
+    if (currentVideo.localVideo) {
+      const shouldDeleteFile = 
+        !videoData.localVideo || // Файла больше нет
+        currentVideo.localVideo !== videoData.localVideo || // Имя файла изменилось
+        videoData.videoType !== VIDEO_TYPES.LOCAL; // Тип изменился с локального
       
-      // Удаляем старый файл если:
-      // 1. Файл был, а теперь его нет
-      // 2. Имя файла изменилось
-      // 3. Тип изменился с локального на другой
-      const videoPath = path.join(__dirname, '../data/videos', currentVideo.localVideo);
-      if (fs.existsSync(videoPath)) {
-        try {
-          console.log(`Deleting old video file: ${videoPath}`);
-          fs.unlinkSync(videoPath);
-          console.log(`Successfully deleted old video file: ${videoPath}`);
-        } catch (fileError) {
-          console.error(`Error deleting old video file: ${fileError}`);
-          // Продолжаем выполнение даже при ошибке удаления
+      if (shouldDeleteFile) {
+        // Очищаем путь от возможных префиксов
+        const cleanVideoPath = currentVideo.localVideo.replace(/^\/videos\//, '');
+        const videoPath = path.join(__dirname, '../data/videos', cleanVideoPath);
+        
+        console.log(`Attempting to delete old video file: ${videoPath}`);
+        
+        if (fs.existsSync(videoPath)) {
+          try {
+            fs.unlinkSync(videoPath);
+            console.log(`Successfully deleted old video file: ${videoPath}`);
+          } catch (fileError) {
+            console.error(`Error deleting old video file: ${fileError}`);
+          }
+        } else {
+          console.log(`Old video file not found: ${videoPath}`);
         }
-      } else {
-        console.log(`Old video file not found: ${videoPath}`);
       }
+    }
+    
+    // Очищаем путь к новому файлу, если он есть
+    if (videoData.localVideo && videoData.localVideo.startsWith('/videos/')) {
+      videoData.localVideo = videoData.localVideo.replace(/^\/videos\//, '');
     }
     
     // Обновляем видео
@@ -380,55 +371,91 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
 });
 
 // Delete a video
-router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, res) => {
+// Маршрут для удаления курса - замените полностью
+router.delete('/courses/:courseId', [auth, isAdmin], async (req, res) => {
   try {
-    const { courseId, videoId } = req.params;
+    const { courseId } = req.params;
     const language = req.query.language || 'ru';
     
     // Получаем существующие курсы
     const courses = getCourses();
     
-    // Ищем курс
-    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    // Находим курс перед удалением для обработки его видео
+    const courseToDelete = courses.find(c => c.id === courseId && c.language === language);
     
-    if (courseIndex === -1) {
+    if (!courseToDelete) {
       return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Ищем видео
-    if (!courses[courseIndex].videos) {
-      return res.status(404).json({ message: 'Video not found' });
-    }
-    
-    const videoIndex = courses[courseIndex].videos.findIndex(v => v.id === videoId);
-    
-    if (videoIndex === -1) {
-      return res.status(404).json({ message: 'Video not found' });
-    }
-    
-    // Проверяем, есть ли локальное видео для удаления
-    const video = courses[courseIndex].videos[videoIndex];
-    if (video.localVideo) {
-      const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
-      if (fs.existsSync(videoPath)) {
-        try {
-          fs.unlinkSync(videoPath);
-          console.log(`Deleted video file: ${videoPath}`);
-        } catch (fileError) {
-          console.error(`Error deleting video file: ${fileError}`);
+    // Удаляем все локальные видеофайлы, связанные с курсом
+    if (courseToDelete.videos && courseToDelete.videos.length > 0) {
+      courseToDelete.videos.forEach(video => {
+        if (video.localVideo) {
+          // Очищаем путь от возможных префиксов
+          const cleanVideoPath = video.localVideo.replace(/^\/videos\//, '');
+          const videoPath = path.join(__dirname, '../data/videos', cleanVideoPath);
+          
+          console.log(`Attempting to delete course video file: ${videoPath}`);
+          
+          if (fs.existsSync(videoPath)) {
+            try {
+              fs.unlinkSync(videoPath);
+              console.log(`Successfully deleted course video file: ${videoPath}`);
+            } catch (fileError) {
+              console.error(`Error deleting course video file: ${fileError}`);
+            }
+          } else {
+            console.log(`Course video file not found: ${videoPath}`);
+          }
         }
-      }
+      });
     }
     
-    // Фильтруем видео, исключая удаляемое
-    courses[courseIndex].videos = courses[courseIndex].videos.filter(v => v.id !== videoId);
+    // Фильтруем курсы, исключая удаляемый
+    const filteredCourses = courses.filter(c => !(c.id === courseId && c.language === language));
     
-    // Сохраняем курсы
-    saveCourses(courses);
+    if (filteredCourses.length === courses.length) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
     
-    res.json({ message: 'Video deleted successfully' });
+    // Сохраняем обновленный список курсов
+    saveCourses(filteredCourses);
+    
+    res.json({ message: 'Course deleted successfully' });
   } catch (err) {
-    console.error(`Error deleting video ${req.params.videoId}:`, err);
+    console.error(`Error deleting course ${req.params.courseId}:`, err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Добавьте этот маршрут для удаления файлов - должен быть полностью новым
+router.delete('/files/:fileName', [auth, isAdmin], async (req, res) => {
+  try {
+    const { fileName } = req.params;
+    
+    // Проверяем валидность имени файла (защита от path traversal)
+    if (!fileName || fileName.includes('..') || fileName.includes('/')) {
+      return res.status(400).json({ message: 'Invalid file name' });
+    }
+    
+    const filePath = path.join(__dirname, '../data/videos', fileName);
+    console.log(`Attempting to delete file: ${filePath}`);
+    
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`Successfully deleted file: ${filePath}`);
+        res.json({ success: true, message: 'File deleted successfully' });
+      } catch (fileError) {
+        console.error(`Error deleting file: ${fileError}`);
+        res.status(500).json({ message: 'Error deleting file', error: fileError.message });
+      }
+    } else {
+      console.log(`File not found: ${filePath}`);
+      res.status(404).json({ message: 'File not found' });
+    }
+  } catch (err) {
+    console.error('Error in file delete route:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

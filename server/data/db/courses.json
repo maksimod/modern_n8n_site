@@ -340,24 +340,6 @@
     ]
   },
   {
-    "id": "cb5a4139-e224-4cea-b4b4-b41db65d5ca2",
-    "title": "рускохрень",
-    "description": "",
-    "language": "ru",
-    "videos": [
-      {
-        "id": "f6f36686-1932-43ce-b546-f9cbb611dfc9",
-        "title": "руссковид",
-        "description": "рускотекст",
-        "videoType": "text",
-        "duration": "00:00",
-        "localVideo": "",
-        "videoUrl": "",
-        "isPrivate": false
-      }
-    ]
-  },
-  {
     "id": "64d4d9a3-d833-4325-be83-8e9947b48a48",
     "title": "engbitch",
     "description": "",
