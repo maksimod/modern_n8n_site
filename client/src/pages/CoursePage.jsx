@@ -146,45 +146,52 @@ const CoursePage = () => {
           <h2 className={styles.courseTitle}>{course.title}</h2>
           
           <div className={styles.videosList}>
-            {course.videos.map((video, index) => {
-              const isActive = currentVideo && currentVideo.id === video.id;
-              const completed = isVideoCompleted(course.id, video.id);
-              
-              return (
-                <div 
-                  key={video.id} 
-                  className={styles.videoItemContainer} 
+          {course.videos.map((video, index) => {
+            const isActive = currentVideo && currentVideo.id === video.id;
+            const completed = isVideoCompleted(course.id, video.id);
+            
+            // Форматируем длительность для корректного отображения
+            const formattedDuration = video.duration ? video.duration.trim() : '00:00';
+            
+            return (
+              <div 
+                key={video.id} 
+                className={styles.videoItemContainer} 
+              >
+                <Link 
+                  to={`/course/${courseId}?video=${video.id}`}
+                  className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''} ${
+                    completed ? styles.videoCardCompleted : ''
+                  }`}
+                  onClick={() => setShowSidebar(false)}
                 >
-                  <Link 
-                    to={`/course/${courseId}?video=${video.id}`}
-                    className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''} ${
-                      completed ? styles.videoCardCompleted : ''
-                    }`}
-                    onClick={() => setShowSidebar(false)}
-                  >
-                    <div className={styles.videoIndex}>{index + 1}</div>
-                    
-                    <div className={styles.videoDetails}>
-                      <div className={styles.videoTitleRow}>
-                        <h4 className={styles.videoTitle} title={video.title}>{video.title}</h4>
-                        {video.duration && (
-                          <span className={styles.videoDuration}>{video.duration}</span>
-                        )}
-                      </div>
+                  <div className={styles.videoIndex}>{index + 1}</div>
+                  
+                  <div className={styles.videoDetails}>
+                    <div className={styles.videoTitleRow}>
+                      <h4 className={styles.videoTitle} title={video.title}>
+                        {video.title}
+                      </h4>
+                      {formattedDuration && (
+                        <span className={styles.videoDuration}>
+                          {formattedDuration}
+                        </span>
+                      )}
                     </div>
-                  </Link>
-
-                  <div className={styles.videoCheckboxContainer}>
-                    <input 
-                      type="checkbox" 
-                      className={styles.videoCheckbox}
-                      checked={completed}
-                      onChange={() => handleVideoCompletionToggle(video.id)}
-                    />
                   </div>
+                </Link>
+
+                <div className={styles.videoCheckboxContainer}>
+                  <input 
+                    type="checkbox" 
+                    className={styles.videoCheckbox}
+                    checked={completed}
+                    onChange={() => handleVideoCompletionToggle(video.id)}
+                  />
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
           </div>
         </div>
         
