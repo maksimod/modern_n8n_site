@@ -296,11 +296,6 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
     const videoData = req.body;
     const language = req.query.language || videoData.language || 'ru';
     
-    // Проверяем наличие обязательных полей
-    if (!videoData.title) {
-      return res.status(400).json({ message: 'Missing required fields' });
-    }
-    
     // Получаем существующие курсы
     const courses = getCourses();
     
@@ -320,6 +315,51 @@ router.put('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, re
     
     if (videoIndex === -1) {
       return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Получаем текущее видео
+    const currentVideo = courses[courseIndex].videos[videoIndex];
+    if (currentVideo.localVideo && 
+      (videoData.videoType !== VIDEO_TYPES.LOCAL || !videoData.localVideo)) {
+    
+    // Удаляем файл с сервера
+    const videoPath = path.join(__dirname, '../data/videos', currentVideo.localVideo);
+    console.log(`Attempting to delete file: ${videoPath}`);
+    
+    if (fs.existsSync(videoPath)) {
+      try {
+        fs.unlinkSync(videoPath);
+        console.log(`Successfully deleted file: ${videoPath}`);
+      } catch (fileError) {
+        console.error(`Error deleting file: ${fileError}`);
+      }
+    } else {
+      console.log(`File not found: ${videoPath}`);
+    }
+  }
+    // ВАЖНОЕ ИЗМЕНЕНИЕ: Проверяем, был ли локальный файл и изменился ли тип
+    if (currentVideo.localVideo && 
+        (!videoData.localVideo || 
+         currentVideo.localVideo !== videoData.localVideo ||
+         (videoData.videoType && videoData.videoType !== VIDEO_TYPES.LOCAL))) {
+      
+      // Удаляем старый файл если:
+      // 1. Файл был, а теперь его нет
+      // 2. Имя файла изменилось
+      // 3. Тип изменился с локального на другой
+      const videoPath = path.join(__dirname, '../data/videos', currentVideo.localVideo);
+      if (fs.existsSync(videoPath)) {
+        try {
+          console.log(`Deleting old video file: ${videoPath}`);
+          fs.unlinkSync(videoPath);
+          console.log(`Successfully deleted old video file: ${videoPath}`);
+        } catch (fileError) {
+          console.error(`Error deleting old video file: ${fileError}`);
+          // Продолжаем выполнение даже при ошибке удаления
+        }
+      } else {
+        console.log(`Old video file not found: ${videoPath}`);
+      }
     }
     
     // Обновляем видео
@@ -360,15 +400,28 @@ router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req,
       return res.status(404).json({ message: 'Video not found' });
     }
     
-    // Фильтруем видео, исключая удаляемое
-    const filteredVideos = courses[courseIndex].videos.filter(v => v.id !== videoId);
+    const videoIndex = courses[courseIndex].videos.findIndex(v => v.id === videoId);
     
-    if (filteredVideos.length === courses[courseIndex].videos.length) {
+    if (videoIndex === -1) {
       return res.status(404).json({ message: 'Video not found' });
     }
     
-    // Обновляем список видео
-    courses[courseIndex].videos = filteredVideos;
+    // Проверяем, есть ли локальное видео для удаления
+    const video = courses[courseIndex].videos[videoIndex];
+    if (video.localVideo) {
+      const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
+      if (fs.existsSync(videoPath)) {
+        try {
+          fs.unlinkSync(videoPath);
+          console.log(`Deleted video file: ${videoPath}`);
+        } catch (fileError) {
+          console.error(`Error deleting video file: ${fileError}`);
+        }
+      }
+    }
+    
+    // Фильтруем видео, исключая удаляемое
+    courses[courseIndex].videos = courses[courseIndex].videos.filter(v => v.id !== videoId);
     
     // Сохраняем курсы
     saveCourses(courses);
@@ -443,4 +496,131 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
   }
 });
 
+
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+// API для получения информации о диске
+// API для получения информации о диске
+router.get('/disk-usage', [auth, isAdmin], async (req, res) => {
+  try {
+    // Путь к директории с видео
+    const videosPath = path.join(__dirname, '../data/videos');
+    
+    // Если директория не существует, создаем её
+    if (!fs.existsSync(videosPath)) {
+      fs.mkdirSync(videosPath, { recursive: true });
+    }
+    
+    // Получаем информацию о диске с помощью команды df
+    let diskInfo;
+    try {
+      // Для Windows используем команду wmic
+      if (process.platform === 'win32') {
+        const drive = videosPath.split(path.sep)[0] || 'C:';
+        const { stdout } = await execPromise(`wmic logicaldisk where "DeviceID='${drive}'" get Size,FreeSpace /format:value`);
+        
+        const sizeMatch = stdout.match(/Size=(\d+)/);
+        const freeMatch = stdout.match(/FreeSpace=(\d+)/);
+        
+        if (sizeMatch && freeMatch) {
+          const total = parseInt(sizeMatch[1]);
+          const free = parseInt(freeMatch[1]);
+          
+          diskInfo = {
+            total,
+            free,
+            used: total - free
+          };
+        }
+      } else {
+        // Для Unix-подобных систем используем df
+        const { stdout } = await execPromise(`df -B1 "${videosPath}"`);
+        const lines = stdout.trim().split('\n');
+        const parts = lines[1].split(/\s+/);
+        
+        diskInfo = {
+          total: parseInt(parts[1]),
+          used: parseInt(parts[2]),
+          free: parseInt(parts[3])
+        };
+      }
+    } catch (cmdError) {
+      console.error('Error executing disk command:', cmdError);
+      
+      // Запасной вариант - установить значения по умолчанию
+      diskInfo = {
+        total: 100 * 1024 * 1024 * 1024, // 100GB
+        free: 50 * 1024 * 1024 * 1024,  // 50GB
+        used: 50 * 1024 * 1024 * 1024   // 50GB
+      };
+    }
+    
+    // Вычисляем размер директории с видео
+    const videoFiles = fs.readdirSync(videosPath);
+    let videoSize = 0;
+    
+    for (const file of videoFiles) {
+      const filePath = path.join(videosPath, file);
+      try {
+        const stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+          videoSize += stats.size;
+        }
+      } catch (err) {
+        console.error(`Error getting stats for file ${file}:`, err);
+      }
+    }
+    
+    // Формируем ответ с полной информацией
+    res.json({
+      total: diskInfo.total,
+      free: diskInfo.free,
+      used: diskInfo.used,
+      videos: {
+        count: videoFiles.length,
+        size: videoSize
+      }
+    });
+  } catch (err) {
+    console.error('Error getting disk usage:', err);
+    res.status(500).json({ 
+      message: 'Server error: ' + err.message,
+      error: true
+    });
+  }
+});
+
+
+// Маршрут для удаления файла
+router.delete('/files/:fileName', [auth, isAdmin], async (req, res) => {
+  try {
+    const { fileName } = req.params;
+    
+    // Проверяем валидность имени файла (защита от path traversal)
+    if (!fileName || fileName.includes('..') || fileName.includes('/')) {
+      return res.status(400).json({ message: 'Invalid file name' });
+    }
+    
+    const filePath = path.join(__dirname, '../data/videos', fileName);
+    console.log(`Attempting to delete file: ${filePath}`);
+    
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`Successfully deleted file: ${filePath}`);
+        res.json({ success: true, message: 'File deleted successfully' });
+      } catch (fileError) {
+        console.error(`Error deleting file: ${fileError}`);
+        res.status(500).json({ message: 'Error deleting file', error: fileError.message });
+      }
+    } else {
+      console.log(`File not found: ${filePath}`);
+      res.status(404).json({ message: 'File not found' });
+    }
+  } catch (err) {
+    console.error('Error in file delete route:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 module.exports = router;

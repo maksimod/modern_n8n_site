@@ -9,39 +9,37 @@
         "id": "n8n-interface",
         "title": "Интерфейс",
         "description": "Интерфейс",
-        "videoType": "text",
         "duration": "00:00",
-        "localVideo": "",
-        "videoUrl": "",
-        "isPrivate": false
+        "videoType": "text",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-triggers",
         "title": "Триггеры",
         "description": "Использование триггеров в n8n",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=a10j_jTTR6s",
+        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "videoType": "text",
         "localVideo": ""
       },
       {
         "id": "n8n-action-in-app",
         "title": "Узлы «Action in app»",
-        "description": "Работа с Action in app",
-        "duration": "12:30",
-        "localVideo": "58c0103b-e768-4faa-97ea-c7459e190a8c.mp4",
-        "isPrivate": false,
-        "videoType": "text"
+        "description": "",
+        "duration": "",
+        "localVideo": "7f55ff30-af17-4503-802c-12db15f00056.mp4",
+        "videoType": "local",
+        "isPrivate": false
       },
       {
         "id": "n8n-credentials",
         "title": "Credentials",
         "description": "Настройка учетных данных",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -49,9 +47,8 @@
         "title": "Узлы «Data transformation»",
         "description": "Преобразование данных",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -59,9 +56,8 @@
         "title": "Узлы «Flow»",
         "description": "Управление потоком данных",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -69,9 +65,8 @@
         "title": "Узлы \"Core\"",
         "description": "Базовые узлы Core",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -79,9 +74,8 @@
         "title": "JSON",
         "description": "Работа с JSON форматом",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -89,9 +83,8 @@
         "title": "Работа с данными",
         "description": "Продвинутые методы работы с данными",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -99,9 +92,8 @@
         "title": "Postgres",
         "description": "Интеграция с PostgreSQL",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -109,9 +101,8 @@
         "title": "Google cloud console",
         "description": "Подключение к Google Cloud",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -119,9 +110,8 @@
         "title": "Google sheets",
         "description": "Работа с Google Sheets",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -129,9 +119,8 @@
         "title": "Google drive",
         "description": "Интеграция с Google Drive",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -139,9 +128,8 @@
         "title": "Практика: простой workflow",
         "description": "Создание простого рабочего процесса",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -149,9 +137,8 @@
         "title": "Практика: Telegram Trigger",
         "description": "Настройка Telegram триггера",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -159,9 +146,8 @@
         "title": "Практика: телеграм бот",
         "description": "Создание телеграм бота",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       },
       {
@@ -169,9 +155,8 @@
         "title": "Практика: сложный workflow",
         "description": "Создание продвинутого рабочего процесса",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-        "isPrivate": false,
         "videoType": "text",
+        "isPrivate": false,
         "localVideo": ""
       }
     ]

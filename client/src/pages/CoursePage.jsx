@@ -1,3 +1,4 @@
+import VideoPlayer from '../components/Courses/VideoPlayer';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -289,7 +290,10 @@ return (
   <div>
     <Header />
     
-    <button className={styles.mobileMenuButton} onClick={toggleSidebar}>
+    <button 
+      className={styles.mobileMenuButton} 
+      onClick={toggleSidebar}
+    >
       {showSidebar ? "Скрыть содержание" : "Показать содержание"}
     </button>
     
@@ -301,7 +305,7 @@ return (
         
         <h2 className={styles.courseTitle}>{course.title}</h2>
         
-        <div>
+        <div className={styles.videosList}>
           {course.videos.map((video, index) => {
             const isActive = currentVideo && currentVideo.id === video.id;
             const completed = isVideoCompleted(course.id, video.id);
@@ -322,7 +326,7 @@ return (
                   
                   <div className={styles.videoDetails}>
                     <div className={styles.videoTitleRow}>
-                      <h4 className={styles.videoTitle}>{video.title}</h4>
+                      <h4 className={styles.videoTitle} title={video.title}>{video.title}</h4>
                       {video.duration && (
                         <span className={styles.videoDuration}>{video.duration}</span>
                       )}
@@ -346,25 +350,11 @@ return (
       
       <div className={styles.videoContent}>
         {currentVideo ? (
-          <>
-            {/* Conditional rendering based on lesson type */}
-            {isTextLesson ? (
-              <TextLessonView 
-                video={currentVideo}
-                courseId={course.id}
-                completed={isVideoCompleted(course.id, currentVideo.id)}
-                onToggleComplete={() => handleVideoCompletionToggle(currentVideo.id)}
-              />
-            ) : (
-              <VideoLessonView 
-                video={currentVideo}
-                courseId={course.id}
-                completed={isVideoCompleted(course.id, currentVideo.id)}
-                onToggleComplete={() => handleVideoCompletionToggle(currentVideo.id)}
-                onDownload={handleDownload}
-              />
-            )}
-          </>
+          <VideoPlayer 
+            course={course} 
+            video={currentVideo} 
+            onVideoComplete={handleVideoCompletionToggle}
+          />
         ) : (
           <div className={styles.selectVideo}>{t('selectVideo')}</div>
         )}

@@ -195,6 +195,22 @@ export const uploadVideoFile = async (file, onProgress) => {
   }
 };
 
+// Удаление видеофайла
+export const deleteVideoFile = async (fileName) => {
+  try {
+    if (!fileName) return null;
+    
+    // Удаляем префикс /videos/ если он есть
+    const cleanFileName = fileName.replace(/^\/videos\//, '');
+    
+    const response = await api.delete(`/api/admin/files/${cleanFileName}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting video file:', error);
+    throw error;
+  }
+};
+
 // Update video positions (reordering)
 export const updateVideoPositions = async (courseId, videoPositions) => {
   try {

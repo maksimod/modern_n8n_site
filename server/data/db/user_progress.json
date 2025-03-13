@@ -1,11 +1,12 @@
 {
   "2": {
     "n8n-basics": {
-      "n8n-action-in-app": true,
+      "n8n-action-in-app": false,
       "n8n-data-transformation": false,
       "n8n-interface": true,
       "n8n-triggers": true,
-      "n8n-flow": true
+      "n8n-flow": false,
+      "n8n-credentials": true
     },
     "64d4d9a3-d833-4325-be83-8e9947b48a48": {
       "86856189-ecfe-424e-8d41-a8ab2632e0a6": true
@@ -15,7 +16,9 @@
     "n8n-basics": {
       "n8n-triggers": true,
       "n8n-credentials": true,
-      "n8n-flow": true
+      "n8n-flow": true,
+      "n8n-data-transformation": true,
+      "n8n-interface": false
     }
   }
 }

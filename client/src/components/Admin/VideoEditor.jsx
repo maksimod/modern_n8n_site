@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { uploadVideoFile } from '../../services/course.service';
 import Header from '../Layout/Header';
 import { VIDEO_TYPES } from '../../config';
 import styles from '../../styles/admin.module.css';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadVideoFile, deleteVideoFile } from '../../services/course.service';
 
 const VideoEditor = ({ video, courseId, onClose, language }) => {
   const { t } = useTranslation();
@@ -112,9 +112,25 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
   
   const handleVideoTypeChange = (e) => {
     const newType = e.target.value;
+    const oldType = formData.videoType;
+    
+    // Если меняем тип с локального на другой и у нас есть файл
+    if (oldType === VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.LOCAL && formData.localVideo) {
+      // Удаляем файл
+      try {
+        deleteVideoFile(formData.localVideo);
+        console.log('Requested file deletion for type change:', formData.localVideo);
+      } catch (error) {
+        console.error('Error requesting file deletion:', error);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      videoType: newType
+      videoType: newType,
+      // Очищаем соответствующие поля при смене типа
+      ...(newType !== VIDEO_TYPES.LOCAL ? { localVideo: '', uploadedFile: null } : {}),
+      ...(newType !== VIDEO_TYPES.EXTERNAL ? { videoUrl: '' } : {})
     }));
   };
   

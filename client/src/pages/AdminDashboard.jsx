@@ -8,6 +8,7 @@ import Header from '../components/Layout/Header';
 import CourseEditor from '../components/Admin/CourseEditor';
 import styles from '../styles/admin.module.css';
 import componentStyles from '../styles/components.module.css';
+import DiskUsage from '../components/Admin/DiskUsage';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -111,8 +112,8 @@ const AdminDashboard = () => {
   return (
     <div>
       <Header />
-      
       <div className={componentStyles.container}>
+        <DiskUsage />
         <div className={componentStyles.pageHeader}>
           <h1 className={componentStyles.pageTitle}>{t('admin.dashboard')}</h1>
           
@@ -129,7 +130,6 @@ const AdminDashboard = () => {
             {error}
           </div>
         )}
-        
         <div className={styles.courseGrid}>
           {courses.length === 0 ? (
             <p className={styles.noCourses}>No courses found.</p>

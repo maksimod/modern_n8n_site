@@ -33,7 +33,9 @@ const CourseItem = ({ course, currentVideo }) => {
                 
                 <div className={styles.videoDetails}>
                   <div className={styles.videoTitleRow}>
-                    <h4 className={styles.videoTitle}>{video.title}</h4>
+                    <h4 className={styles.videoTitle} title={video.title}>
+                      {video.title}
+                    </h4>
                     {video.duration && (
                       <span className={styles.videoDuration}>{video.duration}</span>
                     )}

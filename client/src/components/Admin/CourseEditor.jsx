@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { createCourse, updateCourse } from '../../services/course.service';
+import { createCourse, updateCourse, getCourseById } from '../../services/course.service';
 import Header from '../Layout/Header';
 import VideoEditor from './VideoEditor';
 import VideoList from './VideoList';
 import { SUPPORTED_LANGUAGES } from '../../config';
 import styles from '../../styles/admin.module.css';
 import { v4 as uuidv4 } from 'uuid';
+
 
 const CourseEditor = ({ course, onClose, language }) => {
   const { t } = useTranslation();
@@ -30,15 +31,46 @@ const CourseEditor = ({ course, onClose, language }) => {
   // Загружаем детали курса если редактируем существующий
   useEffect(() => {
     if (course) {
-      setFormData({
-        id: course.id,
-        title: course.title || '',
-        description: course.description || '',
-        language: course.language || language || 'ru',
-        videos: course.videos || []
-      });
+      // Ищем версию курса на выбранном языке
+      const courseLanguage = language || 'ru';
+      const fetchCourseByLanguage = async () => {
+        try {
+          // Получаем курс на выбранном языке
+          const courseData = await getCourseById(course.id, courseLanguage);
+          if (courseData) {
+            setFormData({
+              id: courseData.id,
+              title: courseData.title || '',
+              description: courseData.description || '',
+              language: courseData.language || courseLanguage,
+              videos: courseData.videos || []
+            });
+          } else {
+            // Если нет курса на выбранном языке, используем текущие данные
+            setFormData({
+              id: course.id,
+              title: course.title || '',
+              description: course.description || '',
+              language: courseLanguage,
+              videos: course.videos || []
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching course by language:', error);
+          // Используем текущий курс при ошибке
+          setFormData({
+            id: course.id,
+            title: course.title || '',
+            description: course.description || '',
+            language: courseLanguage,
+            videos: course.videos || []
+          });
+        }
+      };
+  
+      fetchCourseByLanguage();
     } else {
-      // Generate a unique ID for new courses
+      // Создаем новый курс на выбранном языке
       setFormData({
         id: uuidv4(),
         title: '',
