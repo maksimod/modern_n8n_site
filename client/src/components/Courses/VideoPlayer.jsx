@@ -74,22 +74,32 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
-  // Форматирование YouTube URL для корректного встраивания
+  // Функция для преобразования любого формата URL YouTube в embed-формат
   const formatYoutubeUrl = (url) => {
     if (!url) return '';
     
-    // Проверка если URL уже в формате embed
-    if (url.includes('/embed/')) return url;
+    // Проверяем если URL уже в формате embed
+    if (url.includes('youtube.com/embed/')) {
+      return url;
+    }
     
-    // Обработка youtube.com/watch?v=
-    const watchMatch = url.match(/youtube\.com\/watch\?v=([^&]+)/);
-    if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    // Получаем идентификатор видео
+    let videoId = '';
     
-    // Обработка youtu.be/
-    const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
-    if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    // Обработка youtube.com/watch?v=ID
+    const watchRegex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(watchRegex);
     
-    return url;
+    if (match && match[1]) {
+      videoId = match[1];
+    }
+    
+    // Если нашли ID, формируем embed-ссылку
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url; // Возвращаем исходный URL если не удалось получить ID
   };
 
   if (!video) {
@@ -152,7 +162,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               src={formatYoutubeUrl(video.videoUrl)}
               title={video.title}
               frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               className={styles.videoElement}
             ></iframe>

@@ -10,9 +10,10 @@
         "title": "Интерфейс",
         "description": "Интерфейс",
         "duration": "00:00",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
+        "localVideo": "",
+        "videoType": "external"
       },
       {
         "id": "n8n-triggers",
