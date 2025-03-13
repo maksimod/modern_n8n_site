@@ -1,3 +1,4 @@
+// client/src/utils/i18n.js
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -11,6 +12,8 @@ const resources = {
       "videos": "videos",
       "logout": "Logout",
       "view": "View",
+      "showCourseContents": "Show Contents",
+      "hideCourseContents": "Hide Contents",
       "course.markCompleted": "Mark as completed",
       "course.completed": "Completed",
       "course.download": "Download",
@@ -75,6 +78,8 @@ const resources = {
       "videos": "видео",
       "logout": "Выход",
       "view": "Просмотр",
+      "showCourseContents": "Показать содержание",
+      "hideCourseContents": "Скрыть содержание",
       "course.markCompleted": "Отметить как просмотренное",
       "course.completed": "Просмотрено",
       "course.download": "Скачать",

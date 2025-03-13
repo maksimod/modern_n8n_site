@@ -1,604 +1,12 @@
-/* styles/courses.module.css */
-
-/* Основной контейнер страницы */
-.coursePageContainer {
-  width: 100%;
-  overflow-x: hidden;
-}
-
-/* Сайдбар */
-.courseSidebar {
-  width: 350px;
-  padding: 1.25rem;
-  border-right: 1px solid var(--border-color, #e5e7eb);
-  overflow-y: auto;
-  flex-shrink: 0;
-  background-color: var(--background-light, #f9fafb);
-  height: calc(100vh - var(--header-height, 60px));
-  position: fixed;
-  top: var(--header-height, 60px);
-  left: 0;
-}
-
-/* Ссылка "Назад к курсам" */
-.backToCoursesLink {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1.25rem;
-  color: var(--primary-color, #4f46e5);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.backToCoursesLink:hover {
-  text-decoration: none;
-  opacity: 0.8;
-}
-
-/* Контент (правая часть) */
-.videoContent {
-  margin-left: 0;
-  width: 100%;
-  padding: 0.5rem;
-}
-
-/* Заголовок курса */
-.courseTitle {
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-  color: var(--text-primary, #111827);
-}
-
-/* Контейнер для видео в сайдбаре */
-.videoItemContainer {
-  margin-bottom: 0.625rem;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-/* Элемент видео в сайдбаре */
-.videoItem {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: var(--border-radius, 8px);
-  border: 1px solid var(--border-color, #e5e7eb);
-  text-decoration: none;
-  background: var(--background-white, #ffffff);
-  color: var(--text-primary, #111827);
-  transition: all 0.2s ease;
-  flex: 1;
-  overflow: hidden;
-}
-
-.videoItem:hover {
-  background-color: var(--background-blue, #eff6ff);
-  border-color: var(--secondary-color, #0ea5e9);
-  text-decoration: none;
-}
-
-.videoItemActive {
-  background: var(--background-blue, #eff6ff);
-  border-left: 4px solid var(--primary-color, #4f46e5);
-}
-
-/* Номер видео */
-.videoIndex {
-  min-width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--background-light, #f9fafb);
-  border-radius: 50%;
-  margin-right: 10px;
-  flex-shrink: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Детали видео */
-.videoDetails {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* Строка с заголовком и длительностью видео */
-.videoTitleRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
-  width: 100%;
-}
-
-.videoTitle {
-  margin: 0;
-  font-weight: 500;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px; /* Это ограничит ширину, чтобы текст не выходил за пределы */
-}
-
-.videoDuration {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  background-color: var(--background-light, #f9fafb);
-  border-radius: 4px;
-  white-space: nowrap;
-  margin-left: 0.5rem;
-  flex-shrink: 0;
-}
-
-/* Video checkbox styles */
-.videoCheckboxContainer {
-  display: flex;
-  align-items: center;
-  margin-left: 10px;
-  flex-shrink: 0;
-}
-
-.videoCheckbox {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--primary-color, #4f46e5);
-  transform: scale(1.2);
-}
-
-/* Обертка для видео */
-.videoWrapper {
-  width: 100%;
-  height: auto;
-}
-
-/* iframe с видео */
-.videoIframe {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* Информация о видео */
-.videoInfo {
-  background-color: var(--background-white, #ffffff);
-  border-radius: var(--border-radius, 8px);
-  padding: 1.5rem;
-  box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
-  border: 1px solid var(--border-color, #e5e7eb);
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.videoHeaderRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-/* Заголовок видео */
-.videoTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary, #111827);
-  margin-top: 0;
-  margin-bottom: 1rem;
-  word-break: break-word;
-}
-
-/* Описание видео */
-.videoDescription {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--text-secondary, #4b5563);
-  margin-bottom: 1.5rem;
-}
-
-.videoDuration {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  color: var(--text-secondary, #4b5563);
-}
-
-/* Сообщение "Выберите видео" */
-.selectVideo {
-  padding: 2.5rem;
-  text-align: center;
-  background-color: var(--background-light, #f9fafb);
-  border-radius: var(--border-radius, 8px);
-  color: var(--text-secondary, #4b5563);
-  font-size: 1.125rem;
-}
-
-/* Сообщение "Загрузка" */
-.loading {
-  padding: 2.5rem;
-  text-align: center;
-  color: var(--text-secondary, #4b5563);
-  font-size: 1.125rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-/* Сообщение "Курс не найден" */
-.notFound {
-  padding: 2.5rem;
-  text-align: center;
-  color: var(--text-secondary, #4b5563);
-  font-size: 1.125rem;
-}
-
-/* Кнопка скачивания */
-.downloadButton {
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius, 8px);
-  background-color: var(--secondary-color, #0ea5e9);
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.downloadButton:hover {
-  background-color: #0284c7;
-}
-
-.downloadButton:before {
-  content: "↓";
-  margin-right: 0.375rem;
-  font-weight: bold;
-}
-
-.videoSection {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 2rem;
-  width: 100%;
-  max-width: 100%;
-}
-
-.videoContentArea {
-  padding: 1rem 0;
-  width: 100%;
-}
-
-/* Текстовый урок */
-.textLessonContainer {
-  background-color: var(--background-white, #ffffff);
-  border-radius: var(--border-radius, 8px);
-  padding: 1.5rem;
-  box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
-  border: 1px solid var(--border-color, #e5e7eb);
-  margin-bottom: 1rem;
-  width: 100%;
-}
-
-.textLessonContent {
-  margin-top: 1.5rem;
-  line-height: 1.6;
-  color: var(--text-primary, #111827);
-}
-
-/* Стили для завершенных видео */
-.videoCardCompleted {
-  border-left: 4px solid var(--success-color, #10b981);
-}
-
-.privateVideo {
-  background-color: var(--error-color, #ef4444);
-  color: white;
-}
-
-.videoCardBadge {
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
-}
-
-.textLessonIndicator {
-  background-color: var(--secondary-color, #0ea5e9);
-  color: white;
-  font-size: 0.75rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-  margin-left: 8px;
-}
-
-/* Мобильный вид */
-.mobileMenuButton {
-  display: none;
-  background: var(--primary-color, #4f46e5);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius, 8px);
-  font-size: 0.875rem;
-  margin-bottom: 1rem;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Медиа-запросы для адаптивности */
-@media (max-width: 768px) {
-  .courseSidebar {
-    width: 100%;
-    height: auto;
-    max-height: 0;
-    padding: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease, padding 0.3s ease;
-    position: relative;
-    top: 0;
-    left: 0;
-  }
-  
-  .videoContent {
-    margin-left: 0;
-    width: 100%;
-  }
-  
-  .courseSidebar.visible {
-    max-height: 70vh;
-    padding: 1rem;
-    overflow-y: auto;
-    position: fixed;
-    top: var(--header-height, 60px);
-    z-index: 100;
-    width: 100%;
-  }
-  
-  .mobileMenuButton {
-    display: flex;
-    margin: 1rem 0;
-  }
-  
-  .videoItem {
-    padding: 0.625rem;
-  }
-  
-  .videoTitle {
-    max-width: 100%;
-    white-space: normal;
-    overflow: visible;
-  }
-  
-  .videoContent {
-    padding: 1rem 0.5rem;
-  }
-  
-  .textLessonContainer {
-    padding: 1.25rem;
-  }
-}
-
-/* Кнопка "Отметить как просмотренное" */
-.completeButton {
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius, 8px);
-  background-color: var(--primary-color, #4f46e5);
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.completeButton:hover {
-  background-color: var(--primary-hover, #4338ca);
-}
-
-.completedButton {
-  background-color: var(--success-color, #10b981);
-}
-
-.completedButton:hover {
-  background-color: #0d9669;
-}
-
-.completeButton.completed {
-  background-color: var(--success-color, #10b981);
-}
-
-.completeButton.completed:hover {
-  background-color: #0d9669;
-}
-
-.videoCompletionSection {
-  margin-top: 1rem;
-}
-
-.videoTitle {
-  margin: 0;
-  font-weight: 500;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px; /* Это ограничит ширину, чтобы текст не выходил за пределы */
-}
-
-/* Контейнер для видео */
-.videoContainer {
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-/* iframe для YouTube видео */
-.videoFrame, .videoElement {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-/* Кнопки управления */
-.videoControls {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-/* Заголовок с кнопкой скачивания */
-.videoHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-/* Сообщение об ошибке */
-.errorMessage {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--error-color, #ef4444);
-  padding: 0.75rem;
-  border-radius: var(--border-radius, 8px);
-  margin-top: 1rem;
-}
-
-/* Мобильная кнопка переключения содержания */
-.mobileMenuButton {
-  display: none;
-}
-
-/* Исправления для мобильной версии */
-@media (max-width: 768px) {
-  .coursePageContainer {
-    flex-direction: column;
-    padding: 0.5rem;
-  }
-  
-  .courseSidebar {
-    position: fixed;
-    top: var(--header-height, 60px);
-    left: 0;
-    width: 100%;
-    z-index: 50;
-    background-color: var(--background-light, #f9fafb);
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-  }
-
-  .videoContent {
-    margin-left: 0;
-    width: 100%;
-    padding: 0.5rem;
-  }
-  
-  .videoWrapper {
-    position: relative;
-    padding-bottom: 56.25%; /* 16:9 */
-    height: 0;
-    overflow: hidden;
-    border-radius: var(--border-radius, 8px);
-    background-color: #000;
-  }
-  
-  /* Исправить проблемы с прокруткой и содержимым */
-  .videoPlayer {
-    max-width: 100%;
-    height: auto;
-  }
-  
-  .mobileMenuButton {
-    display: block;
-    background-color: var(--primary-color, #4f46e5);
-    color: white;
-    padding: 0.75rem;
-    border-radius: var(--border-radius, 8px);
-    border: none;
-    margin: 0.5rem 0;
-    width: 100%;
-    text-align: center;
-    font-weight: 500;
-    z-index: 10;
-  }
-
-  /* Стили для видимого сайдбара на мобильных устройствах */
-  .courseSidebar.visible {
-    max-height: 70vh;
-    overflow-y: auto;
-    padding: 1rem;
-  }
-  
-  /* Исправить проблему с обрезанным текстом */
-  /* Убрать ограничения на заголовки в мобильной версии */
-  .videoTitle {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-    max-width: 100%;
-  }
-  
-  /* Текстовые уроки должны быть полностью видны */
-  .textLessonContainer {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-  
-  /* Ошибки должны быть видны */
-  .videoError {
-    padding: 0.75rem;
-    background-color: rgba(239, 68, 68, 0.1);
-    color: var(--error-color);
-    border-radius: var(--border-radius);
-    margin: 1rem 0;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* client/src/styles/courses.module.css */
-
-/* Основной контейнер страницы курса */
+/* Основной контейнер страницы */
 .coursePageContainer {
   display: flex;
   width: 100%;
   min-height: calc(100vh - var(--header-height, 60px));
 }
 
-/* Сайдбар с содержанием курса */
+/* Сайдбар */
 .courseSidebar {
   width: 300px;
   padding: 1.25rem;
@@ -610,14 +18,7 @@
   left: 0;
   overflow-y: auto;
   z-index: 10;
-}
-
-/* Основной контент (видео и описание) */
-.videoContent {
-  flex: 1;
-  padding: 1.25rem;
-  margin-left: 300px; /* Соответствует ширине сайдбара */
-  width: calc(100% - 300px);
+  transition: transform 0.3s ease;
 }
 
 /* Ссылка "Назад к курсам" */
@@ -634,6 +35,14 @@
   text-decoration: underline;
 }
 
+/* Контент (правая часть) */
+.videoContent {
+  margin-left: 300px;
+  flex: 1;
+  padding: 1.25rem;
+  width: calc(100% - 300px);
+}
+
 /* Заголовок курса */
 .courseTitle {
   margin-bottom: 1.5rem;
@@ -641,14 +50,21 @@
   color: var(--text-primary, #111827);
 }
 
-/* Элемент видео в сайдбаре */
+/* Список видео */
+.videosList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+/* Контейнер для видео в сайдбаре */
 .videoItemContainer {
-  margin-bottom: 0.625rem;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
+/* Элемент видео в сайдбаре */
 .videoItem {
   display: flex;
   align-items: center;
@@ -702,7 +118,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
   width: 100%;
 }
 
@@ -710,9 +125,9 @@
   margin: 0;
   font-weight: 500;
   font-size: 0.875rem;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
   max-width: 180px;
 }
 
@@ -726,7 +141,7 @@
   flex-shrink: 0;
 }
 
-/* Чекбокс для отметки видео */
+/* Чекбокс */
 .videoCheckboxContainer {
   display: flex;
   align-items: center;
@@ -741,7 +156,7 @@
   accent-color: var(--primary-color, #4f46e5);
 }
 
-/* Стиль для видеоплеера */
+/* Видеоплеер */
 .videoPlayer {
   width: 100%;
   display: flex;
@@ -749,14 +164,15 @@
   gap: 1rem;
 }
 
-/* Контейнер для локального и YouTube видео */
+/* Контейнер для видео */
 .videoContainer {
-  width: 100%;
   position: relative;
-  padding-top: 56.25%; /* 16:9 соотношение */
-  background-color: black;
-  border-radius: 8px;
+  padding-top: 56.25%; /* 16:9 соотношение сторон */
+  width: 100%;
   overflow: hidden;
+  background: #000;
+  border-radius: var(--border-radius, 8px);
+  margin-bottom: 1rem;
 }
 
 .videoElement {
@@ -765,14 +181,15 @@
   left: 0;
   width: 100%;
   height: 100%;
+  border: none;
 }
 
-/* Информация о видео (заголовок, описание, кнопки) */
+/* Информация о видео */
 .videoInfo {
-  background-color: white;
+  background-color: var(--background-white, #ffffff);
+  border-radius: var(--border-radius, 8px);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
@@ -785,28 +202,37 @@
   gap: 1rem;
 }
 
-.videoDescription {
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-  color: var(--text-secondary, #4b5563);
+.videoTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
-/* Текстовые уроки */
+.videoDescription {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text-secondary, #4b5563);
+  margin-bottom: 1.5rem;
+}
+
+/* Текстовый урок */
 .textLesson {
-  background-color: white;
+  background-color: var(--background-white, #ffffff);
   padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius, 8px);
+  box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
-/* Кнопка отметки о просмотре */
+/* Кнопка "Отметить как просмотренное" */
 .markButton {
   padding: 0.5rem 1rem;
   background-color: var(--primary-color, #4f46e5);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius, 8px);
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
@@ -830,7 +256,7 @@
   background-color: var(--secondary-color, #0ea5e9);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius, 8px);
   cursor: pointer;
   font-weight: 500;
   transition: background-color 0.2s;
@@ -840,16 +266,36 @@
   background-color: #0284c7;
 }
 
-/* Сообщение об ошибке */
+.downloadButton:before {
+  content: "↓";
+  margin-right: 0.375rem;
+  font-weight: bold;
+}
+
+/* Сообщения */
+.selectVideo, .loading, .notFound {
+  padding: 2.5rem;
+  text-align: center;
+  border-radius: var(--border-radius, 8px);
+  background-color: var(--background-light, #f9fafb);
+  color: var(--text-secondary, #4b5563);
+  font-size: 1.125rem;
+}
+
 .errorMessage {
   padding: 0.75rem;
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--error-color, #ef4444);
-  border-radius: 8px;
+  border-radius: var(--border-radius, 8px);
   margin-top: 1rem;
 }
 
-/* Мобильная кнопка переключения содержания */
+/* Стили для завершенных видео */
+.videoCardCompleted {
+  border-left: 4px solid var(--success-color, #10b981);
+}
+
+/* Мобильная кнопка */
 .mobileMenuButton {
   display: none;
 }
@@ -863,7 +309,7 @@
     background-color: var(--primary-color, #4f46e5);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--border-radius, 8px);
     margin: 0.5rem 0;
     text-align: center;
     font-weight: 500;
@@ -877,17 +323,19 @@
   .courseSidebar {
     position: fixed;
     width: 100%;
+    height: auto;
     max-height: 0;
     padding: 0;
     overflow: hidden;
-    transition: max-height 0.3s;
+    transform: translateY(-100%);
+    z-index: 15;
   }
 
   .courseSidebar.visible {
     max-height: 70vh;
-    overflow-y: auto;
+    transform: translateY(0);
     padding: 1rem;
-    z-index: 15;
+    overflow-y: auto;
   }
 
   .videoContent {
@@ -902,7 +350,13 @@
     white-space: normal;
   }
 
-  .videoPlayer {
-    margin-top: 0.5rem;
+  .videoInfo {
+    padding: 1rem;
+  }
+  
+  .videoContainer {
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 4px;
   }
 }

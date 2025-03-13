@@ -1,3 +1,4 @@
+// client/src/components/Layout/Header.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -11,23 +12,19 @@ const Header = () => {
   const { language, switchLanguage, supportedLanguages } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-  const closeDropdown = () => setDropdownOpen(false);
+  // Получить первую букву имени пользователя для аватара
+  const getInitial = (name) => name ? name.charAt(0).toUpperCase() : '';
 
-  const handleLogout = () => {
-    logout();
-    closeDropdown();
-  };
-
-  const handleLanguageChange = (lang) => {
-    switchLanguage(lang);
-    closeDropdown();
-  };
-
-  // Get first letter of username for avatar
-  const getInitial = (name) => {
-    return name ? name.charAt(0).toUpperCase() : '';
-  };
+  // Если пользователь не авторизован, показываем только логотип
+  if (!currentUser) {
+    return (
+      <header className={styles.header}>
+        <Link to="/" className={styles.logo}>
+          <span>VideoLearn</span>
+        </Link>
+      </header>
+    );
+  }
 
   return (
     <header className={styles.header}>
@@ -36,60 +33,67 @@ const Header = () => {
       </Link>
 
       <div className={styles.navList}>
-        {currentUser && (
-          <div className={styles.userMenu}>
-            {/* Add Admin Dashboard link if the user is an admin */}
-            {isAdmin && (
-              <Link to="/admin" className={styles.adminLink}>
-                {t('admin.dashboard')}
-              </Link>
-            )}
-          
-            <button 
-              className={styles.userButton} 
-              onClick={toggleDropdown}
-              aria-expanded={dropdownOpen}
-            >
-              <div className={styles.userAvatar}>
-                {getInitial(currentUser.username)}
-              </div>
-              <span className={styles.userName}>{currentUser.username}</span>
-            </button>
+        <div className={styles.userMenu}>
+          {/* Ссылка на админ-панель для администраторов */}
+          {isAdmin && (
+            <Link to="/admin" className={styles.adminLink}>
+              {t('admin.dashboard')}
+            </Link>
+          )}
+        
+          <button 
+            className={styles.userButton} 
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            aria-expanded={dropdownOpen}
+          >
+            <div className={styles.userAvatar}>
+              {getInitial(currentUser.username)}
+            </div>
+            <span className={styles.userName}>{currentUser.username}</span>
+          </button>
 
-            {dropdownOpen && (
-              <div className={styles.dropdown}>
-                {/* Add Admin Dashboard link in dropdown as well if user is admin */}
-                {isAdmin && (
-                  <Link 
-                    to="/admin" 
-                    className={styles.dropdownItem}
-                    onClick={closeDropdown}
-                  >
-                    {t('admin.dashboard')}
-                  </Link>
-                )}
+          {dropdownOpen && (
+            <div className={styles.dropdown}>
+              {/* Ссылка на админ-панель в выпадающем меню */}
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className={styles.dropdownItem}
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  {t('admin.dashboard')}
+                </Link>
+              )}
+            
+              <button 
+                className={styles.dropdownItem} 
+                onClick={() => {
+                  logout();
+                  setDropdownOpen(false);
+                }}
+              >
+                {t('logout')}
+              </button>
               
-                <button className={styles.dropdownItem} onClick={handleLogout}>
-                  {t('logout')}
-                </button>
-                
-                <div className={styles.languages}>
-                  {supportedLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      className={`${styles.languageButton} ${
-                        language === lang.code ? styles.activeLanguage : ''
-                      }`}
-                      onClick={() => handleLanguageChange(lang.code)}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
+              <div className={styles.languages}>
+                {supportedLanguages.map(lang => (
+                  <button
+                    key={lang.code}
+                    className={`${styles.languageButton} ${
+                      language === lang.code ? styles.activeLanguage : ''
+                    }`}
+                    onClick={() => {
+                      switchLanguage(lang.code);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

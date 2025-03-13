@@ -1,26 +1,34 @@
 // client/src/config.js
+// Определяем базовый URL для API
+const getServerUrl = () => {
+  // В production используем хост сервера напрямую
+  if (process.env.NODE_ENV === 'production') {
+    return window.location.origin;
+  }
+  
+  // Для локальной разработки
+  return window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : `http://${window.location.hostname}:5000`;
+};
 
-// Base URL for API endpoints
-export const SERVER_URL = process.env.NODE_ENV === 'production' 
-  ? 'http://192.168.0.102:5000' // Ваш IP в локальной сети + порт сервера
-  : window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000' // Для локальной разработки
-    : `http://${window.location.hostname}:5000`; // Для доступа через IP
+// Базовый URL для API
+export const SERVER_URL = getServerUrl();
 
-// Supported languages
+// Поддерживаемые языки
 export const SUPPORTED_LANGUAGES = [
   { code: 'ru', name: 'Русский' },
   { code: 'en', name: 'English' }
 ];
 
-// Video types
+// Типы видео
 export const VIDEO_TYPES = {
   EXTERNAL: 'external',
   LOCAL: 'local',
   TEXT: 'text'
 };
 
-// Breakpoints for responsive design
+// Брейкпоинты для адаптивного дизайна
 export const BREAKPOINTS = {
   mobile: 480, 
   tablet: 768,

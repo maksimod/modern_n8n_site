@@ -74,6 +74,24 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
+  // Форматирование YouTube URL для корректного встраивания
+  const formatYoutubeUrl = (url) => {
+    if (!url) return '';
+    
+    // Проверка если URL уже в формате embed
+    if (url.includes('/embed/')) return url;
+    
+    // Обработка youtube.com/watch?v=
+    const watchMatch = url.match(/youtube\.com\/watch\?v=([^&]+)/);
+    if (watchMatch) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    
+    // Обработка youtu.be/
+    const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+    if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    
+    return url;
+  };
+
   if (!video) {
     return <div className={styles.selectVideo}>{t('selectVideo')}</div>;
   }
@@ -102,6 +120,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               src={`${SERVER_URL}/videos/${video.localVideo.replace(/^\/videos\//, '')}`}
               controls
               className={styles.videoElement}
+              playsInline
             ></video>
           </div>
           <div className={styles.videoInfo}>
@@ -130,9 +149,10 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         <>
           <div className={styles.videoContainer}>
             <iframe 
-              src={video.videoUrl.replace('watch?v=', 'embed/')}
+              src={formatYoutubeUrl(video.videoUrl)}
               title={video.title}
               frameBorder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className={styles.videoElement}
             ></iframe>

@@ -1,3 +1,4 @@
+// client/src/contexts/LanguageContext.jsx
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LANGUAGES } from '../config';
@@ -12,13 +13,13 @@ export const LanguageProvider = ({ children }) => {
     localStorage.getItem('language') || 'ru'
   );
 
-  // Эффект только при инициализации - для загрузки языка
+  // Эффект для загрузки языка при инициализации
   useEffect(() => {
     // Проверяем URL для параметра lang
     const urlParams = new URLSearchParams(window.location.search);
     const urlLang = urlParams.get('lang');
     
-    if (urlLang && ['ru', 'en'].includes(urlLang)) {
+    if (urlLang && SUPPORTED_LANGUAGES.some(l => l.code === urlLang)) {
       // Устанавливаем язык из URL
       handleLanguageChange(urlLang);
     } else {
@@ -44,14 +45,12 @@ export const LanguageProvider = ({ children }) => {
     window.history.pushState({}, '', url);
   };
 
-  const value = {
-    language,
-    switchLanguage: handleLanguageChange,
-    supportedLanguages: SUPPORTED_LANGUAGES
-  };
-
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={{
+      language,
+      switchLanguage: handleLanguageChange,
+      supportedLanguages: SUPPORTED_LANGUAGES
+    }}>
       {children}
     </LanguageContext.Provider>
   );

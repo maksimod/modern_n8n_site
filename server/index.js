@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const morgan = require('morgan');
+const fs = require('fs');
 const progressRouter = require('./routes/progress');
 require('dotenv').config();
 
@@ -10,60 +11,92 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-const corsOptions = {
+app.use(cors({
   origin: '*', // Разрешаем запросы с любого источника
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204
-};
+}));
 
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan('dev'));
 app.use('/api/progress', progressRouter);
 
+// Специальная настройка для видео-файлов
 app.use((req, res, next) => {
-  if (req.url.endsWith('.mp4')) {
-    res.setHeader('Content-Type', 'video/mp4');
+  if (req.url.startsWith('/videos/') || req.url.endsWith('.mp4')) {
+    // Добавляем CORS заголовки
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
+    
+    // Для потоковой передачи видео
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    // Правильный MIME-тип
+    if (req.url.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+    }
   }
   next();
 });
 
-app.use('/videos', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+// Обработка потоковой передачи видео
+app.get('/videos/:filename', (req, res) => {
+  const videoPath = path.join(__dirname, 'data/videos', req.params.filename);
   
-  // Важно для потоковой передачи видео
-  res.header('Accept-Ranges', 'bytes');
-  
-  // Правильный MIME-тип
-  if (req.path.endsWith('.mp4')) {
-    res.header('Content-Type', 'video/mp4');
-  }
-  
-  console.log(`Запрос к видео: ${req.path}`);
-  next();
+  // Проверяем, существует ли файл
+  fs.stat(videoPath, (err, stat) => {
+    if (err) {
+      console.error(`Файл не найден: ${videoPath}`, err);
+      return res.status(404).send('Файл не найден');
+    }
+    
+    // Получаем размер файла
+    const fileSize = stat.size;
+    const range = req.headers.range;
+    
+    // Поддержка частичной загрузки для мобильных устройств
+    if (range) {
+      // Парсим Range header
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = (end - start) + 1;
+      
+      // Создаем поток чтения
+      const fileStream = fs.createReadStream(videoPath, { start, end });
+      
+      // Устанавливаем заголовки
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': chunkSize,
+        'Content-Type': 'video/mp4'
+      });
+      
+      // Передаем поток
+      fileStream.pipe(res);
+    } else {
+      // Если нет Range header, отдаем весь файл
+      res.writeHead(200, {
+        'Content-Length': fileSize,
+        'Content-Type': 'video/mp4'
+      });
+      
+      fs.createReadStream(videoPath).pipe(res);
+    }
+  });
 });
 
-// Статическая директория для видео
-app.use('/videos', express.static(path.join(__dirname, 'data/videos')));
-
-// Обработка ошибок при отсутствии токена
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/auth') || 
-      (req.path.startsWith('/api/courses') && req.method === 'GET') ||
-      req.path.startsWith('/videos/')) {
-    return next();
+// Статические видео-файлы
+app.use('/videos', express.static(path.join(__dirname, 'data/videos'), {
+  setHeaders: (res) => {
+    res.set('Accept-Ranges', 'bytes');
+    res.set('Content-Type', 'video/mp4');
   }
-  
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ message: 'No token, authorization denied' });
-  }
-  
-  next();
-});
+}));
 
 // Маршруты
 const authRouter = require('./routes/auth');
@@ -73,46 +106,6 @@ const adminRouter = require('./routes/admin');
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
 app.use('/api/admin', adminRouter);
-
-// Добавьте этот роут в server/index.js перед другими роутами
-app.get('/debug/courses', (req, res) => {
-  try {
-    const coursesPath = path.join(__dirname, 'data/db/courses.json');
-    if (fs.existsSync(coursesPath)) {
-      const content = fs.readFileSync(coursesPath, 'utf8');
-      const courses = JSON.parse(content);
-      
-      // Найдем видео с локальными файлами
-      const localVideos = [];
-      courses.forEach(course => {
-        if (course.videos) {
-          course.videos.forEach(video => {
-            if (video.localVideo) {
-              localVideos.push({
-                courseId: course.id,
-                videoId: video.id,
-                title: video.title,
-                videoType: video.videoType,
-                localVideo: video.localVideo
-              });
-            }
-          });
-        }
-      });
-      
-      res.json({
-        fileSize: content.length,
-        coursesCount: courses.length,
-        localVideosCount: localVideos.length,
-        localVideos
-      });
-    } else {
-      res.json({ error: 'Courses file not found' });
-    }
-  } catch (error) {
-    res.json({ error: error.message });
-  }
-});
 
 // Специальный маршрут для скачивания видео
 app.get('/download/:filename', (req, res) => {
@@ -148,5 +141,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Сервер запущен на порту ${PORT}`);
-  console.log(`Окружение: ${process.env.NODE_ENV}`);
+  console.log(`Окружение: ${process.env.NODE_ENV || 'development'}`);
 });
