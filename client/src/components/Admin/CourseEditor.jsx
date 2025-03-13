@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { createCourse, updateCourse, getCourseById } from '../../services/course.service';
+import { createCourse, updateCourse, getCourseById, updateVideoPositions } from '../../services/course.service';
 import Header from '../Layout/Header';
 import VideoEditor from './VideoEditor';
 import VideoList from './VideoList';
@@ -178,6 +178,11 @@ const CourseEditor = ({ course, onClose, language }) => {
         // Move video down
         [videos[index], videos[index + 1]] = [videos[index + 1], videos[index]];
       }
+      
+      // Async call to update video positions on the server
+      const videoIds = videos.map(video => video.id);
+      updateVideoPositions(formData.id, videoIds)
+        .catch(err => console.error('Error saving video positions:', err));
       
       return { ...prev, videos };
     });

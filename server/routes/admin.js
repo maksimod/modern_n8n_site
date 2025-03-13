@@ -450,13 +450,21 @@ router.put('/courses/:courseId/videos/positions', [auth, isAdmin], async (req, r
       return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Обновляем позиции видео
-    // Здесь можно реализовать логику обновления позиций
+    // Если есть массив позиций, обновляем порядок
+    if (positions && Array.isArray(positions)) {
+      // Обновляем порядок согласно предоставленным ID
+      courses[courseIndex].videos = courses[courseIndex].videos.sort((a, b) => {
+        return positions.indexOf(a.id) - positions.indexOf(b.id);
+      });
+    }
     
     // Сохраняем курсы
     saveCourses(courses);
     
-    res.json({ message: 'Video positions updated successfully' });
+    res.json({ 
+      message: 'Video positions updated successfully',
+      videos: courses[courseIndex].videos 
+    });
   } catch (err) {
     console.error('Error updating video positions:', err);
     res.status(500).json({ message: 'Server error' });

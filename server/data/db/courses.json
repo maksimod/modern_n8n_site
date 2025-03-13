@@ -9,18 +9,17 @@
         "id": "n8n-interface",
         "title": "Интерфейс",
         "description": "Интерфейс",
-        "videoType": "text",
         "duration": "00:00",
-        "localVideo": "",
-        "videoUrl": "",
-        "isPrivate": false
+        "videoType": "text",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-triggers",
         "title": "Триггеры",
         "description": "Использование триггеров в n8n",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
         "videoType": "external",
         "isPrivate": false,
         "localVideo": ""
@@ -173,18 +172,20 @@
         "title": "Interface",
         "description": "Overview of n8n interface",
         "duration": "12:25",
-        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
         "isPrivate": false,
-        "orderIndex": 0
+        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
+        "localVideo": "",
+        "videoType": "external"
       },
       {
         "id": "n8n-triggers",
         "title": "Triggers",
         "description": "Using triggers in n8n",
         "duration": "12:30",
-        "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "isPrivate": false,
-        "orderIndex": 1
+        "videoUrl": "https://www.youtube.com/watch?v=ypJT_r_GSSM",
+        "localVideo": "",
+        "videoType": "external"
       },
       {
         "id": "n8n-action-in-app",
@@ -192,8 +193,9 @@
         "description": "Working with Action in app",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 2
+        "localVideo": ""
       },
       {
         "id": "n8n-credentials",
@@ -201,8 +203,9 @@
         "description": "Setting up credentials",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 3
+        "localVideo": ""
       },
       {
         "id": "n8n-data-transformation",
@@ -210,8 +213,9 @@
         "description": "Data transformations",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 4
+        "localVideo": ""
       },
       {
         "id": "n8n-flow",
@@ -219,8 +223,9 @@
         "description": "Managing data flow",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 5
+        "localVideo": ""
       },
       {
         "id": "n8n-core",
@@ -228,8 +233,9 @@
         "description": "Basic Core nodes",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 6
+        "localVideo": ""
       },
       {
         "id": "n8n-json",
@@ -237,8 +243,9 @@
         "description": "Working with JSON format",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 7
+        "localVideo": ""
       },
       {
         "id": "n8n-work-with-data",
@@ -246,8 +253,9 @@
         "description": "Advanced data processing methods",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 8
+        "localVideo": ""
       },
       {
         "id": "n8n-postgres",
@@ -255,8 +263,9 @@
         "description": "PostgreSQL integration",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 9
+        "localVideo": ""
       },
       {
         "id": "n8n-google-cloud-console",
@@ -264,8 +273,9 @@
         "description": "Connecting to Google Cloud",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 10
+        "localVideo": ""
       },
       {
         "id": "n8n-google-sheets",
@@ -273,8 +283,9 @@
         "description": "Working with Google Sheets",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 11
+        "localVideo": ""
       },
       {
         "id": "n8n-google-drive",
@@ -282,8 +293,9 @@
         "description": "Google Drive integration",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 12
+        "localVideo": ""
       },
       {
         "id": "n8n-practice-easy",
@@ -291,8 +303,9 @@
         "description": "Creating a simple workflow",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 13
+        "localVideo": ""
       },
       {
         "id": "n8n-telegram-trigger",
@@ -300,8 +313,9 @@
         "description": "Setting up Telegram Trigger",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 14
+        "localVideo": ""
       },
       {
         "id": "n8n-telegram-bot",
@@ -309,8 +323,9 @@
         "description": "Creating a telegram bot",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 15
+        "localVideo": ""
       },
       {
         "id": "n8n-practice-hard",
@@ -318,8 +333,9 @@
         "description": "Creating an advanced workflow",
         "duration": "12:30",
         "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "videoType": "external",
         "isPrivate": false,
-        "orderIndex": 16
+        "localVideo": ""
       }
     ]
   },

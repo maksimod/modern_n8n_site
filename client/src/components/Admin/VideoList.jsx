@@ -78,17 +78,23 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
           <div className={styles.videoActions}>
             <button
               className={styles.adminButtonSecondary}
-              onClick={() => onReorder(video.id, 'up')}
+              onClick={(e) => {
+                e.preventDefault();
+                onReorder(video.id, 'up');
+              }}
               disabled={index === 0}
               title={t('admin.moveUp')}
               style={{ opacity: index === 0 ? 0.5 : 1, padding: '0.375rem 0.75rem' }}
             >
               ↑
             </button>
-            
+
             <button
               className={styles.adminButtonSecondary}
-              onClick={() => onReorder(video.id, 'down')}
+              onClick={(e) => {
+                e.preventDefault();
+                onReorder(video.id, 'down');
+              }}
               disabled={index === videos.length - 1}
               title={t('admin.moveDown')}
               style={{ opacity: index === videos.length - 1 ? 0.5 : 1, padding: '0.375rem 0.75rem' }}

@@ -212,9 +212,11 @@ export const deleteVideoFile = async (fileName) => {
 };
 
 // Update video positions (reordering)
-export const updateVideoPositions = async (courseId, videoPositions) => {
+export const updateVideoPositions = async (courseId, videoIds) => {
   try {
-    const response = await api.put(`/api/admin/courses/${courseId}/videos/positions`, { positions: videoPositions });
+    const response = await api.put(`/api/admin/courses/${courseId}/videos/positions`, { 
+      positions: videoIds 
+    });
     return response.data;
   } catch (error) {
     console.error('Error updating video positions:', error);
