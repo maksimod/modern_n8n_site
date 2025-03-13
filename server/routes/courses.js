@@ -6,6 +6,26 @@ const fs = require('fs');
 const { courseModel } = require('../models/data-model');
 const { VIDEO_TYPES } = require('../config'); // Добавляем импорт констант
 
+function formatYoutubeUrl(url) {
+  if (!url) return '';
+  
+  // Различные регулярные выражения для извлечения ID из разных форматов URL
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/i,
+    /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/i,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+  }
+  
+  return url;
+}
+
 // @route   GET api/courses
 // @desc    Get all courses
 // @access  Public
@@ -170,7 +190,12 @@ router.get('/:courseId/videos/:videoId', async (req, res) => {
       if (!video) {
         return res.status(404).json({ message: 'Video not found' });
       }
-      
+
+      // Обработка YouTube URL для мобильных устройств
+      if (video.videoUrl) {
+        video.videoUrl = formatYoutubeUrl(video.videoUrl);
+      }
+
       // Проверка наличия локального видео
       if (video.localVideo) {
         const videoPath = path.join(__dirname, '../data/videos', video.localVideo);

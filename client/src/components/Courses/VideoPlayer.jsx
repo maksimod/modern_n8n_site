@@ -74,32 +74,23 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
-  // Функция для преобразования любого формата URL YouTube в embed-формат
-  const formatYoutubeUrl = (url) => {
+  // Преобразование видео URL в простейшем виде
+  const getEmbedUrl = (url) => {
     if (!url) return '';
     
-    // Проверяем если URL уже в формате embed
-    if (url.includes('youtube.com/embed/')) {
-      return url;
-    }
-    
-    // Получаем идентификатор видео
-    let videoId = '';
-    
-    // Обработка youtube.com/watch?v=ID
-    const watchRegex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = url.match(watchRegex);
-    
-    if (match && match[1]) {
-      videoId = match[1];
-    }
-    
-    // Если нашли ID, формируем embed-ссылку
-    if (videoId) {
+    // Убираем часть watch?v= и заменяем на embed/
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('watch?v=')[1].split('&')[0];
       return `https://www.youtube.com/embed/${videoId}`;
     }
     
-    return url; // Возвращаем исходный URL если не удалось получить ID
+    // Для youtu.be URL
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1].split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url;
   };
 
   if (!video) {
@@ -159,10 +150,10 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         <>
           <div className={styles.videoContainer}>
             <iframe 
-              src={formatYoutubeUrl(video.videoUrl)}
+              src={getEmbedUrl(video.videoUrl)}
               title={video.title}
               frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className={styles.videoElement}
             ></iframe>
