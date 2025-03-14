@@ -1,394 +1,449 @@
 .errorAlert {
-    padding: 1rem;
-    background-color: rgba(239, 68, 68, 0.1);
-    color: var(--error-color, #ef4444);
-    border-radius: var(--border-radius, 8px);
-    margin-bottom: 1.5rem;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-  
-  .courseGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-  }
-  
-  .courseCard {
-    background-color: var(--background-white, #ffffff);
-    border-radius: var(--border-radius, 8px);
-    box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--border-color, #e5e7eb);
-  }
-  
-  .courseCard:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-  
-  .courseHeader {
-    margin-bottom: 1rem;
-  }
-  
-  .courseTitle {
-    font-size: 1.25rem;
-    color: var(--text-primary, #111827);
-    margin: 0;
-  }
-  
-  .courseDescription {
-    color: var(--text-secondary, #4b5563);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-    flex-grow: 1;
-  }
-  
-  .courseMeta {
-    margin-bottom: 1rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary, #4b5563);
-  }
-  
-  .videoCount {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    background-color: var(--background-light, #f9fafb);
-    border-radius: var(--border-radius, 8px);
-  }
-  
-  .courseActions {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: auto;
-  }
-  
-  .noCourses {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 2rem;
-    background-color: var(--background-light, #f9fafb);
-    border-radius: var(--border-radius, 8px);
-    color: var(--text-secondary, #4b5563);
-  }
-  
-  /* Стили для редактирования курса */
-  .adminForm {
-    max-width: 900px;
-    margin: 0 auto;
-    background-color: var(--background-white, #ffffff);
-    border-radius: var(--border-radius, 8px);
-    box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
-    padding: 2rem;
-  }
-  
-  .adminHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-  
-  .adminTitle {
-    font-size: 1.5rem;
-    margin: 0;
-    color: var(--text-primary, #111827);
-  }
-  
-  .formGroup {
-    margin-bottom: 1.5rem;
-  }
-  
-  .formLabel {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-primary, #111827);
-  }
-  
-  .formInput,
-  .formTextarea,
-  .formSelect {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: var(--border-radius, 8px);
-    transition: border-color 0.2s ease;
-  }
-  
-  .formInput:focus,
-  .formTextarea:focus,
-  .formSelect:focus {
-    border-color: var(--primary-color, #4f46e5);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-  }
-  
-  .formTextarea {
-    min-height: 120px;
-    resize: vertical;
-  }
-  
-  .formActions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-  
-  .adminButton {
-    background-color: var(--primary-color, #4f46e5);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius, 8px);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .adminButton:hover {
-    background-color: var(--primary-hover, #4338ca);
-  }
-  
-  .adminButtonSecondary {
-    background-color: var(--background-light, #f9fafb);
-    color: var(--text-primary, #111827);
-    border: 1px solid var(--border-color, #e5e7eb);
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius, 8px);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .adminButtonSecondary:hover {
-    background-color: var(--border-color, #e5e7eb);
-  }
-  
-  .adminButtonDanger {
-    background-color: var(--error-color, #ef4444);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--border-radius, 8px);
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .adminButtonDanger:hover {
-    background-color: #dc2626;
-  }
-  
-  /* Видео в админке */
-  .videoListSection {
-    margin-top: 2.5rem;
-  }
-  
-  .videoListHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  .videoListTitle {
-    font-size: 1.25rem;
-    margin: 0;
-    color: var(--text-primary, #111827);
-  }
-  
-  .videoList {
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: var(--border-radius, 8px);
-    overflow: hidden;
-  }
-  
-  .videoItem {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: var(--background-white, #ffffff);
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
-  }
-  
-  .videoItem:last-child {
-    border-bottom: none;
-  }
-  
-  .videoInfo {
-    flex: 1;
-  }
-  
-  .videoTitle {
-    font-weight: 500;
-    margin: 0 0 0.25rem 0;
-    color: var(--text-primary, #111827);
-  }
-  
-  .videoBadge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
-    border-radius: var(--border-radius, 8px);
-    margin-right: 0.5rem;
-  }
-  
-  .videoBadgeText {
-    background-color: var(--secondary-color, #0ea5e9);
-    color: white;
-  }
-  
-  .videoBadgeExternal {
-    background-color: #8b5cf6;
-    color: white;
-  }
-  
-  .videoBadgeLocal {
-    background-color: #10b981;
-    color: white;
-  }
-  
-  .videoActions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .videoEditor {
-    margin-top: 2rem;
-    background-color: var(--background-light, #f9fafb);
-    border-radius: var(--border-radius, 8px);
-    padding: 1.5rem;
-    border: 1px solid var(--border-color, #e5e7eb);
-  }
-  
-  .videoEditorTitle {
-    font-size: 1.25rem;
-    margin: 0 0 1.5rem 0;
-    color: var(--text-primary, #111827);
-  }
-  
-  .videoIdField {
-    margin-bottom: 1.5rem;
-  }
-  
-  .videoIdLabel {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-primary, #111827);
-  }
-  
-  .videoIdInput {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: var(--border-radius, 8px);
-    transition: border-color 0.2s ease;
-  }
-  
-  .videoIdInput:focus {
-    border-color: var(--primary-color, #4f46e5);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-  }
-  
-  /* Responsive styles */
-  @media (max-width: 768px) {
-    .courseGrid {
-      grid-template-columns: 1fr;
-    }
-    
-    .courseActions {
-      flex-wrap: wrap;
-    }
-    
-    .adminForm {
-      padding: 1.25rem;
-    }
-    
-    .videoItem {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.75rem;
-    }
-    
-    .videoActions {
-      width: 100%;
-      justify-content: flex-start;
-    }
-  }
-/* В файл client/src/styles/admin.module.css добавьте: */
+  padding: 1rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--error-color, #ef4444);
+  border-radius: var(--border-radius, 8px);
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
 
-.diskUsageCard {
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.courseCard {
   background-color: var(--background-white, #ffffff);
   border-radius: var(--border-radius, 8px);
   box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
   padding: 1.5rem;
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
-.diskUsageTitle {
-  font-size: 1.25rem;
-  margin: 0 0 1rem 0;
-  color: var(--text-primary, #111827);
+.courseCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.diskUsageInfo {
+.courseHeader {
   margin-bottom: 1rem;
 }
 
-.diskUsageProgressContainer {
-  width: 100%;
-  height: 16px;
+.courseTitle {
+  font-size: 1.25rem;
+  color: var(--text-primary, #111827);
+  margin: 0;
+}
+
+.courseDescription {
+  color: var(--text-secondary, #4b5563);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.courseMeta {
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #4b5563);
+}
+
+.videoCount {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
   background-color: var(--background-light, #f9fafb);
-  border-radius: 8px;
-  overflow: hidden;
+  border-radius: var(--border-radius, 8px);
+}
+
+.courseActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.noCourses {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--background-light, #f9fafb);
+  border-radius: var(--border-radius, 8px);
+  color: var(--text-secondary, #4b5563);
+}
+
+/* Стили для редактирования курса */
+.adminForm {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--background-white, #ffffff);
+  border-radius: var(--border-radius, 8px);
+  box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
+  padding: 2rem;
+}
+
+.adminHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.adminTitle {
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--text-primary, #111827);
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formLabel {
+  display: block;
   margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+}
+
+.formInput,
+.formTextarea,
+.formSelect {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--border-radius, 8px);
+  transition: border-color 0.2s ease;
+}
+
+.formInput:focus,
+.formTextarea:focus,
+.formSelect:focus {
+  border-color: var(--primary-color, #4f46e5);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.formTextarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.adminButton {
+  background-color: var(--primary-color, #4f46e5);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius, 8px);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButton:hover {
+  background-color: var(--primary-hover, #4338ca);
+}
+
+.adminButton:disabled {
+  background-color: #a5a5a5;
+  cursor: not-allowed;
+}
+
+.adminButtonSecondary {
+  background-color: var(--background-light, #f9fafb);
+  color: var(--text-primary, #111827);
+  border: 1px solid var(--border-color, #e5e7eb);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius, 8px);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButtonSecondary:hover {
+  background-color: var(--border-color, #e5e7eb);
+}
+
+.adminButtonDanger {
+  background-color: var(--error-color, #ef4444);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius, 8px);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.adminButtonDanger:hover {
+  background-color: #dc2626;
+}
+
+.adminButtonDanger:disabled {
+  background-color: #f87171;
+  cursor: not-allowed;
+}
+
+/* Видео в админке */
+.videoListSection {
+  margin-top: 2.5rem;
+}
+
+.videoListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.videoListTitle {
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--text-primary, #111827);
+}
+
+.videoList {
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--border-radius, 8px);
+  overflow: hidden;
+}
+
+.videoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--background-white, #ffffff);
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.videoItem:last-child {
+  border-bottom: none;
+}
+
+.videoInfo {
+  flex: 1;
+}
+
+.videoTitle {
+  font-weight: 500;
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary, #111827);
+}
+
+.videoBadge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: var(--border-radius, 8px);
+  margin-right: 0.5rem;
+}
+
+.videoBadgeText {
+  background-color: var(--secondary-color, #0ea5e9);
+  color: white;
+}
+
+.videoBadgeExternal {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+.videoBadgeLocal {
+  background-color: #10b981;
+  color: white;
+}
+
+.videoActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.videoEditor {
+  margin-top: 2rem;
+  background-color: var(--background-light, #f9fafb);
+  border-radius: var(--border-radius, 8px);
+  padding: 1.5rem;
   border: 1px solid var(--border-color, #e5e7eb);
 }
 
+.videoEditorTitle {
+  font-size: 1.25rem;
+  margin: 0 0 1.5rem 0;
+  color: var(--text-primary, #111827);
+}
+
+.videoIdField {
+  margin-bottom: 1.5rem;
+}
+
+.videoIdLabel {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+}
+
+.videoIdInput {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: var(--border-radius, 8px);
+  transition: border-color 0.2s ease;
+}
+
+.videoIdInput:focus {
+  border-color: var(--primary-color, #4f46e5);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .courseGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .courseActions {
+    flex-wrap: wrap;
+  }
+  
+  .adminForm {
+    padding: 1.25rem;
+  }
+  
+  .videoItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .videoActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+/* В файл client/src/styles/admin.module.css добавьте: */
+
+.diskUsageCard {
+background-color: var(--background-white, #ffffff);
+border-radius: var(--border-radius, 8px);
+box-shadow: var(--box-shadow, 0 1px 3px rgba(0, 0, 0, 0.1));
+padding: 1.5rem;
+margin-bottom: 2rem;
+border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.diskUsageTitle {
+font-size: 1.25rem;
+margin: 0 0 1rem 0;
+color: var(--text-primary, #111827);
+}
+
+.diskUsageInfo {
+margin-bottom: 1rem;
+}
+
+.diskUsageProgressContainer {
+width: 100%;
+height: 16px;
+background-color: var(--background-light, #f9fafb);
+border-radius: 8px;
+overflow: hidden;
+margin-bottom: 0.5rem;
+border: 1px solid var(--border-color, #e5e7eb);
+}
+
 .diskUsageProgressBar {
-  height: 100%;
-  background-color: var(--primary-color, #4f46e5);
-  transition: width 0.5s ease;
+height: 100%;
+background-color: var(--primary-color, #4f46e5);
+transition: width 0.5s ease;
 }
 
 .diskUsageText {
-  font-size: 0.875rem;
-  color: var(--text-secondary, #4b5563);
-  margin-bottom: 0.5rem;
+font-size: 0.875rem;
+color: var(--text-secondary, #4b5563);
+margin-bottom: 0.5rem;
 }
 
 .diskUsageVideos {
-  font-size: 0.875rem;
-  color: var(--text-secondary, #4b5563);
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border-color, #e5e7eb);
+font-size: 0.875rem;
+color: var(--text-secondary, #4b5563);
+padding-top: 0.5rem;
+border-top: 1px solid var(--border-color, #e5e7eb);
 }
 
 .diskUsageLoading {
-  padding: 1rem;
-  text-align: center;
-  color: var(--text-secondary, #4b5563);
+padding: 1rem;
+text-align: center;
+color: var(--text-secondary, #4b5563);
 }
 
 .diskUsageError {
-  padding: 1rem;
-  text-align: center;
-  color: var(--error-color, #ef4444);
-  background-color: rgba(239, 68, 68, 0.1);
-  border-radius: var(--border-radius, 8px);
+padding: 1rem;
+text-align: center;
+color: var(--error-color, #ef4444);
+background-color: rgba(239, 68, 68, 0.1);
+border-radius: var(--border-radius, 8px);
+}
+
+.adminActions {
+margin-bottom: 1.5rem;
+display: flex;
+gap: 1rem;
+flex-wrap: wrap;
+}
+
+.deleteAllVideosButton {
+display: flex;
+align-items: center;
+font-weight: 600;
+padding: 0.75rem 1.5rem;
+}
+
+.deleteAllVideosButton:before {
+content: "🗑️";
+margin-right: 0.5rem;
+font-size: 1.25rem;
+}
+
+.resultMessage {
+padding: 1rem;
+border-radius: var(--border-radius, 8px);
+margin-bottom: 1.5rem;
+font-weight: 500;
+animation: fadeIn 0.3s ease;
+}
+
+.successMessage {
+background-color: rgba(16, 185, 129, 0.1);
+color: #10b981;
+border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.errorMessage {
+background-color: rgba(239, 68, 68, 0.1);
+color: #ef4444;
+border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(-10px); }
+to { opacity: 1; transform: translateY(0); }
 }

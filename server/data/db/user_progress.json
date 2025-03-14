@@ -18,7 +18,8 @@
       "n8n-credentials": true,
       "n8n-flow": true,
       "n8n-data-transformation": true,
-      "n8n-interface": true
+      "n8n-interface": true,
+      "n8n-action-in-app": false
     }
   }
 }

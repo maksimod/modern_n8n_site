@@ -223,6 +223,37 @@ router.delete('/courses/:courseId', [auth, isAdmin], async (req, res) => {
     // Получаем существующие курсы
     const courses = getCourses();
     
+    // Находим курс перед удалением для обработки его видео
+    const courseToDelete = courses.find(c => c.id === courseId && c.language === language);
+    
+    if (!courseToDelete) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Удаляем все локальные видеофайлы, связанные с курсом
+    if (courseToDelete.videos && courseToDelete.videos.length > 0) {
+      courseToDelete.videos.forEach(video => {
+        if (video.localVideo) {
+          // Очищаем путь от возможных префиксов
+          const cleanVideoPath = video.localVideo.replace(/^\/videos\//, '');
+          const videoPath = path.join(__dirname, '../data/videos', cleanVideoPath);
+          
+          console.log(`Attempting to delete course video file: ${videoPath}`);
+          
+          if (fs.existsSync(videoPath)) {
+            try {
+              fs.unlinkSync(videoPath);
+              console.log(`Successfully deleted course video file: ${videoPath}`);
+            } catch (fileError) {
+              console.error(`Error deleting course video file: ${fileError}`);
+            }
+          } else {
+            console.log(`Course video file not found: ${videoPath}`);
+          }
+        }
+      });
+    }
+    
     // Фильтруем курсы, исключая удаляемый
     const filteredCourses = courses.filter(c => !(c.id === courseId && c.language === language));
     
@@ -626,6 +657,76 @@ router.get('/disk-usage', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// Новый маршрут для удаления всех видео файлов
+router.delete('/delete-all-videos', [auth, isAdmin], async (req, res) => {
+  try {
+    const videosPath = path.join(__dirname, '../data/videos');
+    
+    // Проверяем существование директории
+    if (!fs.existsSync(videosPath)) {
+      fs.mkdirSync(videosPath, { recursive: true });
+      return res.json({ success: true, message: 'No videos to delete', deletedCount: 0 });
+    }
+
+    // Получаем список всех файлов
+    const files = fs.readdirSync(videosPath);
+    let deletedCount = 0;
+    let errors = [];
+    
+    // Удаляем каждый файл
+    for (const file of files) {
+      const filePath = path.join(videosPath, file);
+      try {
+        const stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+          fs.unlinkSync(filePath);
+          console.log(`Successfully deleted video file: ${filePath}`);
+          deletedCount++;
+        }
+      } catch (error) {
+        console.error(`Error deleting file ${file}:`, error);
+        errors.push({ file, error: error.message });
+      }
+    }
+    
+    // Обновляем ссылки в JSON файле курсов
+    const courses = getCourses();
+    let updatedCourses = false;
+    
+    // Проходим по всем курсам и их видео
+    for (const course of courses) {
+      if (course.videos && course.videos.length > 0) {
+        for (const video of course.videos) {
+          if (video.localVideo) {
+            // Удаляем ссылку на локальное видео, меняя тип на текстовый
+            video.localVideo = '';
+            video.videoType = VIDEO_TYPES.TEXT;
+            updatedCourses = true;
+          }
+        }
+      }
+    }
+    
+    // Сохраняем обновленные курсы, если были изменения
+    if (updatedCourses) {
+      saveCourses(courses);
+    }
+    
+    // Отправляем результат
+    res.json({
+      success: true,
+      message: `Successfully deleted ${deletedCount} video files`,
+      deletedCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  } catch (err) {
+    console.error('Error deleting all videos:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error: ' + err.message 
+    });
+  }
+});
 
 // Маршрут для удаления файла
 router.delete('/files/:fileName', [auth, isAdmin], async (req, res) => {

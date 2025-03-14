@@ -11,3 +11,14 @@ export const getDiskUsage = async () => {
     throw error;
   }
 };
+
+// Удаление всех видео
+export const deleteAllVideos = async () => {
+  try {
+    const response = await api.delete('/api/admin/delete-all-videos');
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting all videos:', error);
+    throw error;
+  }
+};

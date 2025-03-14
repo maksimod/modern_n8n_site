@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getCourses, deleteCourse } from '../services/course.service';
+import { deleteAllVideos } from '../services/admin.service';
 import Header from '../components/Layout/Header';
 import CourseEditor from '../components/Admin/CourseEditor';
 import styles from '../styles/admin.module.css';
@@ -21,6 +22,8 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null);
   const [showCourseEditor, setShowCourseEditor] = useState(false);
   const [currentCourse, setCurrentCourse] = useState(null);
+  const [deletingVideos, setDeletingVideos] = useState(false);
+  const [deleteVideoResult, setDeleteVideoResult] = useState(null);
   
   // Проверяем статус админа
   useEffect(() => {
@@ -74,6 +77,30 @@ const AdminDashboard = () => {
     }
   };
   
+  // Удаление всех видео
+  const handleDeleteAllVideos = async () => {
+    if (window.confirm('Вы действительно хотите удалить ВСЕ видеофайлы? Это действие невозможно отменить.')) {
+      try {
+        setDeletingVideos(true);
+        setDeleteVideoResult(null);
+        const result = await deleteAllVideos();
+        setDeleteVideoResult(result);
+        // Перезагружаем данные о диске
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } catch (error) {
+        console.error('Error deleting all videos:', error);
+        setDeleteVideoResult({
+          success: false,
+          message: error.message || 'Не удалось удалить видеофайлы'
+        });
+      } finally {
+        setDeletingVideos(false);
+      }
+    }
+  };
+  
   // Закрытие редактора курса
   const handleCloseEditor = (refreshNeeded = false) => {
     setShowCourseEditor(false);
@@ -114,6 +141,26 @@ const AdminDashboard = () => {
       <Header />
       <div className={componentStyles.container}>
         <DiskUsage />
+        
+        <div className={styles.adminActions}>
+          <button 
+            className={`${styles.adminButtonDanger} ${styles.deleteAllVideosButton}`}
+            onClick={handleDeleteAllVideos}
+            disabled={deletingVideos}
+          >
+            {deletingVideos ? 'Удаление...' : 'Удалить все видео'}
+          </button>
+        </div>
+        
+        {deleteVideoResult && (
+          <div className={`${styles.resultMessage} ${deleteVideoResult.success ? styles.successMessage : styles.errorMessage}`}>
+            {deleteVideoResult.message}
+            {deleteVideoResult.deletedCount !== undefined && (
+              <p>Удалено файлов: {deleteVideoResult.deletedCount}</p>
+            )}
+          </div>
+        )}
+        
         <div className={componentStyles.pageHeader}>
           <h1 className={componentStyles.pageTitle}>{t('admin.dashboard')}</h1>
           
