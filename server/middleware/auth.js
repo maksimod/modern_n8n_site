@@ -1,5 +1,6 @@
 // server/middleware/auth.js
 const jwt = require('jsonwebtoken');
+// const { isUserTrusted } = require('../trusted-users'); // Закомментировано для временного отключения
 
 module.exports = function(req, res, next) {
   // Получаем токен из заголовка
@@ -20,6 +21,25 @@ module.exports = function(req, res, next) {
     if (!decoded || !decoded.user) {
       return res.status(401).json({ message: 'Invalid token payload' });
     }
+    
+    // Получаем данные пользователя
+    const userId = decoded.user.id;
+    
+    /* Временно отключаем проверку доверенных пользователей
+    const user = userModel.findById(userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+    
+    // Проверяем, остается ли пользователь в списке доверенных
+    if (!isUserTrusted(user.username)) {
+      return res.status(403).json({ 
+        message: 'User access has been revoked',
+        code: 'ACCESS_REVOKED'
+      });
+    }
+    */
     
     // Добавляем информацию о пользователе в request
     req.user = decoded.user;

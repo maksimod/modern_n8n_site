@@ -1,3 +1,5 @@
+// client/src/pages/AuthPage.jsx
+// Модифицированный компонент для поддержки информирования пользователя об отозванном доступе
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,9 +14,10 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [accessRevokedMessage, setAccessRevokedMessage] = useState(''); // Новое состояние
   const [loading, setLoading] = useState(false);
   
-  const { login, register, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated, accessRevoked } = useAuth();
   const { language, switchLanguage, supportedLanguages } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +27,16 @@ const AuthPage = () => {
     const searchParams = new URLSearchParams(location.search);
     return searchParams.get('redirect') || '/';
   };
+  
+  // Проверяем параметр revoked в URL
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const isRevoked = searchParams.get('revoked') === 'true';
+    
+    if (isRevoked || accessRevoked) {
+      setAccessRevokedMessage(t('Ваш доступ был отозван. Пожалуйста, обратитесь к администратору.'));
+    }
+  }, [location.search, accessRevoked, t]);
   
   // Если пользователь уже авторизован, перенаправляем
   useEffect(() => {
@@ -36,6 +49,7 @@ const AuthPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setAccessRevokedMessage('');
     
     if (!username || !password) {
       setError(t('enterAllFields'));
@@ -59,7 +73,12 @@ const AuthPage = () => {
       const redirectUrl = getRedirectUrl();
       navigate(redirectUrl);
     } catch (err) {
-      setError(err.message);
+      // Проверяем специфические ошибки доступа
+      if (err.message.includes('access has been revoked') || err.message.includes('restricted to trusted users')) {
+        setAccessRevokedMessage(err.message);
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -68,6 +87,7 @@ const AuthPage = () => {
   const toggleMode = () => {
     setIsLoginMode(!isLoginMode);
     setError('');
+    setAccessRevokedMessage('');
   };
   
   return (
@@ -98,6 +118,17 @@ const AuthPage = () => {
           {error && (
             <div className={styles.errorMessage}>
               {error}
+            </div>
+          )}
+          
+          {/* Новый блок для отображения сообщения об отозванном доступе */}
+          {accessRevokedMessage && (
+            <div className={`${styles.errorMessage} ${styles.revokedMessage}`}>
+              <strong>{t('Внимание!')} </strong>
+              {accessRevokedMessage}
+              <p className={styles.revokedHint}>
+                {t('Если вы считаете, что это ошибка, обратитесь к администратору системы.')}
+              </p>
             </div>
           )}
           

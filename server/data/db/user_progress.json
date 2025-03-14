@@ -21,5 +21,10 @@
       "n8n-interface": true,
       "n8n-action-in-app": false
     }
+  },
+  "5": {
+    "n8n-basics": {
+      "n8n-action-in-app": true
+    }
   }
 }

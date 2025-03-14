@@ -1,0 +1,16 @@
+{
+  "users": {
+    "admin": {
+      "enabled": true,
+      "notes": "Built-in administrator account"
+    },
+    "Коптелов Максим Максимович": {
+      "enabled": true,
+      "notes": ""
+    }
+  },
+  "meta": {
+    "lastUpdated": "2025-03-14T13:37:42.229Z",
+    "version": 1
+  }
+}

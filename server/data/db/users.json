@@ -1,20 +1,14 @@
 [
   {
-    "id": 2,
-    "username": "Maksim",
-    "password": "$2a$10$fWVzv7yJ8ULgSpLk7XGHuOs08Nl0jZfDdlFsw28bgI.kkfhgjmpm2",
-    "created_at": "2025-03-04T14:43:53.112Z"
-  },
-  {
-    "id": 3,
-    "username": "Максим",
-    "password": "$2a$10$fZfy/dyMqR29P4ulJhuCNOnnDQTYR/dNXP9sIU8p/snK.ruPFdOJC",
-    "created_at": "2025-03-04T14:49:58.604Z"
-  },
-  {
     "id": 4,
     "username": "admin",
     "password": "$2a$10$3SU0U8VsKb7tlmmFgkextuv5fzuxGf2LgLazRIwHw6FHWn0plHQJG",
     "created_at": "2025-03-11T13:48:10.570Z"
+  },
+  {
+    "id": 5,
+    "username": "Коптелов Максим Максимович",
+    "password": "$2a$10$34lc0sVE5nZQpo91/oYb/O5JHvpXqTbluxTnbUB1WOmkNcXYWV4M.",
+    "created_at": "2025-03-14T14:02:07.278Z"
   }
 ]

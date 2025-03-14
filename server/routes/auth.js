@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const { userModel } = require('../models/data-model');
 const auth = require('../middleware/auth');
+const { isUserTrusted } = require('../trusted-users');
 
 // @route   POST api/auth/register
 // @desc    Register a user
@@ -33,6 +34,15 @@ router.post(
       if (existingUser) {
         console.log('Пользователь уже существует');
         return res.status(400).json({ message: 'User already exists' });
+      }
+
+      // НОВОЕ: Проверяем, находится ли пользователь в списке доверенных
+      if (!isUserTrusted(username)) {
+        console.log('Пользователь не находится в списке доверенных:', username);
+        return res.status(403).json({ 
+          message: 'Registration is restricted to trusted users only', 
+          code: 'NOT_TRUSTED'
+        });
       }
 
       // Создаем нового пользователя
@@ -101,6 +111,15 @@ router.post(
         return res.status(400).json({ message: 'Invalid credentials' });
       }
       
+      // НОВОЕ: Проверяем, находится ли пользователь всё ещё в списке доверенных
+      if (!isUserTrusted(username)) {
+        console.log('Доступ пользователя был отозван:', username);
+        return res.status(403).json({ 
+          message: 'User access has been revoked', 
+          code: 'ACCESS_REVOKED'
+        });
+      }
+      
       console.log('User authenticated:', { id: user.id, username: user.username });
       
       // Создаем и возвращаем JWT токен
@@ -163,7 +182,14 @@ router.get('/check-username/:username', async (req, res) => {
   
   try {
     const user = userModel.findByUsername(username);
-    res.json({ available: !user });
+    
+    // НОВОЕ: Также проверяем, находится ли username в списке доверенных
+    const isTrusted = isUserTrusted(username);
+    
+    res.json({ 
+      available: !user,
+      trusted: isTrusted
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

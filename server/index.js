@@ -5,6 +5,9 @@ const path = require('path');
 const morgan = require('morgan');
 const fs = require('fs');
 const progressRouter = require('./routes/progress');
+// Закомментируем пока это - система очистки должна быть включена только после того, 
+// как все остальное будет работать корректно
+// const { startCleanupJob } = require('./utils/user-cleaner');
 require('dotenv').config();
 
 // Создаем приложение Express
@@ -113,9 +116,22 @@ const authRouter = require('./routes/auth');
 const coursesRouter = require('./routes/courses');
 const adminRouter = require('./routes/admin');
 
+// ВАЖНО: Проверяем существование файла маршрутов перед импортом
+// let trustedUsersRouter;
+// try {
+//   trustedUsersRouter = require('./routes/trusted-users');
+// } catch (error) {
+//   console.warn('Trusted users routes not found, skipping: ', error.message);
+// }
+
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
 app.use('/api/admin', adminRouter);
+
+// Регистрируем маршрут только если файл существует
+// if (trustedUsersRouter) {
+//   app.use('/api/admin/trusted-users', trustedUsersRouter);
+// }
 
 // Специальный маршрут для скачивания видео
 app.get('/download/:filename', (req, res) => {
@@ -152,9 +168,14 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Временно отключаем задачу очистки отозванных пользователей
+// пока не убедимся, что все остальное работает
+// startCleanupJob();
+
 // Запуск сервера
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Сервер запущен на порту ${PORT}`);
   console.log(`Окружение: ${process.env.NODE_ENV || 'development'}`);
+  // console.log('Система доверенных пользователей активирована');
 });

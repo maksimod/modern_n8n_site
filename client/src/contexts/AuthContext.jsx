@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [accessRevoked, setAccessRevoked] = useState(false); // Новое состояние для отозванного доступа
 
   useEffect(() => {
     // Проверяем, есть ли сохраненный пользователь и токен
@@ -36,10 +37,28 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Обработка ошибок API для проверки отозванного доступа
+  const handleApiError = (err) => {
+    setError(err.message);
+    
+    // Проверяем, был ли отозван доступ
+    if (err.response && err.response.data && err.response.data.code === 'ACCESS_REVOKED') {
+      console.log('Доступ к аккаунту был отозван');
+      setAccessRevoked(true);
+      
+      // Очищаем данные пользователя
+      logoutUser();
+    }
+    
+    throw err;
+  };
+
   // Функция для регистрации
   const registerUser = async (username, password) => {
     try {
       setError(null);
+      setAccessRevoked(false);
+      
       const response = await register(username, password);
       const { user, token } = response;
       
@@ -55,7 +74,12 @@ export const AuthProvider = ({ children }) => {
       setIsAdmin(user.username === 'admin');
       return user;
     } catch (err) {
-      setError(err.message);
+      // Проверяем, был ли отказ в регистрации из-за отсутствия в списке доверенных
+      if (err.response && err.response.data && err.response.data.code === 'NOT_TRUSTED') {
+        setError('Регистрация ограничена только для доверенных пользователей');
+      } else {
+        handleApiError(err);
+      }
       throw err;
     }
   };
@@ -64,6 +88,8 @@ export const AuthProvider = ({ children }) => {
   const loginUser = async (username, password) => {
     try {
       setError(null);
+      setAccessRevoked(false);
+      
       const response = await login(username, password);
       const { user, token } = response;
       
@@ -79,8 +105,7 @@ export const AuthProvider = ({ children }) => {
       setIsAdmin(user.username === 'admin');
       return user;
     } catch (err) {
-      setError(err.message);
-      throw err;
+      return handleApiError(err);
     }
   };
 
@@ -99,7 +124,19 @@ export const AuthProvider = ({ children }) => {
   // Функция для проверки username
   const checkUsernameAvailable = async (username) => {
     try {
-      return await checkUsername(username);
+      const response = await checkUsername(username);
+      
+      // Обновленный ответ API включает информацию о доверенных пользователях
+      if (response && typeof response.available !== 'undefined') {
+        // Если имя свободно, но пользователь не в списке доверенных
+        if (response.available && response.trusted === false) {
+          setError('Регистрация ограничена только для доверенных пользователей');
+          return false;
+        }
+        return response.available;
+      }
+      
+      return false;
     } catch (err) {
       console.error('Error checking username:', err);
       return false;
@@ -113,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     loading,
     error,
+    accessRevoked, // Добавляем новое состояние
     register: registerUser,
     login: loginUser,
     logout: logoutUser,

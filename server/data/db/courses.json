@@ -8,11 +8,12 @@
       {
         "id": "n8n-interface",
         "title": "Интерфейс",
-        "description": "Интерфейс",
-        "duration": "00:00",
+        "description": "Интерфейс \\n\n\nЯ хочу вам сказать что это только тест\n❤️‍🔥😺👾👁️😻🥴🤕😁😃😀\n\n",
         "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
+        "duration": "00:00",
+        "localVideo": "",
+        "videoUrl": "",
+        "isPrivate": false
       },
       {
         "id": "n8n-triggers",
@@ -29,10 +30,9 @@
         "title": "Узлы \"Action in app\"",
         "description": "",
         "duration": "00:00",
-        "isPrivate": false,
         "localVideo": "68395861-adf6-42e7-a021-d74313b7ac96.mp4",
-        "videoUrl": "",
-        "videoType": "local"
+        "videoType": "local",
+        "isPrivate": false
       },
       {
         "id": "n8n-credentials",

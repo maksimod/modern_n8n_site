@@ -1,3 +1,4 @@
+// client/src/services/api.js
 import axios from 'axios';
 
 // Получаем базовый URL сервера из переменных окружения или используем значение по умолчанию
@@ -30,16 +31,40 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // При 401 ошибке (неавторизован) перенаправляем на страницу логина
-    if (error.response && error.response.status === 401) {
-      // Очищаем данные пользователя и токен
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+    // Обработка ошибок авторизации
+    if (error.response) {
+      // Проверка на ошибку отозванного доступа
+      if (error.response.data && error.response.data.code === 'ACCESS_REVOKED') {
+        console.error('Доступ пользователя был отозван');
+        
+        // Очищаем данные пользователя
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        
+        // Добавляем информацию о причине ошибки
+        error.accessRevoked = true;
+        
+        // Перенаправляем на страницу авторизации с соответствующим сообщением
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}&revoked=true`;
+        
+        return Promise.reject(error);
+      }
       
-      // Перенаправляем на страницу авторизации, сохраняя текущий URL
-      const currentPath = window.location.pathname + window.location.search;
-      window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
+      // Обычная 401 ошибка (неавторизован)
+      if (error.response.status === 401) {
+        // Очищаем данные пользователя и токен
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        
+        // Перенаправляем на страницу авторизации, сохраняя текущий URL
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/auth?redirect=${encodeURIComponent(currentPath)}`;
+        
+        return Promise.reject(error);
+      }
     }
+    
     return Promise.reject(error);
   }
 );

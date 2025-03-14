@@ -1,3 +1,4 @@
+// client/src/pages/AdminDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,9 @@ import CourseEditor from '../components/Admin/CourseEditor';
 import styles from '../styles/admin.module.css';
 import componentStyles from '../styles/components.module.css';
 import DiskUsage from '../components/Admin/DiskUsage';
+
+// Временно закомментировано до исправления ошибок
+// import TrustedUsersManager from '../components/Admin/TrustedUsersManager';
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -24,6 +28,9 @@ const AdminDashboard = () => {
   const [currentCourse, setCurrentCourse] = useState(null);
   const [deletingVideos, setDeletingVideos] = useState(false);
   const [deleteVideoResult, setDeleteVideoResult] = useState(null);
+  
+  // Упрощаем админ дашборд - убираем вкладки, пока не наладим работу
+  // const [activeTab, setActiveTab] = useState('courses');
   
   // Проверяем статус админа
   useEffect(() => {

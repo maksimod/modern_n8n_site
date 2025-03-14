@@ -51,6 +51,8 @@ const saveData = (filePath, data) => {
 
 // Операции с пользователями
 const userModel = {
+  USERS_FILE, // Экспортируем константу для доступа в других модулях
+
   getAll: () => getData(USERS_FILE),
   
   findByUsername: (username) => {
@@ -107,9 +109,58 @@ const userModel = {
     // Возвращаем пользователя без пароля
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
+  },
+
+  deleteById: (id) => {
+    const users = getData(USERS_FILE);
+    const updatedUsers = users.filter(user => user.id !== id);
+    
+    if (users.length === updatedUsers.length) {
+      return false; // Пользователь не найден
+    }
+    
+    return saveData(USERS_FILE, updatedUsers);
+  },
+
+  // Новый метод для удаления пользователя по имени
+  deleteByUsername: (username) => {
+    const users = getData(USERS_FILE);
+    const updatedUsers = users.filter(user => user.username !== username);
+    
+    if (users.length === updatedUsers.length) {
+      return false; // Пользователь не найден
+    }
+    
+    return saveData(USERS_FILE, updatedUsers);
+  },
+  
+  // Метод для массового удаления пользователей по списку имен
+  deleteUsersByUsernameList: (usernameList) => {
+    if (!Array.isArray(usernameList) || usernameList.length === 0) {
+      return { success: false, message: 'No usernames provided' };
+    }
+    
+    const users = getData(USERS_FILE);
+    const usernameSet = new Set(usernameList);
+    
+    const updatedUsers = users.filter(user => !usernameSet.has(user.username));
+    
+    const deletedCount = users.length - updatedUsers.length;
+    
+    if (deletedCount === 0) {
+      return { success: false, message: 'No matching users found', deletedCount: 0 };
+    }
+    
+    const saveSuccess = saveData(USERS_FILE, updatedUsers);
+    
+    return { 
+      success: saveSuccess, 
+      message: saveSuccess ? `Successfully deleted ${deletedCount} users` : 'Failed to save changes',
+      deletedCount: saveSuccess ? deletedCount : 0
+    };
   }
 };
-
+  
 // Операции с курсами
 const courseModel = {
   getAll: (language = 'ru') => {

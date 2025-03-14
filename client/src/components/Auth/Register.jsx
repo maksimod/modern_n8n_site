@@ -1,3 +1,4 @@
+// Модификация client/src/components/Auth/Register.jsx
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -15,6 +16,7 @@ const Register = ({ onSwitchMode }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [isTrusted, setIsTrusted] = useState(null); // Новое состояние для проверки доверенности
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -28,6 +30,7 @@ const Register = ({ onSwitchMode }) => {
     // Reset username availability check when username changes
     if (name === 'username') {
       setUsernameAvailable(null);
+      setIsTrusted(null); // Сбрасываем статус доверенности
     }
   };
 
@@ -45,12 +48,22 @@ const Register = ({ onSwitchMode }) => {
     if (formData.username && !errors.username) {
       setUsernameChecking(true);
       try {
-        const isAvailable = await checkUsername(formData.username);
-        if (!isAvailable) {
+        const result = await checkUsername(formData.username);
+        
+        // Обновленная проверка доверенного пользователя
+        if (!result.available) {
           errors.username = t('auth.usernameExists');
           setUsernameAvailable(false);
         } else {
           setUsernameAvailable(true);
+          
+          // Проверяем, является ли пользователь доверенным
+          if (!result.trusted) {
+            errors.username = t('Registration is restricted to trusted users only');
+            setIsTrusted(false);
+          } else {
+            setIsTrusted(true);
+          }
         }
       } catch (error) {
         console.error('Error checking username:', error);
@@ -117,8 +130,10 @@ const Register = ({ onSwitchMode }) => {
               <div className={styles.formError}>{formErrors.username}</div>
             )}
             {usernameAvailable === true && !formErrors.username && (
-              <div style={{ color: 'green', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-                {t('Username is available')}
+              <div className={`${styles.statusMessage} ${isTrusted ? styles.successStatus : styles.warningStatus}`}>
+                {isTrusted 
+                  ? t('Username is available and trusted') 
+                  : t('Username is available but not in trusted list')}
               </div>
             )}
           </div>
@@ -170,7 +185,7 @@ const Register = ({ onSwitchMode }) => {
           <button 
             type="submit" 
             className={styles.submitButton}
-            disabled={isSubmitting || usernameChecking}
+            disabled={isSubmitting || usernameChecking || isTrusted === false}
           >
             {isSubmitting ? t('common.loading') : t('auth.register')}
           </button>
