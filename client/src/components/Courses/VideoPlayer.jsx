@@ -114,7 +114,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       )}
 
       {/* Локальное видео */}
-      {videoType === VIDEO_TYPES.LOCAL && (
+      {videoType === VIDEO_TYPES.LOCAL && video.localVideo && (
         <>
           <div className={styles.videoContainer}>
             <video 
@@ -146,7 +146,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       )}
 
       {/* Внешнее видео (YouTube) */}
-      {videoType === VIDEO_TYPES.EXTERNAL && (
+      {videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl && (
         <>
           <div className={styles.videoContainer}>
             <iframe 
@@ -155,6 +155,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               frameBorder="0" 
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+              loading="lazy"
               className={styles.videoElement}
             ></iframe>
           </div>

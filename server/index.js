@@ -22,6 +22,9 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use('/api/progress', progressRouter);
 
+// Добавляем кэширование для статических файлов
+const cacheTime = 86400000 * 7; // 7 дней
+
 // Специальная настройка для видео-файлов
 app.use((req, res, next) => {
   if (req.url.startsWith('/videos/') || req.url.endsWith('.mp4')) {
@@ -38,6 +41,9 @@ app.use((req, res, next) => {
     if (req.url.endsWith('.mp4')) {
       res.setHeader('Content-Type', 'video/mp4');
     }
+    
+    // Кэширование видео на клиенте
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 день
   }
   next();
 });
@@ -73,7 +79,8 @@ app.get('/videos/:filename', (req, res) => {
         'Content-Range': `bytes ${start}-${end}/${fileSize}`,
         'Accept-Ranges': 'bytes',
         'Content-Length': chunkSize,
-        'Content-Type': 'video/mp4'
+        'Content-Type': 'video/mp4',
+        'Cache-Control': 'public, max-age=86400'
       });
       
       // Передаем поток
@@ -82,7 +89,8 @@ app.get('/videos/:filename', (req, res) => {
       // Если нет Range header, отдаем весь файл
       res.writeHead(200, {
         'Content-Length': fileSize,
-        'Content-Type': 'video/mp4'
+        'Content-Type': 'video/mp4',
+        'Cache-Control': 'public, max-age=86400'
       });
       
       fs.createReadStream(videoPath).pipe(res);
@@ -90,11 +98,13 @@ app.get('/videos/:filename', (req, res) => {
   });
 });
 
-// Статические видео-файлы
+// Статические видео-файлы с кэшированием
 app.use('/videos', express.static(path.join(__dirname, 'data/videos'), {
+  maxAge: cacheTime,
   setHeaders: (res) => {
     res.set('Accept-Ranges', 'bytes');
     res.set('Content-Type', 'video/mp4');
+    res.set('Cache-Control', 'public, max-age=86400');
   }
 }));
 
@@ -121,9 +131,14 @@ app.get('/download/:filename', (req, res) => {
   res.download(filePath);
 });
 
-// Обслуживание статических файлов в production
+// Обслуживание статических файлов в production с кэшированием
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+  app.use(express.static(path.join(__dirname, '../client/dist'), {
+    maxAge: cacheTime,
+    etag: true,
+    lastModified: true
+  }));
+  
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
   });

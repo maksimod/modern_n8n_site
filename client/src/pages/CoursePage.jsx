@@ -1,5 +1,5 @@
 // client/src/pages/CoursePage.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,8 +26,24 @@ const CoursePage = () => {
   
   // Используем реф для отслеживания, загрузился ли прогресс
   const progressLoadedRef = useRef(false);
+  // Храним предыдущий videoId, чтобы избежать лишних перезагрузок
+  const prevVideoIdRef = useRef(null);
   
-  // Загружаем курс и текущее видео
+  // Функция для загрузки видео
+  const fetchVideo = useCallback(async (cId, vId, lang) => {
+    try {
+      if (!vId || prevVideoIdRef.current === vId) return null;
+      
+      const videoData = await getVideoById(cId, vId, lang);
+      prevVideoIdRef.current = vId;
+      return videoData;
+    } catch (error) {
+      console.error('Error loading video:', error);
+      return null;
+    }
+  }, []);
+  
+  // Загружаем курс
   useEffect(() => {
     let isMounted = true;
     
@@ -40,20 +56,6 @@ const CoursePage = () => {
         
         if (courseData) {
           setCourse(courseData);
-          
-          // Если есть видео в URL и оно существует в курсе
-          if (videoId && courseData.videos.find(v => v.id === videoId)) {
-            const videoData = await getVideoById(courseId, videoId, language);
-            if (!isMounted) return;
-            if (videoData) {
-              setCurrentVideo(videoData);
-            }
-          } else if (courseData.videos.length > 0) {
-            // Если нет видео в URL, устанавливаем первое видео из курса
-            if (isMounted) {
-              setSearchParams({ video: courseData.videos[0].id });
-            }
-          }
         }
       } catch (error) {
         console.error('Error loading course:', error);
@@ -69,7 +71,38 @@ const CoursePage = () => {
     return () => {
       isMounted = false;
     };
-  }, [courseId, language, videoId, setSearchParams]);
+  }, [courseId, language]);
+  
+  // Загружаем текущее видео когда курс загружен и есть videoId
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadVideo = async () => {
+      if (!course) return;
+      
+      // Если есть видео в URL и оно существует в курсе
+      if (videoId && course.videos.find(v => v.id === videoId)) {
+        const videoData = await fetchVideo(courseId, videoId, language);
+        
+        if (!isMounted) return;
+        
+        if (videoData) {
+          setCurrentVideo(videoData);
+        }
+      } else if (course.videos.length > 0 && !videoId) {
+        // Если нет видео в URL, устанавливаем первое видео из курса
+        if (isMounted) {
+          setSearchParams({ video: course.videos[0].id });
+        }
+      }
+    };
+    
+    loadVideo();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [courseId, language, videoId, course, fetchVideo, setSearchParams]);
   
   // Загружаем прогресс по курсу
   useEffect(() => {

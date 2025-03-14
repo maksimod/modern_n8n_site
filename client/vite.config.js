@@ -10,6 +10,19 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     minify: true,
+    // Улучшаем сборку
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-components': ['react-player'],
+          'utils': ['axios', 'i18next']
+        }
+      }
+    },
+    // Включаем gzip сжатие
+    brotliSize: false,
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     host: '0.0.0.0', // Важно для доступа с других устройств
@@ -18,5 +31,9 @@ export default defineConfig({
     watch: {
       usePolling: true,
     }
-  }
+  },
+  // Включаем оптимизацию для продакшена
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'i18next']
+  },
 })

@@ -1,11 +1,13 @@
 // client/src/components/Courses/YouTubePlayer.jsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from '../../styles/courses.module.css';
 
 const YouTubePlayer = ({ videoUrl }) => {
   const playerRef = useRef(null);
   const containerRef = useRef(null);
   const playerInstanceRef = useRef(null);
+  const [isApiLoaded, setIsApiLoaded] = useState(false);
+  const [isApiLoading, setIsApiLoading] = useState(false);
 
   // Извлекаем YouTube ID из URL
   const extractYoutubeId = (url) => {
@@ -31,24 +33,53 @@ const YouTubePlayer = ({ videoUrl }) => {
     return null;
   };
 
-  useEffect(() => {
-    // Глобальный обработчик для YouTube API
-    if (!window.onYouTubeIframeAPIReady) {
-      window.onYouTubeIframeAPIReady = () => {
-        window.youTubeAPIReady = true;
-        
-        // Вызываем событие, чтобы уведомить все экземпляры компонента
-        const event = new Event('youtubeapiready');
-        window.dispatchEvent(event);
-      };
+  // Загрузка YouTube API
+  const loadYouTubeAPI = () => {
+    if (window.YT && window.YT.Player) {
+      setIsApiLoaded(true);
+      return Promise.resolve();
     }
-    
+
+    if (isApiLoading) {
+      return new Promise((resolve) => {
+        window.onYouTubeIframeAPIReady = () => {
+          setIsApiLoaded(true);
+          resolve();
+        };
+      });
+    }
+
+    return new Promise((resolve) => {
+      // Создаем функцию обратного вызова
+      window.onYouTubeIframeAPIReady = () => {
+        setIsApiLoaded(true);
+        resolve();
+      };
+
+      // Динамически загружаем скрипт
+      setIsApiLoading(true);
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    });
+  };
+
+  useEffect(() => {
     const videoId = extractYoutubeId(videoUrl);
     if (!videoId) return;
     
     // Функция для создания плеера
-    const createPlayer = () => {
+    const createPlayer = async () => {
       if (!containerRef.current) return;
+      
+      // Загружаем API если необходимо
+      try {
+        await loadYouTubeAPI();
+      } catch (error) {
+        console.error('Failed to load YouTube API:', error);
+        return;
+      }
       
       if (playerInstanceRef.current) {
         playerInstanceRef.current.destroy();
@@ -63,50 +94,53 @@ const YouTubePlayer = ({ videoUrl }) => {
       playerRef.current.id = `youtube-player-${videoId}`;
       containerRef.current.appendChild(playerRef.current);
       
-      // Создаем плеер с мобильными параметрами
-      playerInstanceRef.current = new window.YT.Player(playerRef.current.id, {
-        videoId: videoId,
-        playerVars: {
-          playsinline: 1,       // Важно для iOS
-          rel: 0,               // Не показывать похожие видео
-          modestbranding: 1,    // Минимальный брендинг YouTube
-          origin: window.location.origin,
-          enablejsapi: 1
-        },
-        events: {
-          onReady: (event) => {
-            console.log('YouTube player ready');
+      try {
+        // Создаем плеер с мобильными параметрами
+        playerInstanceRef.current = new window.YT.Player(playerRef.current.id, {
+          videoId: videoId,
+          playerVars: {
+            playsinline: 1,       // Важно для iOS
+            rel: 0,               // Не показывать похожие видео
+            modestbranding: 1,    // Минимальный брендинг YouTube
+            origin: window.location.origin,
+            enablejsapi: 1
           },
-          onError: (event) => {
-            console.error('YouTube player error:', event.data);
+          events: {
+            onReady: (event) => {
+              console.log('YouTube player ready');
+            },
+            onError: (event) => {
+              console.error('YouTube player error:', event.data);
+            }
           }
-        }
-      });
+        });
+      } catch (error) {
+        console.error('Error creating YouTube player:', error);
+      }
     };
     
-    // Проверяем, готово ли API
-    if (window.YT && window.YT.Player) {
-      createPlayer();
-    } else {
-      // Ждем, когда API будет готово
-      const onYouTubeReady = () => {
-        createPlayer();
-      };
-      
-      window.addEventListener('youtubeapiready', onYouTubeReady);
-      
-      return () => {
-        window.removeEventListener('youtubeapiready', onYouTubeReady);
-      };
-    }
+    createPlayer();
     
     return () => {
       if (playerInstanceRef.current) {
-        playerInstanceRef.current.destroy();
+        try {
+          playerInstanceRef.current.destroy();
+        } catch (error) {
+          console.error('Error destroying YouTube player:', error);
+        }
         playerInstanceRef.current = null;
       }
     };
   }, [videoUrl]);
+
+  // Если URL недоступен, показываем сообщение
+  if (!extractYoutubeId(videoUrl)) {
+    return (
+      <div className={styles.youtubeError}>
+        <p>Видео недоступно</p>
+      </div>
+    );
+  }
 
   return (
     <div 

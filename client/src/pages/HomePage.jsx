@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,28 +10,34 @@ import styles from '../styles/HomePage.module.css';
 const HomePage = () => {
   const { t } = useTranslation();
   const { language, switchLanguage, supportedLanguages } = useLanguage();
-  const { currentUser, logout, isAdmin } = useAuth();
+  const { currentUser } = useAuth();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getCourses(language);
-        setCourses(data);
-      } catch (err) {
-        console.error('Ошибка загрузки курсов:', err);
-        setError('Не удалось загрузить курсы. Пожалуйста, убедитесь, что сервер запущен.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCourses(language);
+      setCourses(data);
+    } catch (err) {
+      console.error('Ошибка загрузки курсов:', err);
+      setError('Не удалось загрузить курсы. Пожалуйста, убедитесь, что сервер запущен.');
+    } finally {
+      setLoading(false);
+    }
   }, [language]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  const handleLanguageSwitch = (lang) => {
+    if (lang !== language) {
+      switchLanguage(lang);
+    }
+  };
 
   return (
     <div>
@@ -44,7 +50,7 @@ const HomePage = () => {
             {supportedLanguages.map(lang => (
               <button
                 key={lang.code}
-                onClick={() => switchLanguage(lang.code)}
+                onClick={() => handleLanguageSwitch(lang.code)}
                 className={`${styles.languageButton} ${language === lang.code ? styles.activeLanguage : ''}`}
               >
                 {lang.name}
