@@ -54,22 +54,21 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
     }
   };
 
-  // Обработчик удаления видео с учетом удаления файла
+  // Обработчик удаления видео
   const handleDeleteVideo = async (videoId) => {
     if (window.confirm(t('admin.confirmDeleteVideo'))) {
       try {
-        console.log(`Deleting video ${videoId} from course ${courseId}`, { courseId, videoId, language });
-        
-        // Сначала удаляем видео через API
+        // Непосредственный вызов API для удаления видео
         await deleteVideo(courseId, videoId, language);
+        console.log(`Video ${videoId} deleted from course ${courseId}`);
         
-        // Затем обновляем UI через callback
-        onDelete(videoId);
-        
-        console.log('Video successfully deleted');
+        // Затем вызываем onDelete callback для обновления UI
+        if (onDelete) {
+          onDelete(videoId);
+        }
       } catch (error) {
         console.error(`Error deleting video ${videoId}:`, error);
-        alert('Failed to delete video');
+        alert('Failed to delete video: ' + (error.message || 'Unknown error'));
       }
     }
   };

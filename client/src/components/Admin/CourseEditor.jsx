@@ -1,7 +1,9 @@
+// client/src/components/Admin/CourseEditor.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { createCourse, updateCourse, getCourseById, updateVideoPositions } from '../../services/course.service';
+import { createCourse, updateCourse, getCourseById, updateVideoPositions, deleteVideo } from '../../services/course.service';  // Убедитесь, что здесь есть импорт deleteVideo
 import Header from '../Layout/Header';
 import VideoEditor from './VideoEditor';
 import VideoList from './VideoList';
