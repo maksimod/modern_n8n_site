@@ -759,4 +759,80 @@ router.delete('/files/:fileName', [auth, isAdmin], async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Добавьте этот маршрут для удаления видео внутри существующего файла
+router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req, res) => {
+  try {
+    const { courseId, videoId } = req.params;
+    const language = req.query.language || 'ru';
+    
+    console.log(`[DELETE VIDEO] Deleting video: courseId=${courseId}, videoId=${videoId}, language=${language}`);
+    
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Ищем курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      console.log(`[DELETE VIDEO] Course not found: ${courseId}, language=${language}`);
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    // Находим видео для получения информации о файле перед удалением
+    const videoIndex = courses[courseIndex].videos.findIndex(v => v.id === videoId);
+    
+    if (videoIndex === -1) {
+      console.log(`[DELETE VIDEO] Video not found: ${videoId}`);
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Получаем информацию о видео перед удалением
+    const videoToDelete = courses[courseIndex].videos[videoIndex];
+    console.log('[DELETE VIDEO] Video to delete:', videoToDelete);
+    
+    // Удаляем видеофайл, если он существует
+    let fileDeleted = false;
+    if (videoToDelete.localVideo) {
+      // Очищаем путь от возможных префиксов
+      const cleanVideoPath = videoToDelete.localVideo.replace(/^\/videos\//, '');
+      const videoPath = path.join(__dirname, '../data/videos', cleanVideoPath);
+      
+      console.log(`[DELETE VIDEO] Attempting to delete video file: ${videoPath}`);
+      
+      if (fs.existsSync(videoPath)) {
+        try {
+          fs.unlinkSync(videoPath);
+          console.log(`[DELETE VIDEO] Successfully deleted video file: ${videoPath}`);
+          fileDeleted = true;
+        } catch (fileError) {
+          console.error(`[DELETE VIDEO] Error deleting video file: ${fileError}`);
+          // Продолжаем выполнение даже при ошибке удаления файла
+        }
+      } else {
+        console.log(`[DELETE VIDEO] Video file not found: ${videoPath}`);
+      }
+    }
+    
+    // Удаляем видео из списка
+    courses[courseIndex].videos.splice(videoIndex, 1);
+    
+    // Сохраняем обновленный список курсов
+    saveCourses(courses);
+    
+    console.log('[DELETE VIDEO] Video successfully removed from courses data');
+    
+    res.json({ 
+      success: true,
+      message: 'Video deleted successfully', 
+      fileDeleted,
+      videoId,
+      courseId
+    });
+  } catch (err) {
+    console.error(`[DELETE VIDEO] Error deleting video: ${err.message}`);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -1,10 +1,15 @@
+// client/src/components/Admin/VideoList.jsx
+
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { deleteVideo } from '../../services/course.service';
 import styles from '../../styles/admin.module.css';
 import { VIDEO_TYPES } from '../../config';
 
-const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
+const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   
   if (!videos || videos.length === 0) {
     return (
@@ -46,6 +51,26 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
         );
       default:
         return null;
+    }
+  };
+
+  // Обработчик удаления видео с учетом удаления файла
+  const handleDeleteVideo = async (videoId) => {
+    if (window.confirm(t('admin.confirmDeleteVideo'))) {
+      try {
+        console.log(`Deleting video ${videoId} from course ${courseId}`, { courseId, videoId, language });
+        
+        // Сначала удаляем видео через API
+        await deleteVideo(courseId, videoId, language);
+        
+        // Затем обновляем UI через callback
+        onDelete(videoId);
+        
+        console.log('Video successfully deleted');
+      } catch (error) {
+        console.error(`Error deleting video ${videoId}:`, error);
+        alert('Failed to delete video');
+      }
     }
   };
   
@@ -113,7 +138,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder }) => {
             
             <button
               className={styles.adminButtonDanger}
-              onClick={() => onDelete(video.id)}
+              onClick={() => handleDeleteVideo(video.id)}
               title={t('admin.deleteVideo')}
               style={{ padding: '0.375rem 0.75rem' }}
             >

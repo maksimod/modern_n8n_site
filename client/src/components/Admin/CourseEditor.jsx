@@ -153,13 +153,30 @@ const CourseEditor = ({ course, onClose, language }) => {
     }
   };
   
-  // Delete video handler
-  const handleDeleteVideo = (videoId) => {
+  const handleDeleteVideo = async (videoId) => {
     if (window.confirm(t('admin.confirmDeleteVideo'))) {
-      setFormData(prev => ({
-        ...prev,
-        videos: prev.videos.filter(video => video.id !== videoId)
-      }));
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log(`Attempting to delete video: ${videoId} from course: ${formData.id}`);
+        
+        // Вызываем API для удаления видео
+        await deleteVideo(formData.id, videoId, formData.language);
+        
+        // Обновляем состояние после удаления
+        setFormData(prev => ({
+          ...prev,
+          videos: prev.videos.filter(v => v.id !== videoId)
+        }));
+        
+        console.log('Video successfully deleted from state');
+      } catch (err) {
+        console.error('Error deleting video:', err);
+        setError(err.message || 'Failed to delete video');
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -298,6 +315,7 @@ const CourseEditor = ({ course, onClose, language }) => {
               onEdit={handleEditVideo}
               onDelete={handleDeleteVideo}
               onReorder={handleReorderVideos}
+              courseId={formData.id}
             />
           </div>
           

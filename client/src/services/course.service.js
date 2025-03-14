@@ -157,9 +157,11 @@ export const updateVideo = async (courseId, videoId, videoData) => {
 };
 
 // Delete video
-export const deleteVideo = async (courseId, videoId) => {
+export const deleteVideo = async (courseId, videoId, language = 'ru') => {
   try {
-    const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}`);
+    console.log(`Deleting video: courseId=${courseId}, videoId=${videoId}, language=${language}`);
+    const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
+    console.log('Delete video response:', response.data);
     return response.data;
   } catch (error) {
     console.error(`Error deleting video ${videoId}:`, error);

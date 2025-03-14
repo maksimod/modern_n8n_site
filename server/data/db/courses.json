@@ -28,10 +28,11 @@
         "id": "n8n-action-in-app",
         "title": "Узлы \"Action in app\"",
         "description": "",
-        "duration": "",
-        "localVideo": "6105d377-54ab-4dea-9eaf-836a409a550f.mp4",
-        "videoType": "local",
-        "isPrivate": false
+        "duration": "00:00",
+        "isPrivate": false,
+        "localVideo": "328ea06e-2737-4e79-8b07-8be1f4074d2b.mp4",
+        "videoUrl": "",
+        "videoType": "local"
       },
       {
         "id": "n8n-credentials",
@@ -353,6 +354,32 @@
         "duration": "00:00",
         "localVideo": "",
         "videoUrl": "",
+        "isPrivate": false
+      }
+    ]
+  },
+  {
+    "id": "994d9880-25cc-4c5c-a6b9-04338f1dcf20",
+    "title": "test",
+    "description": "",
+    "language": "ru",
+    "videos": [
+      {
+        "id": "55949fbb-71d1-4493-b609-17079d331d3b",
+        "title": "test",
+        "description": "",
+        "duration": "00:00",
+        "localVideo": "82dac1ff-2e03-404d-821d-75cf63b586e0.mp4",
+        "videoType": "local",
+        "isPrivate": false
+      },
+      {
+        "id": "e0b4a55e-2794-42a5-b495-6d7aac0e3f85",
+        "title": "еуые",
+        "description": "",
+        "duration": "00:00",
+        "localVideo": "6b5fab54-873b-40af-aac8-57dfa18f384b.mp4",
+        "videoType": "local",
         "isPrivate": false
       }
     ]
