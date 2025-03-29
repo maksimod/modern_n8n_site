@@ -1,116 +1,131 @@
 # Video Courses Platform
 
-Платформа для видеокурсов с возможностью загрузки и просмотра видео
+A full-stack application for video courses with React client and Node.js server.
 
-## Требования
+## Quick Start
 
-- Docker
-- Docker Compose
+To build and run the application using Docker:
 
-Если у вас не установлены Docker и Docker Compose, следуйте инструкциям в файле [INSTALL_DOCKER.md](./INSTALL_DOCKER.md).
-
-## Развертывание приложения
-
-### Шаг 1: Клонирование репозитория
+### On Linux/macOS:
 
 ```bash
-git clone <URL_репозитория>
-cd video-courses-platform
-```
+# Clone the repository (if not already done)
+git clone <repository-url>
+cd <repository-directory>
 
-### Шаг 2: Настройка переменных окружения
-
-Отредактируйте файл `.env` в директории `server`:
-
-```bash
-nano server/.env
-```
-
-### Шаг 3: Запуск приложения
-
-Сделайте скрипт развертывания исполняемым и запустите его:
-
-```bash
+# Make deploy script executable
 chmod +x deploy.sh
+
+# Deploy the application
 ./deploy.sh
 ```
 
-После успешного запуска приложение будет доступно по адресу http://localhost или http://IP_вашего_сервера.
+### On Windows:
 
-## Структура директорий
+```cmd
+# Clone the repository (if not already done)
+git clone <repository-url>
+cd <repository-directory>
 
-- `client/` - исходный код фронтенда (React)
-- `server/` - исходный код бэкенда (Node.js/Express)
-- `video-data/` - директория для хранения загруженных видео (bind mount)
-- `db-data/` - директория для хранения данных БД (bind mount)
-
-## Управление приложением
-
-### Просмотр статуса контейнеров
-
-```bash
-docker-compose ps
+# Deploy the application using the batch file
+deploy.bat
 ```
 
-### Просмотр логов
+The application will be available at:
+- Web Interface: http://localhost
+- API: http://localhost:5000
 
-```bash
-# Просмотр логов сервера
-docker-compose logs server
+## Deployment to Another Server
 
-# Просмотр логов клиента
-docker-compose logs client
+To deploy this application to a different server:
 
-# Просмотр логов в режиме реального времени
-docker-compose logs -f
-```
+### Option 1: Build on Target Server
 
-### Остановка приложения
+1. Clone the repository on the target server
+2. Run the deploy script:
+   
+   On Linux/macOS:
+   ```bash
+   ./deploy.sh
+   ```
+   
+   On Windows:
+   ```cmd
+   deploy.bat
+   ```
 
-```bash
-docker-compose down
-```
+### Option 2: Transfer Pre-built Docker Images
 
-### Перезапуск приложения
+1. On the source server, build and export the Docker images:
+   
+   On Linux/macOS:
+   ```bash
+   # Make export script executable
+   chmod +x export-images.sh
+   
+   # Export Docker images
+   ./export-images.sh
+   ```
+   
+   On Windows:
+   ```cmd
+   # Export Docker images
+   export-images.bat
+   ```
 
-```bash
-docker-compose restart
-```
+2. Transfer the resulting `video-platform-docker-package.zip` to the target server
 
-### Обновление приложения
+3. On the target server:
+   
+   On Linux/macOS:
+   ```bash
+   # Extract the package
+   unzip video-platform-docker-package.zip
+   cd docker-export
+   
+   # Make deploy script executable
+   chmod +x deploy-imported.sh
+   
+   # Deploy the application
+   ./deploy-imported.sh
+   ```
+   
+   On Windows:
+   ```cmd
+   # Extract the package
+   # You can use the Windows Explorer to extract the zip file
+   cd docker-export
+   
+   # Deploy the application
+   deploy-imported.bat
+   ```
 
-Если вы внесли изменения в код:
+## Project Structure
 
-```bash
-# Остановка приложения
-docker-compose down
+- `client/`: React frontend application
+- `server/`: Node.js backend application
+- `docker-compose.yml`: Docker Compose configuration
+- `deploy.sh` / `deploy.bat`: Scripts to build and deploy the application
+- `export-images.sh` / `export-images.bat`: Scripts to export Docker images for deployment elsewhere
 
-# Пересборка и запуск
-docker-compose up --build -d
-```
+## Data Persistence
 
-## Резервное копирование и восстановление
+All data is stored in Docker volumes:
+- `video-data`: Contains uploaded videos
+- `db-data`: Contains database files
 
-### Резервное копирование директорий с данными
+## Environment Variables
 
-```bash
-# Создаем архив с видео
-tar -czvf video-backup.tar.gz video-data/
+The server uses the following environment variables (configured in `.env` file):
 
-# Создаем архив с данными БД
-tar -czvf db-backup.tar.gz db-data/
-```
+- `DB_HOST`: Database host
+- `DB_PORT`: Database port
+- `DB_USER`: Database username
+- `DB_PASSWORD`: Database password
+- `DB_NAME`: Database name
+- `JWT_SECRET`: Secret for JWT token generation
+- `PORT`: Server port (default: 5000)
 
-### Восстановление данных из резервной копии
+## License
 
-```bash
-# Останавливаем приложение
-docker-compose down
-
-# Распаковываем архивы с резервными копиями
-tar -xzvf video-backup.tar.gz
-tar -xzvf db-backup.tar.gz
-
-# Запускаем приложение
-docker-compose up -d
-```
+This project is licensed under the MIT License. 

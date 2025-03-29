@@ -2,26 +2,26 @@ FROM node:19-alpine as build
 
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci
 
-# Устанавливаем зависимости
-RUN npm install
-
-# Копируем исходный код
+# Copy source code and build
 COPY . .
-
-# Собираем приложение
 RUN npm run build
 
-# Вторая стадия - создание легковесного образа для production
+# Production stage
 FROM nginx:alpine
 
-# Копируем собранные файлы из первой стадии
+# Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Копируем конфигурационный файл nginx
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
 
 EXPOSE 80
 

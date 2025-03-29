@@ -9,11 +9,10 @@
         "id": "n8n-interface",
         "title": "Интерфейс",
         "description": "Интерфейс \\n\n\nЯ хочу вам сказать что это только тест\n❤️‍🔥😺👾👁️😻🥴🤕😁😃😀\n\n",
-        "videoType": "text",
         "duration": "00:00",
-        "localVideo": "",
-        "videoUrl": "",
-        "isPrivate": false
+        "videoType": "text",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-triggers",

@@ -147,6 +147,11 @@ app.get('/download/:filename', (req, res) => {
   res.download(filePath);
 });
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Обслуживание статических файлов в production с кэшированием
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist'), {

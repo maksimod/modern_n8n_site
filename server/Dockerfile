@@ -1,19 +1,19 @@
-FROM node:19-alpine
-
-WORKDIR /app
-
-# Копируем package.json и package-lock.json
-COPY package*.json ./
-
-# Устанавливаем зависимости
-RUN npm install
-
-# Копируем исходный код
-COPY . .
-
-# Создаем директорию для хранения видео (если её нет)
-RUN mkdir -p /app/data/videos
-
-EXPOSE 5000
-
-CMD ["npm", "start"]
+FROM node:19-alpine 
+ 
+WORKDIR /app 
+ 
+RUN apk add --no-cache python3 make g++ 
+ 
+COPY package*.json ./ 
+RUN npm install 
+ 
+COPY . . 
+ 
+RUN mkdir -p /app/data/videos 
+RUN mkdir -p /app/data/db 
+ 
+ENV NODE_ENV=production 
+ 
+EXPOSE 5000 
+ 
+CMD ["node", "index.js"] 
