@@ -4,7 +4,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const { courseModel } = require('../models/data-model');
-const { VIDEO_TYPES } = require('../config'); // Добавляем импорт констант
+const { VIDEO_TYPES, STORAGE_CONFIG } = require('../config'); // Обновляем импорт констант
 
 function formatYoutubeUrl(url) {
   if (!url) return '';
@@ -114,11 +114,22 @@ router.get('/:courseId', async (req, res) => {
     const formattedVideos = course.videos.map(video => {
       // Сохраняем тип видео, если он есть
       const videoType = video.videoType || 
-                       (video.localVideo ? VIDEO_TYPES.LOCAL : 
-                        (video.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT));
+                       (video.storagePath ? VIDEO_TYPES.STORAGE :
+                        (video.localVideo ? VIDEO_TYPES.LOCAL : 
+                        (video.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT)));
       
       // Определяем данные видео на основе типа
-      if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+      if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description || '',
+          duration: video.duration,
+          storagePath: video.storagePath,
+          videoType: VIDEO_TYPES.STORAGE,
+          isPrivate: video.isPrivate
+        };
+      } else if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
         return {
           id: video.id,
           title: video.title,

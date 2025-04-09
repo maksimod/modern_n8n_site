@@ -34,6 +34,7 @@ export const SUPPORTED_LANGUAGES = [
 export const VIDEO_TYPES = {
   EXTERNAL: 'external',
   LOCAL: 'local',
+  STORAGE: 'storage',
   TEXT: 'text'
 };
 
@@ -49,4 +50,10 @@ export const CACHE_TTL = {
   COURSE: 60 * 60 * 1000, // 1 час
   VIDEO: 30 * 60 * 1000,  // 30 минут
   USER: 24 * 60 * 60 * 1000 // 24 часа
+};
+
+// Конфигурация видеохранилища
+export const STORAGE_CONFIG = {
+  API_URL: 'http://46.35.241.37:6005/api/remote/files/C',
+  API_KEY: 'iq-banana-secure-api-key-2024'
 };

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
-import { SERVER_URL, VIDEO_TYPES } from '../../config';
+import { SERVER_URL, VIDEO_TYPES, STORAGE_CONFIG } from '../../config';
 import styles from '../../styles/courses.module.css';
 
 const VideoPlayer = ({ course, video, onVideoComplete }) => {
@@ -16,8 +16,9 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
 
   // Определение типа видео
   const videoType = video?.videoType || 
-    (video?.localVideo ? VIDEO_TYPES.LOCAL : 
-     (video?.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT));
+    (video?.storagePath ? VIDEO_TYPES.STORAGE :
+     (video?.localVideo ? VIDEO_TYPES.LOCAL : 
+     (video?.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT)));
 
   useEffect(() => {
     if (currentUser && course?.id && video?.id) {
@@ -47,23 +48,66 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
+  // Формирование URL для загрузки видео из веб-хранилища
+  const getStorageVideoUrl = (storagePath) => {
+    return `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(storagePath)}`;
+  };
+
   // Обработчик для скачивания видео
   const handleDownload = () => {
-    if (!video || !video.localVideo) return;
-    
     try {
-      // Очищаем URL от префикса /videos/ если он есть
-      const cleanVideoPath = video.localVideo.replace(/^\/videos\//, '');
-      const fullVideoUrl = `${SERVER_URL}/videos/${cleanVideoPath}`;
+      let downloadUrl;
+      let fileName;
+      
+      if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
+        // Скачивание из веб-хранилища
+        downloadUrl = getStorageVideoUrl(video.storagePath);
+        fileName = video.title 
+          ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
+          : 'video.mp4';
+      } else if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+        // Скачивание с локального сервера
+        const cleanVideoPath = video.localVideo.replace(/^\/videos\//, '');
+        downloadUrl = `${SERVER_URL}/videos/${cleanVideoPath}`;
+        fileName = video.title 
+          ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
+          : 'video.mp4';
+      } else {
+        setError('Невозможно скачать внешнее видео');
+        return;
+      }
       
       const link = document.createElement('a');
-      link.href = fullVideoUrl;
+      link.href = downloadUrl;
       
-      // Формируем имя файла из заголовка видео
-      const fileName = video.title 
-        ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
-        : 'video.mp4';
+      // Добавляем заголовок авторизации для веб-хранилища
+      if (videoType === VIDEO_TYPES.STORAGE) {
+        // Для загрузки через XHR с заголовками авторизации
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', downloadUrl, true);
+        xhr.setRequestHeader('X-API-Key', STORAGE_CONFIG.API_KEY);
+        xhr.responseType = 'blob';
+        
+        xhr.onload = function() {
+          if (this.status === 200) {
+            const blob = new Blob([this.response], { type: 'video/mp4' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+          } else {
+            setError('Ошибка при скачивании файла');
+          }
+        };
+        
+        xhr.send();
+        return;
+      }
       
+      // Для обычных файлов
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
@@ -111,6 +155,41 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
             {completed ? t('course.completed') : t('course.markCompleted')}
           </button>
         </div>
+      )}
+
+      {/* Видео из веб-хранилища */}
+      {videoType === VIDEO_TYPES.STORAGE && video.storagePath && (
+        <>
+          <div className={styles.videoContainer}>
+            <video 
+              src={getStorageVideoUrl(video.storagePath)}
+              controls
+              className={styles.videoElement}
+              playsInline
+            >
+              <source src={getStorageVideoUrl(video.storagePath)} type="video/mp4" />
+              {t('course.browserNotSupportVideo')}
+            </video>
+          </div>
+          <div className={styles.videoInfo}>
+            <div className={styles.videoHeader}>
+              <h2 className={styles.videoTitle}>{video.title}</h2>
+              <button 
+                className={styles.downloadButton}
+                onClick={handleDownload}
+              >
+                {t('course.download')}
+              </button>
+            </div>
+            <div className={styles.videoDescription}>{video.description}</div>
+            <button 
+              className={`${styles.markButton} ${completed ? styles.completed : ''}`}
+              onClick={handleComplete}
+            >
+              {completed ? t('course.completed') : t('course.markCompleted')}
+            </button>
+          </div>
+        </>
       )}
 
       {/* Локальное видео */}
