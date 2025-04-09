@@ -39,8 +39,27 @@ router.get('/', async (req, res) => {
     // Форматирование ответа
     const formattedCourses = courses.map(course => {
       const formattedVideos = course.videos.map(video => {
+        // Проверяем тип видео
+        const videoType = video.videoType || 
+                          (video.storagePath ? VIDEO_TYPES.STORAGE :
+                           (video.localVideo ? VIDEO_TYPES.LOCAL : 
+                           (video.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT)));
+        
+        // Если это видео из веб-хранилища
+        if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
+          return {
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            duration: video.duration,
+            storagePath: video.storagePath,
+            videoType: VIDEO_TYPES.STORAGE,
+            isPrivate: video.isPrivate
+          };
+        }
+        
         // Проверка наличия локального видео
-        if (video.localVideo) {
+        if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
           const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
           const hasLocalVideo = fs.existsSync(videoPath);
           
@@ -51,18 +70,20 @@ router.get('/', async (req, res) => {
               description: video.description || '',
               duration: video.duration,
               localVideo: `/videos/${video.localVideo}`,
+              videoType: VIDEO_TYPES.LOCAL,
               isPrivate: video.isPrivate
             };
           }
         }
         
-        // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
+        // Если это внешнее видео или текстовый урок
         return {
           id: video.id,
           title: video.title,
           description: video.description || '',
           duration: video.duration,
           videoUrl: video.videoUrl,
+          videoType: videoType,
           isPrivate: video.isPrivate
         };
       });

@@ -50,7 +50,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
 
   // Формирование URL для загрузки видео из веб-хранилища
   const getStorageVideoUrl = (storagePath) => {
-    return `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(storagePath)}`;
+    try {
+      return `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(storagePath)}`;
+    } catch (error) {
+      console.error('Error generating storage URL:', error);
+      setError('Ошибка при формировании URL для видео');
+      return '';
+    }
   };
 
   // Обработчик для скачивания видео
@@ -162,10 +168,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         <>
           <div className={styles.videoContainer}>
             <video 
-              src={getStorageVideoUrl(video.storagePath)}
               controls
               className={styles.videoElement}
               playsInline
+              onError={(e) => {
+                console.error('Video loading error:', e);
+                setError('Ошибка при загрузке видео. Пожалуйста, попробуйте позже.');
+              }}
             >
               <source src={getStorageVideoUrl(video.storagePath)} type="video/mp4" />
               {t('course.browserNotSupportVideo')}

@@ -34,7 +34,7 @@ const tempStorage = multer.diskStorage({
 
 const upload = multer({
   storage: tempStorage,
-  limits: { fileSize: 500 * 1024 * 1024 }, // 500MB limit
+  limits: { fileSize: 5000 * 1024 * 1024 }, // Увеличиваем до 5GB
   fileFilter: function(req, file, cb) {
     // Accept only video files
     const fileTypes = /mp4|webm|ogg|avi|mkv/;
@@ -501,51 +501,70 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
     // Формируем путь для хранения в веб-хранилище
     const storagePath = `videos/${fileName}`;
     
-    // Создаем FormData для отправки файла
+    console.log('Uploading file to storage:', {
+      localPath: filePath,
+      storagePath: storagePath,
+      size: req.file.size
+    });
+    
+    // Для больших файлов используем потоковую передачу
     const formData = new FormData();
-    formData.append('file', fs.createReadStream(filePath));
     
-    // Отправляем файл на веб-хранилище
-    const uploadResponse = await axios.post(
-      `${STORAGE_CONFIG.API_URL}/upload`,
-      formData,
-      {
-        headers: {
-          'X-API-Key': STORAGE_CONFIG.API_KEY,
-          ...formData.getHeaders()
-        },
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
-      }
-    );
+    // Создаем читающий поток для файла
+    const fileStream = fs.createReadStream(filePath);
     
-    // Проверяем успешность загрузки
-    if (uploadResponse.status !== 200) {
-      throw new Error('Failed to upload file to storage');
-    }
+    // Добавляем файловый поток в FormData
+    formData.append('file', fileStream);
     
-    // Удаляем временный файл
+    // Отправляем файл на веб-хранилище с отключенными лимитами
     try {
-      fs.unlinkSync(filePath);
-      console.log(`Temporary file deleted: ${filePath}`);
-    } catch (err) {
-      console.error(`Error deleting temporary file: ${filePath}`, err);
+      const uploadResponse = await axios.post(
+        `${STORAGE_CONFIG.API_URL}/upload`,
+        formData,
+        {
+          headers: {
+            'X-API-Key': STORAGE_CONFIG.API_KEY,
+            ...formData.getHeaders()
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          timeout: 3600000 // Увеличиваем таймаут до 1 часа
+        }
+      );
+      
+      // Проверяем успешность загрузки
+      if (uploadResponse.status !== 200) {
+        throw new Error(`Failed to upload file to storage: ${uploadResponse.statusText}`);
+      }
+      
+      console.log('File uploaded to storage successfully, response:', uploadResponse.data);
+      
+      // Удаляем временный файл
+      try {
+        fs.unlinkSync(filePath);
+        console.log(`Temporary file deleted: ${filePath}`);
+      } catch (err) {
+        console.error(`Error deleting temporary file: ${filePath}`, err);
+      }
+      
+      // Возвращаем информацию о загруженном файле
+      res.json({
+        message: 'File uploaded successfully',
+        filePath: storagePath, // Путь в хранилище
+        originalName: req.file.originalname,
+        size: req.file.size,
+        storageType: VIDEO_TYPES.STORAGE // Указываем тип хранения
+      });
+    } catch (uploadError) {
+      console.error('Error uploading to storage:', uploadError);
+      // Удаляем временный файл при ошибке
+      try {
+        fs.unlinkSync(filePath);
+      } catch (e) {
+        console.error(`Error deleting temporary file after failed upload: ${filePath}`, e);
+      }
+      throw new Error(`Error uploading to storage: ${uploadError.message}`);
     }
-    
-    console.log('File uploaded to storage:', {
-      originalName: req.file.originalname,
-      savedAs: fileName,
-      storagePath: storagePath
-    });
-
-    // Возвращаем информацию о загруженном файле
-    res.json({
-      message: 'File uploaded successfully',
-      filePath: storagePath, // Путь в хранилище
-      originalName: req.file.originalname,
-      size: req.file.size,
-      storageType: VIDEO_TYPES.STORAGE // Указываем тип хранения
-    });
   } catch (err) {
     console.error('Error uploading file:', err);
     res.status(500).json({ message: 'Server error: ' + err.message });

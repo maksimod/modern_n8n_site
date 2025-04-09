@@ -21,7 +21,9 @@ app.use(cors({
   optionsSuccessStatus: 204
 }));
 
-app.use(express.json());
+// Увеличиваем лимит размера запроса
+app.use(express.json({ limit: '1000mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1000mb' }));
 app.use(morgan('dev'));
 app.use('/api/progress', progressRouter);
 
