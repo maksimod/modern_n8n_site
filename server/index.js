@@ -22,9 +22,20 @@ app.use(cors({
 }));
 
 // Увеличиваем лимит размера запроса
-app.use(express.json({ limit: '1000mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1000mb' }));
+app.use(express.json({ limit: '5000mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5000mb' }));
+
+// Логирование запросов
 app.use(morgan('dev'));
+
+// Настраиваем обработку больших файлов
+app.use((req, res, next) => {
+  // Увеличиваем таймаут для больших запросов
+  req.setTimeout(7200000); // 2 часа в миллисекундах
+  res.setTimeout(7200000);
+  next();
+});
+
 app.use('/api/progress', progressRouter);
 
 // Добавляем кэширование для статических файлов

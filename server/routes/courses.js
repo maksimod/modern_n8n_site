@@ -60,8 +60,16 @@ router.get('/', async (req, res) => {
         
         // Проверка наличия локального видео
         if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
-          const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
-          const hasLocalVideo = fs.existsSync(videoPath);
+          const localVideoPath = typeof video.localVideo === 'string' ? video.localVideo.replace(/^\/videos\//, '') : '';
+          const videoPath = path.join(__dirname, '../data/videos', localVideoPath);
+          
+          // Проверка существования файла
+          let hasLocalVideo = false;
+          try {
+            hasLocalVideo = fs.existsSync(videoPath);
+          } catch (e) {
+            console.error(`Error checking video file: ${videoPath}`, e);
+          }
           
           if (hasLocalVideo) {
             return {
@@ -69,21 +77,35 @@ router.get('/', async (req, res) => {
               title: video.title,
               description: video.description || '',
               duration: video.duration,
-              localVideo: `/videos/${video.localVideo}`,
+              localVideo: `/videos/${localVideoPath}`,
               videoType: VIDEO_TYPES.LOCAL,
               isPrivate: video.isPrivate
             };
+          } else {
+            console.warn(`Local video file not found: ${videoPath}, returning as TEXT type`);
           }
         }
         
-        // Если это внешнее видео или текстовый урок
+        // Если внешнее видео
+        if (videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl) {
+          return {
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            duration: video.duration,
+            videoUrl: video.videoUrl,
+            videoType: VIDEO_TYPES.EXTERNAL,
+            isPrivate: video.isPrivate
+          };
+        }
+        
+        // Если ни один из типов не подошел или файл не найден, возвращаем текстовый тип
         return {
           id: video.id,
           title: video.title,
           description: video.description || '',
           duration: video.duration,
-          videoUrl: video.videoUrl,
-          videoType: videoType,
+          videoType: VIDEO_TYPES.TEXT,
           isPrivate: video.isPrivate
         };
       });

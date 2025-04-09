@@ -507,67 +507,100 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       size: req.file.size
     });
     
-    // Для больших файлов используем потоковую передачу
-    const formData = new FormData();
-    
-    // Создаем читающий поток для файла
-    const fileStream = fs.createReadStream(filePath);
-    
-    // Добавляем файловый поток в FormData
-    formData.append('file', fileStream);
-    
-    // Отправляем файл на веб-хранилище с отключенными лимитами
+    // Добавляем обработку локального файла в случае ошибки с веб-хранилищем
     try {
-      const uploadResponse = await axios.post(
-        `${STORAGE_CONFIG.API_URL}/upload`,
-        formData,
-        {
-          headers: {
-            'X-API-Key': STORAGE_CONFIG.API_KEY,
-            ...formData.getHeaders()
-          },
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity,
-          timeout: 3600000 // Увеличиваем таймаут до 1 часа
-        }
-      );
-      
-      // Проверяем успешность загрузки
-      if (uploadResponse.status !== 200) {
-        throw new Error(`Failed to upload file to storage: ${uploadResponse.statusText}`);
+      // Создаем каталог для видео, если не существует
+      const videosDir = path.join(__dirname, '../data/videos');
+      if (!fs.existsSync(videosDir)) {
+        fs.mkdirSync(videosDir, { recursive: true });
       }
       
-      console.log('File uploaded to storage successfully, response:', uploadResponse.data);
+      // Копируем файл в директорию видео (резервный вариант)
+      const localVideoPath = path.join(videosDir, fileName);
+      fs.copyFileSync(filePath, localVideoPath);
+      
+      // Для загрузки в хранилище используем потоковую передачу
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(filePath));
+
+      let uploadResponse;
+      try {
+        // Пробуем отправить файл в хранилище
+        uploadResponse = await axios.post(
+          `${STORAGE_CONFIG.API_URL}/upload`,
+          formData,
+          {
+            headers: {
+              'X-API-Key': STORAGE_CONFIG.API_KEY,
+              ...formData.getHeaders()
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeout: 3600000
+          }
+        );
+      } catch (storageError) {
+        console.error('Storage upload error:', storageError.message);
+        // В случае ошибки хранилища, вернем информацию о локальном файле
+        // Удаляем временный файл
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error(`Error deleting temp file: ${filePath}`, e);
+        }
+        
+        return res.json({
+          message: 'File uploaded to local storage (storage API failed)',
+          filePath: fileName, // Только имя файла для локального доступа
+          originalName: req.file.originalname,
+          size: req.file.size,
+          videoType: VIDEO_TYPES.LOCAL,
+          storageError: storageError.message
+        });
+      }
+      
+      // Если запрос к хранилищу выполнен успешно
+      console.log('Storage API response:', uploadResponse?.data || 'No response data');
       
       // Удаляем временный файл
       try {
         fs.unlinkSync(filePath);
-        console.log(`Temporary file deleted: ${filePath}`);
       } catch (err) {
         console.error(`Error deleting temporary file: ${filePath}`, err);
       }
       
       // Возвращаем информацию о загруженном файле
-      res.json({
-        message: 'File uploaded successfully',
-        filePath: storagePath, // Путь в хранилище
+      return res.json({
+        message: 'File uploaded successfully to storage API',
+        filePath: storagePath,
         originalName: req.file.originalname,
         size: req.file.size,
-        storageType: VIDEO_TYPES.STORAGE // Указываем тип хранения
+        storageType: VIDEO_TYPES.STORAGE
       });
-    } catch (uploadError) {
-      console.error('Error uploading to storage:', uploadError);
-      // Удаляем временный файл при ошибке
+    } catch (processError) {
+      console.error('Error processing file:', processError);
+      
+      // В случае общей ошибки, пытаемся удалить временный файл
       try {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       } catch (e) {
-        console.error(`Error deleting temporary file after failed upload: ${filePath}`, e);
+        console.error(`Cannot delete temp file: ${filePath}`, e);
       }
-      throw new Error(`Error uploading to storage: ${uploadError.message}`);
+      
+      // Отправляем описательную ошибку
+      return res.status(500).json({ 
+        message: `File processing error: ${processError.message}`,
+        error: processError.stack
+      });
     }
   } catch (err) {
-    console.error('Error uploading file:', err);
-    res.status(500).json({ message: 'Server error: ' + err.message });
+    console.error('Upload handler error:', err);
+    return res.status(500).json({ 
+      message: 'Server error during upload: ' + err.message,
+      stack: err.stack
+    });
   }
 });
 
