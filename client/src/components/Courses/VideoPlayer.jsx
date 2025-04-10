@@ -15,10 +15,49 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   const [error, setError] = useState(null);
 
   // Определение типа видео
-  const videoType = video?.videoType || 
-    (video?.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE ? VIDEO_TYPES.STORAGE :
-     (video?.localVideo || video?.storagePath ? VIDEO_TYPES.LOCAL : 
-     (video?.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT)));
+  const detectVideoType = (video) => {
+    console.log('Detecting video type for:', video);
+    
+    // Если явно указан тип видео, используем его
+    if (video?.videoType) {
+      console.log('Using explicit video type:', video.videoType);
+      return video.videoType;
+    }
+    
+    // Проверяем по приоритету различные поля
+    if (video?.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      console.log('Detected as STORAGE video based on storagePath:', video.storagePath);
+      return VIDEO_TYPES.STORAGE;
+    }
+    
+    if (video?.localVideo) {
+      console.log('Detected as LOCAL video based on localVideo:', video.localVideo);
+      return VIDEO_TYPES.LOCAL;
+    }
+    
+    if (video?.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      console.log('Detected as LOCAL video based on storagePath (fallback):', video.storagePath);
+      return VIDEO_TYPES.LOCAL;
+    }
+    
+    if (video?.videoUrl) {
+      console.log('Detected as EXTERNAL video based on videoUrl:', video.videoUrl);
+      return VIDEO_TYPES.EXTERNAL;
+    }
+    
+    console.log('No video source found, defaulting to TEXT type');
+    return VIDEO_TYPES.TEXT;
+  };
+
+  // Используем нашу функцию для определения типа видео
+  const videoType = detectVideoType(video);
+
+  // Добавляем отладку для проверки типа видео и конфигурации
+  console.log('--- VideoPlayer Debug ---');
+  console.log('Video object:', video);
+  console.log('Determined videoType:', videoType);
+  console.log('STORAGE_CONFIG:', STORAGE_CONFIG);
+  console.log('------------------------');
 
   useEffect(() => {
     if (currentUser && course?.id && video?.id) {
@@ -51,7 +90,17 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   // Формирование URL для загрузки видео из веб-хранилища
   const getStorageVideoUrl = (storagePath) => {
     try {
-      return `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(storagePath)}`;
+      if (!storagePath) {
+        console.error('Storage path is empty!');
+        return '';
+      }
+      
+      // Очищаем путь от возможных префиксов
+      const cleanPath = storagePath.replace(/^\/videos\//, '');
+      
+      const url = `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(cleanPath)}`;
+      console.log('Storage URL generated:', url);
+      return url;
     } catch (error) {
       console.error('Error generating storage URL:', error);
       setError('Ошибка при формировании URL для видео');
@@ -169,14 +218,21 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       {videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE && (
         <>
           <div className={styles.videoContainer}>
+            <div className={styles.debugInfo} style={{position: 'absolute', top: 0, right: 0, fontSize: '10px', background: 'rgba(0,0,0,0.5)', color: 'white', padding: '5px', zIndex: 100}}>
+              Type: {videoType}, StoragePath: {video.storagePath}
+            </div>
             <video 
               controls
               className={styles.videoElement}
               playsInline
               onError={(e) => {
                 console.error('Video loading error:', e);
-                setError('Ошибка при загрузке видео. Пожалуйста, попробуйте позже.');
+                console.error('Video source URL:', getStorageVideoUrl(video.storagePath));
+                console.error('Video object:', video);
+                setError(`Ошибка при загрузке видео. URL: ${getStorageVideoUrl(video.storagePath)}`);
               }}
+              onCanPlay={() => console.log('Video can be played now')}
+              onLoadedData={() => console.log('Video data loaded successfully')}
             >
               <source src={getStorageVideoUrl(video.storagePath)} type="video/mp4" />
               {t('course.browserNotSupportVideo')}

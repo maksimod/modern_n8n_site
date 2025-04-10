@@ -79,6 +79,9 @@ app.use((req, res, next) => {
 app.get('/videos/:filename', async (req, res) => {
   const filename = req.params.filename;
   
+  console.log(`🎬 Запрос видео: ${filename}`);
+  console.log(`🎬 Конфигурация хранилища:`, STORAGE_CONFIG);
+  
   try {
     let videoData;
     let fileSize;
@@ -86,25 +89,29 @@ app.get('/videos/:filename', async (req, res) => {
     if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
       // Получаем данные из удаленного хранилища
       try {
+        console.log(`🎬 Получаем файл из удаленного хранилища: ${filename}`);
         videoData = await getFileFromStorage(filename);
         fileSize = videoData.length;
+        console.log(`🎬 Файл получен из удаленного хранилища, размер: ${fileSize} байт`);
       } catch (error) {
-        console.error(`Error getting file from remote storage: ${filename}`, error);
+        console.error(`🎬 Ошибка получения файла из удаленного хранилища: ${filename}`, error);
         return res.status(404).send('Файл не найден');
       }
     } else {
       // Используем локальное хранилище
       const videoPath = path.join(__dirname, 'data/videos', filename);
+      console.log(`🎬 Ищем файл в локальном хранилище: ${videoPath}`);
       
       // Проверяем, существует ли файл
       if (!fs.existsSync(videoPath)) {
-        console.error(`Файл не найден: ${videoPath}`);
+        console.error(`🎬 Файл не найден в локальном хранилище: ${videoPath}`);
         return res.status(404).send('Файл не найден');
       }
       
       // Получаем размер файла
       const stat = fs.statSync(videoPath);
       fileSize = stat.size;
+      console.log(`🎬 Файл найден в локальном хранилище, размер: ${fileSize} байт`);
     }
     
     // Поддержка частичной загрузки

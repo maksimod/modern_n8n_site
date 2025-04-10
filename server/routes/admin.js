@@ -503,7 +503,8 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       localPath: filePath,
       fileName: fileName,
       originalName: req.file.originalname,
-      size: req.file.size
+      size: req.file.size,
+      storageConfig: STORAGE_CONFIG
     });
     
     try {
@@ -515,8 +516,24 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
         req.file.size
       );
       
+      console.log('Upload result from storage:', uploadResult);
+      
+      // Проверяем тип видео в результате и явно устанавливаем его
+      let finalResult = { ...uploadResult };
+      
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        // Принудительно устанавливаем тип STORAGE если используется удаленное хранилище
+        finalResult.videoType = VIDEO_TYPES.STORAGE;
+        console.log('⭐ Override: Video type set to STORAGE');
+        console.log('⭐ filePath (storagePath):', finalResult.filePath);
+      } else {
+        finalResult.videoType = VIDEO_TYPES.LOCAL;
+        console.log('⭐ Override: Video type set to LOCAL');
+        console.log('⭐ filePath (localVideo):', finalResult.filePath);
+      }
+      
       // Возвращаем результат загрузки
-      return res.json(uploadResult);
+      return res.json(finalResult);
     } catch (processError) {
       console.error('Error processing file:', processError);
       

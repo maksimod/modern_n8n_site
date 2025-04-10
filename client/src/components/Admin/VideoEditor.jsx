@@ -84,6 +84,8 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log('File selected:', file);
+      
       setFormData(prev => ({
         ...prev,
         uploadedFile: file,
@@ -95,6 +97,8 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         setLoading(true);
         setUploadProgress(0);
         
+        console.log('Starting upload with config:', STORAGE_CONFIG);
+        
         const uploadResult = await uploadVideoFile(file, (progress) => {
           setUploadProgress(progress);
         });
@@ -102,14 +106,30 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         console.log("Upload result:", uploadResult);
         setUploadResponse(uploadResult);
         
+        console.log('Setting form data based on upload result. Video type:', uploadResult.videoType);
+        
         // Обновляем форму с полученным путем к файлу
-        setFormData(prev => ({
-          ...prev,
-          // Сохраняем путь в зависимости от типа хранилища
-          ...(uploadResult.videoType === VIDEO_TYPES.STORAGE 
-              ? { storagePath: uploadResult.filePath, localVideo: '' } 
-              : { localVideo: uploadResult.filePath, storagePath: '' })
-        }));
+        setFormData(prev => {
+          // Важно: проверяем тип возвращенный с сервера, а не текущую настройку
+          const newData = {
+            ...prev,
+            videoType: uploadResult.videoType || VIDEO_TYPES.LOCAL
+          };
+          
+          // В зависимости от типа видео, устанавливаем путь в соответствующее поле
+          if (uploadResult.videoType === VIDEO_TYPES.STORAGE) {
+            console.log('Setting storagePath:', uploadResult.filePath);
+            newData.storagePath = uploadResult.filePath;
+            newData.localVideo = '';
+          } else {
+            console.log('Setting localVideo:', uploadResult.filePath);
+            newData.localVideo = uploadResult.filePath;
+            newData.storagePath = '';
+          }
+          
+          console.log('New form data:', newData);
+          return newData;
+        });
       } catch (err) {
         console.error('Error uploading file:', err);
         setError(`Error uploading file: ${err.message || 'Unknown error'}`);

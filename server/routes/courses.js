@@ -223,101 +223,62 @@ router.get('/:courseId', async (req, res) => {
 // @access  Public
 router.get('/:courseId/videos/:videoId', async (req, res) => {
   try {
-    const { courseId, videoId } = req.params;
+    console.log(`Запрос видео: courseId=${req.params.courseId}, videoId=${req.params.videoId}`);
+    
     const language = req.query.language || 'ru';
     
-    // Поиск курса
-    const course = courseModel.findById(courseId, language);
+    // Получаем все курсы
+    const courses = courseModel.getAll(language);
+    
+    // Находим курс по ID
+    const course = courses.find(c => c.id === req.params.courseId && c.language === language);
     
     if (!course) {
-      // Если курс не найден на запрошенном языке, ищем на другом языке
-      const allCourses = courseModel.getAll();
-      const alternativeCourse = allCourses.find(c => c.id === courseId);
-      
-      if (!alternativeCourse) {
-        return res.status(404).json({ message: 'Course not found' });
-      }
-      
-      // Поиск видео в альтернативном курсе
-      const video = alternativeCourse.videos.find(v => v.id === videoId);
-      
-      if (!video) {
-        return res.status(404).json({ message: 'Video not found' });
-      }
-
-      // Обработка YouTube URL для мобильных устройств
-      if (video.videoUrl) {
-        video.videoUrl = formatYoutubeUrl(video.videoUrl);
-      }
-
-      // Проверка наличия локального видео
-      if (video.localVideo) {
-        const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
-        const hasLocalVideo = fs.existsSync(videoPath);
-        
-        if (hasLocalVideo) {
-          return res.json({
-            id: video.id,
-            title: video.title,
-            description: video.description || '',
-            duration: video.duration,
-            localVideo: `/videos/${video.localVideo}`,
-            isPrivate: video.isPrivate,
-            language: alternativeCourse.language
-          });
-        }
-      }
-      
-      // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
-      return res.json({
-        id: video.id,
-        title: video.title,
-        description: video.description || '',
-        duration: video.duration,
-        videoUrl: video.videoUrl,
-        isPrivate: video.isPrivate,
-        language: alternativeCourse.language
-      });
+      return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Поиск видео в найденном курсе
-    const video = course.videos.find(v => v.id === videoId);
+    // Находим видео в курсе
+    const video = course.videos.find(v => v.id === req.params.videoId);
     
     if (!video) {
       return res.status(404).json({ message: 'Video not found' });
     }
     
-    // Проверка наличия локального видео
-    if (video.localVideo) {
-      const videoPath = path.join(__dirname, '../data/videos', video.localVideo);
-      const hasLocalVideo = fs.existsSync(videoPath);
+    // Проверяем данные видео и корректируем их при необходимости
+    if (video.localVideo && !video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      // Если есть localVideo, но нет storagePath при активном удаленном хранилище,
+      // устанавливаем storagePath равным localVideo и меняем тип
+      console.log(`Обновляем данные видео ${video.id}: добавляем storagePath на основе localVideo`);
+      video.storagePath = video.localVideo;
+      video.videoType = VIDEO_TYPES.STORAGE;
       
-      if (hasLocalVideo) {
-        return res.json({
-          id: video.id,
-          title: video.title,
-          description: video.description || '',
-          duration: video.duration,
-          localVideo: `/videos/${video.localVideo}`,
-          isPrivate: video.isPrivate,
-          language: course.language
-        });
-      }
+      // Сохраняем изменения в базе
+      courseModel.save(courses);
     }
     
-    // Если нет локального видео или оно не существует, возвращаем ссылку на внешнее видео
-    res.json({
-      id: video.id,
-      title: video.title,
-      description: video.description || '',
-      duration: video.duration,
-      videoUrl: video.videoUrl,
-      isPrivate: video.isPrivate,
-      language: course.language
-    });
+    // Определяем тип видео, если он не указан
+    if (!video.videoType) {
+      if (video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        video.videoType = VIDEO_TYPES.STORAGE;
+      } else if (video.localVideo || video.storagePath) {
+        video.videoType = VIDEO_TYPES.LOCAL;
+      } else if (video.videoUrl) {
+        video.videoType = VIDEO_TYPES.EXTERNAL;
+      } else {
+        video.videoType = VIDEO_TYPES.TEXT;
+      }
+      
+      // Сохраняем изменения в базе
+      courseModel.save(courses);
+    }
+    
+    // Возвращаем видео
+    console.log(`Отправляем данные видео: ${video.id}, тип: ${video.videoType}, storagePath: ${video.storagePath || 'нет'}`);
+    
+    return res.json(video);
   } catch (err) {
-    console.error('Error fetching video:', err);
-    res.status(500).send('Server Error');
+    console.error(`Error getting video ${req.params.videoId}:`, err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

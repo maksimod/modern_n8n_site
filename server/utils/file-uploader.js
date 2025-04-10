@@ -19,7 +19,7 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
   // Проверяем существование временного файла
   if (!fs.existsSync(tempFilePath)) {
     console.error(`Временный файл не найден: ${tempFilePath}`);
-    throw new Error(`Temporary file not found: ${tempFilePath}`);
+    throw new Error(`Временный файл не найден: ${tempFilePath}`);
   }
 
   // Используем удаленное хранилище, если оно включено в конфигурации
@@ -27,34 +27,40 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
     console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Начало загрузки файла: ${fileName}`);
     
     try {
-      // Используем curl для загрузки файла на удаленный сервер (как в примере API)
-      const apiUrl = `${STORAGE_CONFIG.API_URL}/upload`;
-      const apiKey = STORAGE_CONFIG.API_KEY;
+      // Создаем объект FormData для отправки файла
+      const formData = new FormData();
+      const fileStream = fs.createReadStream(tempFilePath);
+      formData.append('file', fileStream);
       
-      console.log(`Загрузка на ${apiUrl} с ключом ${apiKey}`);
-      console.log(`Файл: ${tempFilePath}, имя: ${fileName}`);
+      // Отправляем файл на удаленный сервер
+      console.log(`Отправка на сервер: ${STORAGE_CONFIG.API_URL}/upload`);
       
-      // Формируем команду curl
-      const curlCommand = `curl -X POST "${apiUrl}" -H "X-API-Key: ${apiKey}" -F "file=@${tempFilePath}"`;
+      const axiosConfig = {
+        headers: {
+          ...formData.getHeaders(),
+          'X-API-Key': STORAGE_CONFIG.API_KEY
+        },
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      };
       
-      console.log(`Выполняем команду: ${curlCommand}`);
+      console.log('Конфигурация запроса:', {
+        url: `${STORAGE_CONFIG.API_URL}/upload`,
+        method: 'POST',
+        headers: {
+          'X-API-Key': STORAGE_CONFIG.API_KEY,
+          ...formData.getHeaders()
+        }
+      });
       
-      // Выполняем команду curl и получаем ответ
-      const { stdout, stderr } = await execPromise(curlCommand);
+      // Пробуем отправить файл через axios
+      const response = await axios.post(
+        `${STORAGE_CONFIG.API_URL}/upload`, 
+        formData, 
+        axiosConfig
+      );
       
-      if (stderr) {
-        console.warn('CURL stderr:', stderr);
-      }
-      
-      console.log(`Ответ сервера: ${stdout}`);
-      
-      let response;
-      try {
-        response = JSON.parse(stdout);
-      } catch (e) {
-        console.error('Ошибка парсинга ответа сервера:', e);
-        response = { success: true, filePath: fileName }; // Используем запасной вариант
-      }
+      console.log(`Результат загрузки: ${JSON.stringify(response.data)}`);
       
       // Удаляем временный файл после загрузки
       try {
@@ -76,10 +82,14 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
     } catch (error) {
       console.error('Ошибка загрузки в удаленное хранилище:', error.message);
       
+      if (error.response) {
+        console.error('Данные ответа:', error.response.data);
+        console.error('Статус ответа:', error.response.status);
+      }
+      
       // Если не удалось загрузить в удаленное хранилище, сохраняем локально
       console.log('Переходим к локальному хранилищу как запасному варианту');
       
-      // Пытаемся сохранить файл локально
       return await saveFileLocally(tempFilePath, fileName, originalName, fileSize);
     }
   } else {
@@ -165,43 +175,32 @@ async function getFileFromStorage(filePath) {
       const apiUrl = `${STORAGE_CONFIG.API_URL}/download`;
       const apiKey = STORAGE_CONFIG.API_KEY;
       
-      // Используем curl для загрузки файла из удаленного хранилища
-      const outputPath = path.join(__dirname, '../temp', `tmp_${Date.now()}_${path.basename(filePath)}`);
+      console.log(`Запрос к API: ${apiUrl}?filePath=${encodeURIComponent(filePath)}`);
       
-      // Создаем директорию для временных файлов, если она не существует
-      const tempDir = path.dirname(outputPath);
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-      
-      // Формируем команду curl
-      const curlCommand = `curl -X GET "${apiUrl}?filePath=${encodeURIComponent(filePath)}" -H "X-API-Key: ${apiKey}" --output "${outputPath}"`;
-      
-      console.log(`Выполняем команду: ${curlCommand}`);
-      
-      // Выполняем команду
-      const { stdout, stderr } = await execPromise(curlCommand);
-      
-      if (stderr) {
-        console.warn('CURL stderr:', stderr);
-      }
-      
-      // Проверяем, что файл был загружен
-      if (!fs.existsSync(outputPath)) {
-        throw new Error(`Не удалось загрузить файл из удаленного хранилища: ${filePath}`);
-      }
-      
-      // Читаем файл в буфер
-      const data = fs.readFileSync(outputPath);
-      
-      // Удаляем временный файл
+      // Пробуем прямой запрос через axios
       try {
-        fs.unlinkSync(outputPath);
-      } catch (e) {
-        console.error(`Не удалось удалить временный файл: ${outputPath}`, e);
+        const response = await axios({
+          method: 'GET',
+          url: apiUrl,
+          params: { filePath },
+          headers: {
+            'X-API-Key': apiKey
+          },
+          responseType: 'arraybuffer'
+        });
+        
+        console.log(`Ответ получен, статус: ${response.status}, размер: ${response.data ? response.data.length : 'N/A'} байт`);
+        
+        return response.data;
+      } catch (error) {
+        console.error('Ошибка при получении файла:', error.message);
+        
+        if (error.response) {
+          console.error('Статус ответа:', error.response.status);
+        }
+        
+        throw error;
       }
-      
-      return data;
     } catch (error) {
       console.error(`Ошибка загрузки файла из удаленного хранилища: ${filePath}`, error.message);
       
