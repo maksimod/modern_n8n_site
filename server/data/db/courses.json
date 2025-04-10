@@ -30,9 +30,10 @@
         "description": "",
         "duration": "00:00",
         "isPrivate": false,
-        "localVideo": "96311366-1749-401e-af54-a6a1f1f8d95b.mp4",
+        "storagePath": "7059c474-6b3b-4fd0-94ff-d73322ebedcf.mp4",
+        "localVideo": "",
         "videoUrl": "",
-        "videoType": "local"
+        "videoType": "storage"
       },
       {
         "id": "n8n-credentials",

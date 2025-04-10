@@ -62,8 +62,8 @@ export const CACHE_TTL = {
 
 // Конфигурация видеохранилища
 export const STORAGE_CONFIG = {
-  API_URL: window.location.origin + '/api/remote/files/C',
+  API_URL: 'http://46.35.241.37:6005/api/remote/files/Videos',
   API_KEY: 'iq-banana-secure-api-key-2024',
-  // Полностью отключаем удаленное хранилище - используем только локальное
-  USE_REMOTE_STORAGE: false
+  // Включаем удаленное хранилище
+  USE_REMOTE_STORAGE: true
 };

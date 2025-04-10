@@ -3,7 +3,9 @@ const path = require('path');
 const { VIDEO_TYPES, STORAGE_CONFIG } = require('../config');
 const axios = require('axios');
 const FormData = require('form-data');
-const { execSync } = require('child_process');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
 
 /**
  * Загружает файл в хранилище (локальное или удаленное)
@@ -17,7 +19,7 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
   // Проверяем существование временного файла
   if (!fs.existsSync(tempFilePath)) {
     console.error(`Временный файл не найден: ${tempFilePath}`);
-    throw new Error(`Временный файл не найден: ${tempFilePath}`);
+    throw new Error(`Temporary file not found: ${tempFilePath}`);
   }
 
   // Используем удаленное хранилище, если оно включено в конфигурации
@@ -33,19 +35,22 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
       console.log(`Файл: ${tempFilePath}, имя: ${fileName}`);
       
       // Формируем команду curl
-      const curlCommand = `curl -X POST "${apiUrl}" ` +
-                         `-H "X-API-Key: ${apiKey}" ` +
-                         `-F "file=@${tempFilePath}"`;
+      const curlCommand = `curl -X POST "${apiUrl}" -H "X-API-Key: ${apiKey}" -F "file=@${tempFilePath}"`;
       
       console.log(`Выполняем команду: ${curlCommand}`);
       
       // Выполняем команду curl и получаем ответ
-      const curlOutput = execSync(curlCommand).toString();
-      console.log(`Ответ сервера: ${curlOutput}`);
+      const { stdout, stderr } = await execPromise(curlCommand);
+      
+      if (stderr) {
+        console.warn('CURL stderr:', stderr);
+      }
+      
+      console.log(`Ответ сервера: ${stdout}`);
       
       let response;
       try {
-        response = JSON.parse(curlOutput);
+        response = JSON.parse(stdout);
       } catch (e) {
         console.error('Ошибка парсинга ответа сервера:', e);
         response = { success: true, filePath: fileName }; // Используем запасной вариант
@@ -74,16 +79,8 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
       // Если не удалось загрузить в удаленное хранилище, сохраняем локально
       console.log('Переходим к локальному хранилищу как запасному варианту');
       
-      // Пытаемся удалить временный файл в случае ошибки
-      try {
-        if (fs.existsSync(tempFilePath)) {
-          return await saveFileLocally(tempFilePath, fileName, originalName, fileSize);
-        }
-      } catch (e) {
-        console.error(`Ошибка при очистке временного файла: ${tempFilePath}`, e);
-      }
-      
-      throw error;
+      // Пытаемся сохранить файл локально
+      return await saveFileLocally(tempFilePath, fileName, originalName, fileSize);
     }
   } else {
     // Логика для локального хранилища (на случай отключения удаленного)
@@ -178,14 +175,16 @@ async function getFileFromStorage(filePath) {
       }
       
       // Формируем команду curl
-      const curlCommand = `curl -X GET "${apiUrl}?filePath=${encodeURIComponent(filePath)}" ` +
-                         `-H "X-API-Key: ${apiKey}" ` +
-                         `--output "${outputPath}"`;
+      const curlCommand = `curl -X GET "${apiUrl}?filePath=${encodeURIComponent(filePath)}" -H "X-API-Key: ${apiKey}" --output "${outputPath}"`;
       
       console.log(`Выполняем команду: ${curlCommand}`);
       
       // Выполняем команду
-      execSync(curlCommand);
+      const { stdout, stderr } = await execPromise(curlCommand);
+      
+      if (stderr) {
+        console.warn('CURL stderr:', stderr);
+      }
       
       // Проверяем, что файл был загружен
       if (!fs.existsSync(outputPath)) {
