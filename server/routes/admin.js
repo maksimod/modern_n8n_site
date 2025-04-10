@@ -642,6 +642,7 @@ router.get('/disk-usage', [auth, isAdmin], async (req, res) => {
 // Новый маршрут для удаления всех видео файлов
 router.delete('/delete-all-videos', [auth, isAdmin], async (req, res) => {
   try {
+    // Удаляем только локальные видео, так как удаленные видео управляются отдельно
     const videosPath = path.join(__dirname, '../data/videos');
 
     // Проверяем существование директории
@@ -662,7 +663,7 @@ router.delete('/delete-all-videos', [auth, isAdmin], async (req, res) => {
         const stats = fs.statSync(filePath);
         if (stats.isFile()) {
           fs.unlinkSync(filePath);
-          console.log(`Successfully deleted video file: ${filePath}`);
+          console.log(`Successfully deleted local video file: ${filePath}`);
           deletedCount++;
         }
       } catch (error) {
@@ -671,19 +672,24 @@ router.delete('/delete-all-videos', [auth, isAdmin], async (req, res) => {
       }
     }
 
-    // Обновляем ссылки в JSON файле курсов
+    // Обновляем ссылки в JSON файле курсов, только если используем удаленное хранилище
     const courses = getCourses();
     let updatedCourses = false;
 
-    // Проходим по всем курсам и их видео
-    for (const course of courses) {
-      if (course.videos && course.videos.length > 0) {
-        for (const video of course.videos) {
-          if (video.localVideo) {
-            // Удаляем ссылку на локальное видео, меняя тип на текстовый
-            video.localVideo = '';
-            video.videoType = VIDEO_TYPES.TEXT;
-            updatedCourses = true;
+    // Очищаем локальные ссылки на видео, так как удаленные видео всё равно останутся доступны
+    if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      console.log('Keeping remote video links in courses');
+    } else {
+      // Если не используем удаленное хранилище, очищаем все ссылки на локальные видео
+      for (const course of courses) {
+        if (course.videos && course.videos.length > 0) {
+          for (const video of course.videos) {
+            if (video.localVideo) {
+              // Удаляем ссылку на локальное видео, меняя тип на текстовый
+              video.localVideo = '';
+              video.videoType = VIDEO_TYPES.TEXT;
+              updatedCourses = true;
+            }
           }
         }
       }

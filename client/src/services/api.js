@@ -1,8 +1,13 @@
 // client/src/services/api.js
 import axios from 'axios';
+import { SERVER_URL } from '../config';
 
-// Используем относительный путь для API вместо localhost:5000
-const API_BASE_URL = '';  // Пустой baseURL для использования относительных путей
+// Определяем режим разработки через vite
+const isDev = import.meta.env.DEV;
+
+// В режиме разработки используем относительные пути, так как настроен прокси
+// В продакшене используем полный URL из конфигурации
+const API_BASE_URL = isDev ? '' : SERVER_URL;
 
 // Создаем экземпляр axios с базовым URL сервера
 const api = axios.create({

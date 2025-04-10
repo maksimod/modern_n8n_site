@@ -16,8 +16,8 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
 
   // Определение типа видео
   const videoType = video?.videoType || 
-    (video?.storagePath ? VIDEO_TYPES.STORAGE :
-     (video?.localVideo ? VIDEO_TYPES.LOCAL : 
+    (video?.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE ? VIDEO_TYPES.STORAGE :
+     (video?.localVideo || video?.storagePath ? VIDEO_TYPES.LOCAL : 
      (video?.videoUrl ? VIDEO_TYPES.EXTERNAL : VIDEO_TYPES.TEXT)));
 
   useEffect(() => {
@@ -65,15 +65,17 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       let downloadUrl;
       let fileName;
       
-      if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
+      if (videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
         // Скачивание из веб-хранилища
         downloadUrl = getStorageVideoUrl(video.storagePath);
         fileName = video.title 
           ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
           : 'video.mp4';
-      } else if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+      } else if ((videoType === VIDEO_TYPES.LOCAL && video.localVideo) || 
+                (videoType === VIDEO_TYPES.STORAGE && video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
         // Скачивание с локального сервера
-        const cleanVideoPath = video.localVideo.replace(/^\/videos\//, '');
+        const localPath = video.localVideo || video.storagePath;
+        const cleanVideoPath = localPath.replace(/^\/videos\//, '');
         downloadUrl = `${SERVER_URL}/videos/${cleanVideoPath}`;
         fileName = video.title 
           ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
@@ -164,7 +166,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       )}
 
       {/* Видео из веб-хранилища */}
-      {videoType === VIDEO_TYPES.STORAGE && video.storagePath && (
+      {videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE && (
         <>
           <div className={styles.videoContainer}>
             <video 
@@ -201,12 +203,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         </>
       )}
 
-      {/* Локальное видео */}
-      {videoType === VIDEO_TYPES.LOCAL && video.localVideo && (
+      {/* Локальное видео (или видео со Storage API, которое теперь обрабатывается локально) */}
+      {(videoType === VIDEO_TYPES.LOCAL && video.localVideo) || 
+       (videoType === VIDEO_TYPES.STORAGE && video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE) ? (
         <>
           <div className={styles.videoContainer}>
             <video 
-              src={`${SERVER_URL}/videos/${video.localVideo.replace(/^\/videos\//, '')}`}
+              src={`${SERVER_URL}/videos/${(video.localVideo || video.storagePath).replace(/^\/videos\//, '')}`}
               controls
               className={styles.videoElement}
               playsInline
@@ -231,7 +234,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
             </button>
           </div>
         </>
-      )}
+      ) : null}
 
       {/* Внешнее видео (YouTube) */}
       {videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl && (

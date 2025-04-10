@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -30,10 +31,29 @@ export default defineConfig({
     hmr: true,
     watch: {
       usePolling: true,
+    },
+    proxy: {
+      // Проксирование всех API запросов на сервер
+      '/api': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      // Проксирование для видео
+      '/videos': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+        secure: false
+      }
     }
   },
   // Включаем оптимизацию для продакшена
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'axios', 'i18next']
   },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  }
 })

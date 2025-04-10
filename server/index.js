@@ -11,6 +11,8 @@ const progressRouter = require('./routes/progress');
 
 // Добавляем фикс для проблем с хранилищем
 const storageFixUtils = require('./utils/fix-storage');
+const { getFileFromStorage } = require('./utils/file-uploader');
+const { STORAGE_CONFIG } = require('./config');
 require('dotenv').config();
 
 // Создаем приложение Express
@@ -74,21 +76,40 @@ app.use((req, res, next) => {
 });
 
 // Обработка потоковой передачи видео
-app.get('/videos/:filename', (req, res) => {
-  const videoPath = path.join(__dirname, 'data/videos', req.params.filename);
+app.get('/videos/:filename', async (req, res) => {
+  const filename = req.params.filename;
   
-  // Проверяем, существует ли файл
-  fs.stat(videoPath, (err, stat) => {
-    if (err) {
-      console.error(`Файл не найден: ${videoPath}`, err);
-      return res.status(404).send('Файл не найден');
+  try {
+    let videoData;
+    let fileSize;
+    
+    if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      // Получаем данные из удаленного хранилища
+      try {
+        videoData = await getFileFromStorage(filename);
+        fileSize = videoData.length;
+      } catch (error) {
+        console.error(`Error getting file from remote storage: ${filename}`, error);
+        return res.status(404).send('Файл не найден');
+      }
+    } else {
+      // Используем локальное хранилище
+      const videoPath = path.join(__dirname, 'data/videos', filename);
+      
+      // Проверяем, существует ли файл
+      if (!fs.existsSync(videoPath)) {
+        console.error(`Файл не найден: ${videoPath}`);
+        return res.status(404).send('Файл не найден');
+      }
+      
+      // Получаем размер файла
+      const stat = fs.statSync(videoPath);
+      fileSize = stat.size;
     }
     
-    // Получаем размер файла
-    const fileSize = stat.size;
+    // Поддержка частичной загрузки
     const range = req.headers.range;
     
-    // Поддержка частичной загрузки для мобильных устройств
     if (range) {
       // Парсим Range header
       const parts = range.replace(/bytes=/, '').split('-');
@@ -96,31 +117,67 @@ app.get('/videos/:filename', (req, res) => {
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunkSize = (end - start) + 1;
       
-      // Создаем поток чтения
-      const fileStream = fs.createReadStream(videoPath, { start, end });
-      
-      // Устанавливаем заголовки
-      res.writeHead(206, {
-        'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-        'Accept-Ranges': 'bytes',
-        'Content-Length': chunkSize,
-        'Content-Type': 'video/mp4',
-        'Cache-Control': 'public, max-age=86400'
-      });
-      
-      // Передаем поток
-      fileStream.pipe(res);
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        // В случае с удаленным хранилищем отправляем часть буфера данных
+        const chunk = videoData.slice(start, end + 1);
+        
+        // Устанавливаем заголовки
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': 'video/mp4',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        
+        // Отправляем часть файла
+        res.end(chunk);
+      } else {
+        // Для локального хранилища создаем поток чтения
+        const videoPath = path.join(__dirname, 'data/videos', filename);
+        const fileStream = fs.createReadStream(videoPath, { start, end });
+        
+        // Устанавливаем заголовки
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': 'video/mp4',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        
+        // Передаем поток
+        fileStream.pipe(res);
+      }
     } else {
-      // Если нет Range header, отдаем весь файл
-      res.writeHead(200, {
-        'Content-Length': fileSize,
-        'Content-Type': 'video/mp4',
-        'Cache-Control': 'public, max-age=86400'
-      });
-      
-      fs.createReadStream(videoPath).pipe(res);
+      // Отправка всего файла, если нет запроса на частичную загрузку
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        // Устанавливаем заголовки
+        res.writeHead(200, {
+          'Content-Length': fileSize,
+          'Content-Type': 'video/mp4',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        
+        // Отправляем весь буфер данных
+        res.end(videoData);
+      } else {
+        // Для локального хранилища
+        const videoPath = path.join(__dirname, 'data/videos', filename);
+        
+        res.writeHead(200, {
+          'Content-Length': fileSize,
+          'Content-Type': 'video/mp4',
+          'Cache-Control': 'public, max-age=86400'
+        });
+        
+        fs.createReadStream(videoPath).pipe(res);
+      }
     }
-  });
+  } catch (error) {
+    console.error(`Ошибка при обработке видео ${filename}:`, error);
+    res.status(500).send('Внутренняя ошибка сервера');
+  }
 });
 
 // Статические видео-файлы с кэшированием
@@ -156,17 +213,41 @@ app.use('/api/admin', adminRouter);
 // }
 
 // Специальный маршрут для скачивания видео
-app.get('/download/:filename', (req, res) => {
+app.get('/download/:filename', async (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, 'data/videos', filename);
   
-  // Проверяем, существует ли файл
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ message: 'File not found' });
+  try {
+    if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      // Получаем данные из удаленного хранилища
+      try {
+        const videoData = await getFileFromStorage(filename);
+        
+        // Устанавливаем заголовки для скачивания
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Type', 'video/mp4');
+        
+        // Отправляем файл
+        return res.send(videoData);
+      } catch (error) {
+        console.error(`Ошибка при получении файла из удаленного хранилища: ${filename}`, error);
+        return res.status(404).json({ message: 'File not found' });
+      }
+    } else {
+      // Используем локальное хранилище
+      const filePath = path.join(__dirname, 'data/videos', filename);
+      
+      // Проверяем, существует ли файл
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'File not found' });
+      }
+      
+      // Отправляем файл для скачивания
+      res.download(filePath);
+    }
+  } catch (error) {
+    console.error(`Ошибка при скачивании файла ${filename}:`, error);
+    res.status(500).json({ message: 'Server error' });
   }
-  
-  // Отправляем файл для скачивания
-  res.download(filePath);
 });
 
 // Health check endpoint

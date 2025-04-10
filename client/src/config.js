@@ -13,10 +13,18 @@ const getServerUrl = () => {
     return _serverUrl;
   }
   
+  // Определяем режим разработки через vite
+  const isDev = import.meta.env.DEV;
+  
   // Для локальной разработки
-  _serverUrl = window.location.hostname === 'localhost'
-    ? 'http://localhost:5000'
-    : `http://${window.location.hostname}:5000`;
+  if (isDev) {
+    // В режиме разработки Vite клиент работает на порту 4000, а сервер на 5000
+    _serverUrl = 'http://127.0.0.1:5000';
+  } else {
+    _serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:5000'
+      : `http://${window.location.hostname}:5000`;
+  }
   
   return _serverUrl;
 };
@@ -54,6 +62,8 @@ export const CACHE_TTL = {
 
 // Конфигурация видеохранилища
 export const STORAGE_CONFIG = {
-  API_URL: 'http://46.35.241.37:6005/api/remote/files/C',
-  API_KEY: 'iq-banana-secure-api-key-2024'
+  API_URL: window.location.origin + '/api/remote/files/C',
+  API_KEY: 'iq-banana-secure-api-key-2024',
+  // Полностью отключаем удаленное хранилище - используем только локальное
+  USE_REMOTE_STORAGE: false
 };
