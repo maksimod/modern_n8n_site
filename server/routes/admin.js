@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 const { VIDEO_TYPES, STORAGE_CONFIG } = require('../config'); // Обновляем импорт
 const axios = require('axios'); // Добавляем axios для HTTP запросов
 const FormData = require('form-data'); // Для отправки multipart/form-data
+const { uploadFileToStorage } = require('../utils/file-uploader'); // Импортируем функцию загрузки файлов
 
 // Временное хранилище для загрузки файлов перед отправкой в веб-хранилище
 const tempStorage = multer.diskStorage({
@@ -494,89 +495,28 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Формируем имя файла
+    // Формируем имя файла и путь
     const fileName = path.basename(req.file.path);
     const filePath = req.file.path;
     
-    // Формируем путь для хранения в веб-хранилище
-    const storagePath = `videos/${fileName}`;
-    
-    console.log('Uploading file to storage:', {
+    console.log('Starting upload process:', {
       localPath: filePath,
-      storagePath: storagePath,
+      fileName: fileName,
+      originalName: req.file.originalname,
       size: req.file.size
     });
     
-    // Добавляем обработку локального файла в случае ошибки с веб-хранилищем
     try {
-      // Создаем каталог для видео, если не существует
-      const videosDir = path.join(__dirname, '../data/videos');
-      if (!fs.existsSync(videosDir)) {
-        fs.mkdirSync(videosDir, { recursive: true });
-      }
+      // Используем нашу функцию для загрузки файла в хранилище
+      const uploadResult = await uploadFileToStorage(
+        filePath, 
+        fileName, 
+        req.file.originalname, 
+        req.file.size
+      );
       
-      // Копируем файл в директорию видео (резервный вариант)
-      const localVideoPath = path.join(videosDir, fileName);
-      fs.copyFileSync(filePath, localVideoPath);
-      
-      // Для загрузки в хранилище используем потоковую передачу
-      const formData = new FormData();
-      formData.append('file', fs.createReadStream(filePath));
-
-      let uploadResponse;
-      try {
-        // Пробуем отправить файл в хранилище
-        uploadResponse = await axios.post(
-          `${STORAGE_CONFIG.API_URL}/upload`,
-          formData,
-          {
-            headers: {
-              'X-API-Key': STORAGE_CONFIG.API_KEY,
-              ...formData.getHeaders()
-            },
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            timeout: 3600000
-          }
-        );
-      } catch (storageError) {
-        console.error('Storage upload error:', storageError.message);
-        // В случае ошибки хранилища, вернем информацию о локальном файле
-        // Удаляем временный файл
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error(`Error deleting temp file: ${filePath}`, e);
-        }
-        
-        return res.json({
-          message: 'File uploaded to local storage (storage API failed)',
-          filePath: fileName, // Только имя файла для локального доступа
-          originalName: req.file.originalname,
-          size: req.file.size,
-          videoType: VIDEO_TYPES.LOCAL,
-          storageError: storageError.message
-        });
-      }
-      
-      // Если запрос к хранилищу выполнен успешно
-      console.log('Storage API response:', uploadResponse?.data || 'No response data');
-      
-      // Удаляем временный файл
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error(`Error deleting temporary file: ${filePath}`, err);
-      }
-      
-      // Возвращаем информацию о загруженном файле
-      return res.json({
-        message: 'File uploaded successfully to storage API',
-        filePath: storagePath,
-        originalName: req.file.originalname,
-        size: req.file.size,
-        storageType: VIDEO_TYPES.STORAGE
-      });
+      // Возвращаем результат загрузки
+      return res.json(uploadResult);
     } catch (processError) {
       console.error('Error processing file:', processError);
       
@@ -584,6 +524,7 @@ router.post('/upload', [auth, isAdmin, upload.single('video')], async (req, res)
       try {
         if (fs.existsSync(filePath)) {
           fs.unlinkSync(filePath);
+          console.log(`Temporary file deleted after process error: ${filePath}`);
         }
       } catch (e) {
         console.error(`Cannot delete temp file: ${filePath}`, e);

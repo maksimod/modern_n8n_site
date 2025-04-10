@@ -8,10 +8,16 @@ const progressRouter = require('./routes/progress');
 // Закомментируем пока это - система очистки должна быть включена только после того, 
 // как все остальное будет работать корректно
 // const { startCleanupJob } = require('./utils/user-cleaner');
+
+// Добавляем фикс для проблем с хранилищем
+const storageFixUtils = require('./utils/fix-storage');
 require('dotenv').config();
 
 // Создаем приложение Express
 const app = express();
+
+// Инициализируем директорию для видео
+storageFixUtils.ensureVideosDirectory();
 
 // Middleware
 app.use(cors({
@@ -35,6 +41,9 @@ app.use((req, res, next) => {
   res.setTimeout(7200000);
   next();
 });
+
+// Устанавливаем заглушки для хранилища
+storageFixUtils.setupStorageMock(app);
 
 app.use('/api/progress', progressRouter);
 
@@ -192,8 +201,9 @@ app.use((err, req, res, next) => {
 
 // Запуск сервера
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '127.0.0.1', () => {
   console.log(`Сервер запущен на порту ${PORT}`);
+  console.log(`Сервер доступен по адресу: http://127.0.0.1:${PORT}`);
   console.log(`Окружение: ${process.env.NODE_ENV || 'development'}`);
   // console.log('Система доверенных пользователей активирована');
 });

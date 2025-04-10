@@ -6,9 +6,13 @@ const VIDEO_TYPES = {
     TEXT: 'text'
   };
   
+// Сейчас используем только локальное хранилище из-за проблем с удаленным API
 const STORAGE_CONFIG = {
-  API_URL: 'http://46.35.241.37:6005/api/remote/files/C',
-  API_KEY: 'iq-banana-secure-api-key-2024'
+  // Отключаем обращение к удалённому хранилищу
+  API_URL: 'http://localhost:5000/api/remote/files/C',
+  API_KEY: 'iq-banana-secure-api-key-2024',
+  // Полностью отключаем удаленное хранилище
+  USE_REMOTE_STORAGE: false
 };
 
 module.exports = {
