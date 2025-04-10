@@ -38,7 +38,7 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
       const axiosConfig = {
         headers: {
           ...formData.getHeaders(),
-          'X-API-Key': STORAGE_CONFIG.API_KEY
+          'X-API-KEY': STORAGE_CONFIG.API_KEY
         },
         maxContentLength: Infinity,
         maxBodyLength: Infinity
@@ -48,7 +48,7 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
         url: `${STORAGE_CONFIG.API_URL}/upload`,
         method: 'POST',
         headers: {
-          'X-API-Key': STORAGE_CONFIG.API_KEY,
+          'X-API-KEY': STORAGE_CONFIG.API_KEY,
           ...formData.getHeaders()
         }
       });
@@ -184,7 +184,7 @@ async function getFileFromStorage(filePath) {
           url: apiUrl,
           params: { filePath },
           headers: {
-            'X-API-Key': apiKey
+            'X-API-KEY': apiKey
           },
           responseType: 'arraybuffer'
         });

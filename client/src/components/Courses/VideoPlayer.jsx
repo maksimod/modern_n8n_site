@@ -87,7 +87,215 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
-  // Формирование URL для загрузки видео из веб-хранилища
+  // Обработчик ошибки при загрузке видео
+  const handleVideoError = (e) => {
+    console.error('Video loading error:', e);
+    console.error('Video source URL:', getStorageVideoUrl(video.storagePath));
+    console.error('Video object:', video);
+    setError(`Ошибка при загрузке видео. URL: ${getStorageVideoUrl(video.storagePath)}`);
+    
+    // Пробуем загрузить видео через fetch с заголовками
+    if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
+      loadVideoWithFetch(video.storagePath);
+    }
+  };
+  
+  // Загрузка видео через Fetch API с добавлением заголовков авторизации
+  const loadVideoWithFetch = (storagePath) => {
+    console.log('Attempting to load video with Fetch API:', storagePath);
+    setError('Загрузка видео...');
+    
+    const url = getStorageVideoUrl(storagePath);
+    
+    // Выводим диагностическую информацию
+    console.log('Fetch request details:', {
+      url,
+      headers: {
+        'X-API-KEY': STORAGE_CONFIG.API_KEY,
+        'Accept': 'video/mp4,video/*'
+      }
+    });
+    
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-API-KEY': STORAGE_CONFIG.API_KEY,
+        'Accept': 'video/mp4,video/*'
+      }
+    })
+    .then(response => {
+      console.log('Fetch response status:', response.status);
+      console.log('Fetch response headers:', [...response.headers.entries()]);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.blob();
+    })
+    .then(blob => {
+      console.log('Video blob received:', blob.type, blob.size);
+      const videoUrl = window.URL.createObjectURL(blob);
+      
+      // Обновляем source у видео
+      const videoElement = document.querySelector(`.${styles.videoElement}`);
+      if (videoElement) {
+        const source = videoElement.querySelector('source');
+        if (source) {
+          source.src = videoUrl;
+          videoElement.load();
+          console.log('Video element source updated with blob URL');
+          setError(null); // Очищаем ошибку при успешной загрузке
+        } else {
+          console.error('Source element not found inside video element');
+          setError('Ошибка при обновлении источника видео');
+        }
+      } else {
+        console.error('Video element not found with class:', styles.videoElement);
+        setError('Ошибка при поиске элемента видео');
+      }
+    })
+    .catch(error => {
+      console.error('Fetch error:', error);
+      setError(`Ошибка при загрузке видео: ${error.message}. Пробуем альтернативный метод...`);
+      
+      // Пробуем использовать XHR как запасной вариант
+      loadVideoWithXHR(storagePath);
+    });
+  };
+  
+  // Загрузка видео через XHR с добавлением заголовков авторизации
+  const loadVideoWithXHR = (storagePath) => {
+    console.log('Attempting to load video with XHR:', storagePath);
+    setError('Загрузка видео через альтернативный метод...');
+    
+    const url = getStorageVideoUrl(storagePath);
+    const xhr = new XMLHttpRequest();
+    
+    // Добавляем обработчики для всех состояний XHR
+    xhr.onreadystatechange = function() {
+      console.log(`XHR state changed: readyState=${this.readyState}, status=${this.status}`);
+      
+      if (this.readyState === 2) { // HEADERS_RECEIVED
+        console.log('XHR headers received:', this.getAllResponseHeaders());
+      }
+    };
+    
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('X-API-KEY', STORAGE_CONFIG.API_KEY);
+    xhr.setRequestHeader('Accept', 'video/mp4,video/*');
+    xhr.responseType = 'blob';
+    
+    // Выводим диагностическую информацию
+    console.log('XHR request details:', {
+      url,
+      headers: {
+        'X-API-KEY': STORAGE_CONFIG.API_KEY,
+        'Accept': 'video/mp4,video/*'
+      }
+    });
+    
+    xhr.onprogress = function(e) {
+      if (e.lengthComputable) {
+        const percentComplete = (e.loaded / e.total) * 100;
+        console.log(`XHR download progress: ${percentComplete.toFixed(2)}%`);
+        setError(`Загрузка видео: ${percentComplete.toFixed(0)}%`);
+      }
+    };
+    
+    xhr.onload = function() {
+      console.log(`XHR loaded: status=${this.status}, response type=${this.response ? typeof this.response : 'null'}`);
+      if (this.status === 200) {
+        if (this.response) {
+          const blob = new Blob([this.response], { type: 'video/mp4' });
+          console.log('Video blob created:', blob.type, blob.size);
+          const videoUrl = window.URL.createObjectURL(blob);
+          
+          // Обновляем source у видео
+          const videoElement = document.querySelector(`.${styles.videoElement}`);
+          if (videoElement) {
+            const source = videoElement.querySelector('source');
+            if (source) {
+              source.src = videoUrl;
+              videoElement.load();
+              console.log('Video element source updated with blob URL');
+              setError(null); // Очищаем ошибку при успешной загрузке
+            } else {
+              console.error('Source element not found inside video element');
+              setError('Ошибка при обновлении источника видео');
+            }
+          } else {
+            console.error('Video element not found with class:', styles.videoElement);
+            setError('Ошибка при поиске элемента видео');
+          }
+        } else {
+          console.error('XHR response is empty');
+          setError('Получен пустой ответ от сервера');
+        }
+      } else {
+        console.error('Failed to load video with XHR:', this.status);
+        setError(`Ошибка при загрузке видео. Код ошибки: ${this.status}`);
+        
+        // Проверяем, был ли ответ с ошибкой авторизации
+        if (this.status === 401 || this.status === 403) {
+          console.error('Authorization error. API key might be invalid or missing.');
+          setError('Ошибка авторизации. Проверьте API ключ в настройках.');
+        }
+      }
+    };
+    
+    xhr.onerror = function(e) {
+      console.error('XHR request failed:', e);
+      setError('Ошибка при загрузке видео. Проверьте сетевое соединение и настройки CORS.');
+      
+      // Пробуем создать прямую ссылку на видео с ключом в URL
+      tryDirectLink(storagePath);
+    };
+    
+    xhr.ontimeout = function() {
+      console.error('XHR request timed out');
+      setError('Превышено время ожидания при загрузке видео.');
+    };
+    
+    xhr.send();
+  };
+  
+  // Последняя попытка - создаем ссылку на видео с ключом в URL
+  const tryDirectLink = (storagePath) => {
+    console.log('Attempting to create direct link with API key in URL:', storagePath);
+    setError('Пробуем прямой доступ к видео...');
+    
+    try {
+      if (!storagePath) {
+        console.error('Storage path is empty!');
+        return;
+      }
+      
+      // Очищаем путь от возможных префиксов
+      const cleanPath = storagePath.replace(/^\/videos\//, '');
+      
+      // Создаем URL с ключом в параметрах запроса
+      const url = `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(cleanPath)}&apiKey=${encodeURIComponent(STORAGE_CONFIG.API_KEY)}`;
+      console.log('Direct URL with API key generated:', url);
+      
+      // Устанавливаем прямую ссылку на видео
+      const videoElement = document.querySelector(`.${styles.videoElement}`);
+      if (videoElement) {
+        const source = videoElement.querySelector('source');
+        if (source) {
+          source.src = url;
+          videoElement.load();
+          console.log('Video element source updated with direct URL');
+          setError('Используем прямую ссылку с API ключом. Если видео не загружается, сообщите администратору.');
+        }
+      }
+    } catch (error) {
+      console.error('Error generating direct URL:', error);
+      setError('Не удалось создать прямую ссылку на видео.');
+    }
+  };
+  
+  // Формирование URL для загрузки видео из веб-хранилища с API ключом
   const getStorageVideoUrl = (storagePath) => {
     try {
       if (!storagePath) {
@@ -225,19 +433,41 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               controls
               className={styles.videoElement}
               playsInline
-              onError={(e) => {
-                console.error('Video loading error:', e);
-                console.error('Video source URL:', getStorageVideoUrl(video.storagePath));
-                console.error('Video object:', video);
-                setError(`Ошибка при загрузке видео. URL: ${getStorageVideoUrl(video.storagePath)}`);
+              onError={handleVideoError}
+              onCanPlay={() => {
+                console.log('Video can be played now');
+                setError(null); // Очищаем ошибку, если видео может воспроизводиться
               }}
-              onCanPlay={() => console.log('Video can be played now')}
-              onLoadedData={() => console.log('Video data loaded successfully')}
+              onLoadedData={() => {
+                console.log('Video data loaded successfully');
+                setError(null); // Очищаем ошибку при успешной загрузке
+              }}
             >
               <source src={getStorageVideoUrl(video.storagePath)} type="video/mp4" />
               {t('course.browserNotSupportVideo')}
             </video>
           </div>
+          
+          {error && (
+            <div className={styles.errorMessage}>
+              {error}
+              <div className={styles.errorButtons}>
+                <button 
+                  className={styles.retryButton}
+                  onClick={() => loadVideoWithFetch(video.storagePath)}
+                >
+                  {t('course.retryLoading')}
+                </button>
+                <button 
+                  className={styles.retryButton}
+                  onClick={() => tryDirectLink(video.storagePath)}
+                >
+                  Прямая ссылка
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className={styles.videoInfo}>
             <div className={styles.videoHeader}>
               <h2 className={styles.videoTitle}>{video.title}</h2>
@@ -318,8 +548,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
           </div>
         </>
       )}
-
-      {error && <div className={styles.errorMessage}>{error}</div>}
     </div>
   );
 };
