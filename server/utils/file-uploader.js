@@ -22,9 +22,14 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
     throw new Error(`Временный файл не найден: ${tempFilePath}`);
   }
 
+  // Ensure fileName has no path prefix
+  const cleanFileName = path.basename(fileName);
+  console.log(`Using clean fileName: ${cleanFileName} (original: ${fileName})`);
+
   // Используем удаленное хранилище, если оно включено в конфигурации
+  let actualStorageType = VIDEO_TYPES.LOCAL; // Default to local
   if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-    console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Начало загрузки файла: ${fileName}`);
+    console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Начало загрузки файла: ${cleanFileName}`);
     
     try {
       // Создаем объект FormData для отправки файла
@@ -41,7 +46,8 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
           'X-API-KEY': STORAGE_CONFIG.API_KEY
         },
         maxContentLength: Infinity,
-        maxBodyLength: Infinity
+        maxBodyLength: Infinity,
+        timeout: 60000 // 60 seconds timeout
       };
       
       console.log('Конфигурация запроса:', {
@@ -70,11 +76,15 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
         console.error(`Не критичная ошибка при удалении временного файла: ${tempFilePath}`, err);
       }
       
+      // Set the actual storage type
+      actualStorageType = VIDEO_TYPES.STORAGE;
+      
+      // Store the clean filename without any path prefixes
       // Возвращаем успешный результат
       return {
         success: true,
         message: 'Файл успешно загружен в удаленное хранилище',
-        filePath: fileName,
+        filePath: cleanFileName,
         originalName: originalName,
         size: fileSize,
         videoType: VIDEO_TYPES.STORAGE
@@ -85,16 +95,20 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
       if (error.response) {
         console.error('Данные ответа:', error.response.data);
         console.error('Статус ответа:', error.response.status);
+      } else if (error.request) {
+        console.error('Запрос был сделан, но ответ не получен:', error.request);
+      } else {
+        console.error('Ошибка при настройке запроса:', error.message);
       }
       
       // Если не удалось загрузить в удаленное хранилище, сохраняем локально
       console.log('Переходим к локальному хранилищу как запасному варианту');
       
-      return await saveFileLocally(tempFilePath, fileName, originalName, fileSize);
+      return await saveFileLocally(tempFilePath, cleanFileName, originalName, fileSize);
     }
   } else {
     // Логика для локального хранилища (на случай отключения удаленного)
-    return await saveFileLocally(tempFilePath, fileName, originalName, fileSize);
+    return await saveFileLocally(tempFilePath, cleanFileName, originalName, fileSize);
   }
 }
 

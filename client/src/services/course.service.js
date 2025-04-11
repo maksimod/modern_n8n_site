@@ -115,8 +115,35 @@ export const createCourse = async (courseData) => {
 export const updateCourse = async (courseId, courseData) => {
   try {
     console.log('Updating course with data:', courseData);
-    const response = await api.put(`/api/admin/courses/${courseId}`, courseData);
-    return response.data;
+    
+    // Add retry mechanism for 502 errors
+    let retries = 3;
+    let lastError = null;
+    
+    while (retries > 0) {
+      try {
+        const response = await api.put(`/api/admin/courses/${courseId}`, courseData);
+        console.log('Course update successful:', response.data);
+        return response.data;
+      } catch (error) {
+        lastError = error;
+        
+        // If it's a 502 Bad Gateway, retry
+        if (error.response && error.response.status === 502) {
+          console.log(`Got 502 error, retrying... (${retries} attempts left)`);
+          retries--;
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          // For other errors, don't retry
+          throw error;
+        }
+      }
+    }
+    
+    // If we've exhausted retries, throw the last error
+    console.error(`Exhausted ${3-retries} retries updating course ${courseId}`);
+    throw lastError;
   } catch (error) {
     console.error(`Error updating course ${courseId}:`, error);
     throw error;
@@ -160,9 +187,27 @@ export const updateVideo = async (courseId, videoId, videoData) => {
 export const deleteVideo = async (courseId, videoId, language = 'ru') => {
   try {
     console.log(`Deleting video: courseId=${courseId}, videoId=${videoId}, language=${language}`);
-    const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
-    console.log('Delete video response:', response.data);
-    return response.data;
+    
+    try {
+      const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
+      return response.data;
+    } catch (error) {
+      // Handle 404 errors gracefully - the video may have already been deleted
+      if (error.response && error.response.status === 404) {
+        console.log(`Video ${videoId} not found on server, considering it already deleted`);
+        
+        // Return a successful response to avoid UI errors
+        return {
+          success: true,
+          message: 'Video deleted successfully (was already removed from server)',
+          videoId: videoId,
+          fileDeleted: false
+        };
+      }
+      
+      // For other errors, rethrow
+      throw error;
+    }
   } catch (error) {
     console.error(`Error deleting video ${videoId}:`, error);
     throw error;
@@ -329,18 +374,23 @@ export const deleteVideoFile = async (fileName) => {
     // Улучшенный лог с полным именем файла
     console.log(`Attempting to delete file: ${fileName}`);
     
-    // Очищаем путь от возможных префиксов
-    const cleanFileName = fileName.replace(/^\/videos\//, '');
+    // Clean the filename - keep only the actual filename without paths
+    let cleanFileName = fileName;
+    if (fileName.includes('/')) {
+      cleanFileName = fileName.split('/').pop();
+    }
+    cleanFileName = cleanFileName.replace(/^\/videos\//, '');
     
-    // Добавляем дополнительные данные для отладки
-    console.log(`Using cleaned file name for deletion: ${cleanFileName}`);
+    console.log(`Using clean filename: ${cleanFileName} for deletion`);
     
+    // Directly follow the curl command format that works manually
     const response = await api.delete('/api/storage/delete', {
       headers: {
         'Content-Type': 'application/json'
       },
       data: {
-        pattern: cleanFileName
+        pattern: cleanFileName,
+        confirm: true // This is the key parameter that was missing
       }
     });
     
@@ -349,12 +399,13 @@ export const deleteVideoFile = async (fileName) => {
   } catch (error) {
     console.error('Error deleting video file:', error);
     
-    // Более детальное логирование ошибки
-    if (error.response) {
-      console.error('Error status:', error.response.status);
-      console.error('Error data:', error.response.data);
-      console.error('Request URL:', error.config?.url);
-      console.error('Request method:', error.config?.method);
+    // If we get a 404, consider it already deleted
+    if (error.response && error.response.status === 404) {
+      return { 
+        success: true, 
+        message: 'File not found (already deleted)',
+        status: 404
+      };
     }
     
     return { 

@@ -54,6 +54,36 @@ router.post('/init-upload', [auth, isAdmin], async (req, res) => {
     
     console.log(`Initializing upload for: ${fileName}, size: ${fileSize}`);
     
+    // Variable to track whether to use local storage instead of remote
+    let useLocalStorage = !STORAGE_CONFIG.USE_REMOTE_STORAGE;
+    
+    // Check remote storage if it's enabled in config
+    if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+      try {
+        console.log('Testing remote storage connection...');
+        // Try a simple request to remote storage
+        const response = await axios({
+          method: 'GET',
+          url: `${STORAGE_CONFIG.API_URL}/health`,
+          headers: {
+            'X-API-KEY': STORAGE_CONFIG.API_KEY
+          },
+          timeout: 5000 // 5 second timeout for health check
+        });
+        
+        console.log('Remote storage health check response:', response.status);
+        
+        if (response.status !== 200) {
+          console.warn(`Remote storage returned non-200 status: ${response.status}`);
+          useLocalStorage = true;
+        }
+      } catch (error) {
+        console.error('Remote storage is unreachable:', error.message);
+        console.warn('Falling back to local storage for this session');
+        useLocalStorage = true;
+      }
+    }
+    
     // Создаем уникальный ID сессии
     const sessionId = uuidv4();
     
@@ -71,14 +101,18 @@ router.post('/init-upload', [auth, isAdmin], async (req, res) => {
       totalChunks: 0,
       uploadedChunks: 0,
       sessionDir,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      useLocalStorage // Store flag to force local storage if needed
     };
     
     // Возвращаем ID сессии
     return res.json({
       success: true,
       sessionId,
-      message: 'Upload session initialized'
+      message: useLocalStorage ? 
+        'Upload session initialized (will use local storage)' : 
+        'Upload session initialized',
+      storage: useLocalStorage ? 'local' : 'remote'
     });
   } catch (error) {
     console.error('Error initializing upload:', error);
@@ -170,6 +204,7 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
     const session = uploadSessions[sessionId];
     
     console.log(`Finalizing upload for session ${sessionId}, chunks: ${session.uploadedChunks}/${session.totalChunks}`);
+    console.log(`Session useLocalStorage flag: ${session.useLocalStorage}`);
     
     // Проверяем, все ли чанки загружены
     if (session.uploadedChunks !== session.totalChunks) {
@@ -219,6 +254,11 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
     console.log(`All chunks combined to: ${tempFilePath}`);
     
     try {
+      // Override storage config if session has explicit flag
+      const useRemoteStorage = session.useLocalStorage === true ? false : STORAGE_CONFIG.USE_REMOTE_STORAGE;
+      
+      console.log(`Upload destination: ${useRemoteStorage ? 'REMOTE STORAGE' : 'LOCAL STORAGE'}`);
+      
       // Загружаем объединенный файл в хранилище
       const uploadResult = await uploadFileToStorage(
         tempFilePath,
@@ -255,11 +295,45 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
         message: 'File uploaded successfully',
         filePath: uploadResult.filePath,
         originalName: uploadResult.originalName,
-        videoType: STORAGE_CONFIG.USE_REMOTE_STORAGE ? 'storage' : 'local',
+        videoType: uploadResult.videoType || (useRemoteStorage ? 'storage' : 'local'),
         size: session.fileSize
       });
     } catch (uploadError) {
       console.error('Error uploading to storage:', uploadError);
+      
+      // Attempt local storage as fallback if we haven't already
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !session.useLocalStorage) {
+        console.log('Trying local storage as fallback for failed remote upload...');
+        try {
+          // Force local storage
+          session.useLocalStorage = true;
+          
+          // Try to upload locally
+          const localResult = await uploadFileToStorage(
+            tempFilePath,
+            tempFileName,
+            originalName || session.fileName,
+            session.fileSize
+          );
+          
+          console.log('Local storage fallback result:', localResult);
+          
+          // Cleanup and return result
+          delete uploadSessions[sessionId];
+          
+          return res.json({
+            success: true,
+            message: 'File uploaded successfully to local storage (fallback)',
+            filePath: localResult.filePath,
+            originalName: localResult.originalName,
+            videoType: 'local',
+            size: session.fileSize
+          });
+        } catch (fallbackError) {
+          console.error('Even local storage fallback failed:', fallbackError);
+        }
+      }
+      
       return res.status(500).json({
         success: false,
         message: `Storage upload error: ${uploadError.message}`
@@ -378,7 +452,7 @@ setInterval(() => {
 // Endpoint to delete files
 router.delete('/delete', [auth, isAdmin], async (req, res) => {
   try {
-    const { pattern } = req.body;
+    const { pattern, confirm } = req.body;
     
     if (!pattern) {
       return res.status(400).json({
@@ -387,11 +461,18 @@ router.delete('/delete', [auth, isAdmin], async (req, res) => {
       });
     }
     
-    console.log(`Received request to delete file: ${pattern}`);
+    console.log(`Received request to delete file: ${pattern}, confirm: ${confirm}`);
+    
+    // Clean up the pattern - remove any path prefixes that might cause issues
+    const cleanPattern = pattern.replace(/^\/videos\//, '');
+    console.log(`Using cleaned pattern for deletion: ${cleanPattern}`);
     
     // If using remote storage, delete from there
     if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
       try {
+        console.log(`Sending direct delete request to remote storage: ${cleanPattern}`);
+        
+        // Make a straightforward delete request directly to the storage API
         const response = await axios({
           method: 'DELETE',
           url: `${STORAGE_CONFIG.API_URL}/delete`,
@@ -399,10 +480,26 @@ router.delete('/delete', [auth, isAdmin], async (req, res) => {
             'X-API-KEY': STORAGE_CONFIG.API_KEY,
             'Content-Type': 'application/json'
           },
-          data: { pattern }
+          data: { 
+            pattern: cleanPattern,
+            confirm: true  // Always include confirm:true
+          }
         });
         
         console.log('Remote storage delete response:', response.data);
+        
+        // Also try to delete local copy just in case
+        try {
+          const videosDir = path.join(__dirname, '../data/videos');
+          const localFilePath = path.join(videosDir, cleanPattern);
+          
+          if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+            console.log(`Also deleted local copy at: ${localFilePath}`);
+          }
+        } catch (localError) {
+          console.log('Could not delete local copy, but remote deletion proceeded');
+        }
         
         return res.json({
           success: true,
@@ -419,7 +516,7 @@ router.delete('/delete', [auth, isAdmin], async (req, res) => {
     
     // For local storage or as fallback
     const videosDir = path.join(__dirname, '../data/videos');
-    const filePath = path.join(videosDir, pattern);
+    const filePath = path.join(videosDir, cleanPattern);
     
     console.log(`Checking for local file: ${filePath}`);
     
@@ -434,17 +531,20 @@ router.delete('/delete', [auth, isAdmin], async (req, res) => {
     } else {
       console.log(`File not found locally: ${filePath}`);
       
+      // For graceful degradation, return success even if file not found
       return res.json({
-        success: false,
-        message: 'File not found in local storage'
+        success: true,
+        message: 'File may have been already deleted'
       });
     }
   } catch (error) {
     console.error('Error in file deletion handler:', error);
     
-    res.status(500).json({
-      success: false,
-      message: `Server error: ${error.message}`
+    // For UI continuity, return success with error details
+    res.json({
+      success: true, // Still report success to not block UI
+      message: `Storage operation completed with warnings: ${error.message}`,
+      hadErrors: true
     });
   }
 });

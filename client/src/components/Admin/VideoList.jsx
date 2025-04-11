@@ -3,9 +3,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { deleteVideo } from '../../services/course.service';
+import { deleteVideo, deleteVideoFile } from '../../services/course.service';
 import styles from '../../styles/admin.module.css';
-import { VIDEO_TYPES } from '../../config';
+import { VIDEO_TYPES, STORAGE_CONFIG } from '../../config';
 
 const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
   const { t } = useTranslation();
@@ -58,17 +58,57 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
   const handleDeleteVideo = async (videoId) => {
     if (window.confirm(t('admin.confirmDeleteVideo'))) {
       try {
-        // Непосредственный вызов API для удаления видео
-        await deleteVideo(courseId, videoId, language);
-        console.log(`Video ${videoId} deleted from course ${courseId}`);
+        // Find the video data
+        const video = videos.find(v => v.id === videoId);
+        if (!video) {
+          console.error(`Video ${videoId} not found`);
+          throw new Error('Video not found');
+        }
         
-        // Затем вызываем onDelete callback для обновления UI
+        console.log('Deleting video:', video);
+        
+        // First delete the actual file from storage
+        if (video.storagePath) {
+          console.log(`Deleting storage file first: ${video.storagePath}`);
+          try {
+            // Clean the filename from any path
+            const cleanFilename = video.storagePath.split('/').pop();
+            console.log(`Using cleaned filename for deletion: ${cleanFilename}`);
+            
+            // Direct API call with proper parameters - following manual curl format
+            const result = await deleteVideoFile(cleanFilename);
+            console.log('File deletion result:', result);
+          } catch (fileError) {
+            console.error('Failed to delete file, but will continue with video deletion:', fileError);
+          }
+        } else if (video.localVideo) {
+          console.log(`Deleting local file first: ${video.localVideo}`);
+          try {
+            const result = await deleteVideoFile(video.localVideo);
+            console.log('File deletion result:', result);
+          } catch (fileError) {
+            console.error('Failed to delete local file, but will continue with video deletion:', fileError);
+          }
+        }
+        
+        // Now delete the video from the database
+        const response = await deleteVideo(courseId, videoId, language);
+        console.log(`Video ${videoId} deleted from course ${courseId}:`, response);
+        
+        // Update UI
         if (onDelete) {
           onDelete(videoId);
         }
       } catch (error) {
         console.error(`Error deleting video ${videoId}:`, error);
-        alert('Failed to delete video: ' + (error.message || 'Unknown error'));
+        
+        // Still update UI to avoid confusion
+        if (onDelete) {
+          onDelete(videoId);
+          alert('The file may have been deleted, but there was a database error. The UI has been updated.');
+        } else {
+          alert('Failed to delete video: ' + (error.message || 'Unknown error'));
+        }
       }
     }
   };

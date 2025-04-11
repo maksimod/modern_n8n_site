@@ -149,17 +149,6 @@
         "videoType": "text",
         "isPrivate": false,
         "localVideo": ""
-      },
-      {
-        "id": "73688098-b27d-41dc-afce-081f043b8b63",
-        "title": "zagolog",
-        "description": "",
-        "duration": "",
-        "isPrivate": false,
-        "storagePath": "ade7d837-9bd9-4079-97a0-fbf40ff5a56e.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
       }
     ]
   },

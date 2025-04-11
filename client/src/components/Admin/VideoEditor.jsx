@@ -179,6 +179,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     const oldType = formData.videoType;
     
     console.log(`Changing video type from ${oldType} to ${newType}`);
+    console.log('Current form data:', formData);
     
     // If changing from LOCAL to another type, check if we need to delete any files
     if (oldType === VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.LOCAL) {
@@ -207,14 +208,27 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       if (formData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
         try {
           console.log(`Requesting deletion of storage file: ${formData.storagePath}`);
+          // Ensure we're sending the clean filename without path prefixes
+          const storageFilename = formData.storagePath.split('/').pop();
+          console.log(`Using cleaned storage path for deletion: ${storageFilename}`);
+          
           // Use the deleteVideoFile function for storage files too
-          deleteVideoFile(formData.storagePath)
+          deleteVideoFile(storageFilename)
             .then(result => {
               console.log('Storage file deletion result:', result);
               if (result.success) {
                 console.log('Successfully deleted storage file:', formData.storagePath);
               } else {
                 console.warn('Failed to delete storage file:', result.message);
+                
+                // Try one more time with the full path if the clean name failed
+                console.log('Retrying with full storage path...');
+                return deleteVideoFile(formData.storagePath);
+              }
+            })
+            .then(secondResult => {
+              if (secondResult) {
+                console.log('Second storage file deletion attempt result:', secondResult);
               }
             })
             .catch(error => {
