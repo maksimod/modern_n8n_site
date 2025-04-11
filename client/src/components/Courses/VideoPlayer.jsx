@@ -1,29 +1,32 @@
 // client/src/components/Courses/VideoPlayer.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
 import { SERVER_URL, VIDEO_TYPES, STORAGE_CONFIG } from '../../config';
 import styles from '../../styles/courses.module.css';
 
-const VideoPlayer = ({ course, video, onVideoComplete }) => {
+const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
   const { updateVideoProgress, isVideoCompleted } = useProgress();
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [fallbackToText, setFallbackToText] = useState(false);
 
   // Определение типа видео
-  const detectVideoType = (video) => {
-    if (!video) return VIDEO_TYPES.TEXT;
-    if (video.videoType) return video.videoType;
-    if (video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) return VIDEO_TYPES.STORAGE;
-    if (video.localVideo) return VIDEO_TYPES.LOCAL;
-    if (video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE) return VIDEO_TYPES.LOCAL;
-    if (video.videoUrl) return VIDEO_TYPES.EXTERNAL;
+  const detectVideoType = useCallback((videoData) => {
+    if (!videoData) return VIDEO_TYPES.TEXT;
+    if (fallbackToText) return VIDEO_TYPES.TEXT;
+    if (videoData.videoType) return videoData.videoType;
+    if (videoData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) return VIDEO_TYPES.STORAGE;
+    if (videoData.localVideo) return VIDEO_TYPES.LOCAL;
+    if (videoData.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE) return VIDEO_TYPES.LOCAL;
+    if (videoData.videoUrl) return VIDEO_TYPES.EXTERNAL;
     return VIDEO_TYPES.TEXT;
-  };
+  }, [fallbackToText]);
 
   const videoType = detectVideoType(video);
 
@@ -31,6 +34,10 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     if (currentUser && course?.id && video?.id) {
       setCompleted(isVideoCompleted(course.id, video.id));
     }
+    // Сбрасываем состояние при смене видео
+    setError(null);
+    setRetryCount(0);
+    setFallbackToText(false);
   }, [currentUser, course, video, isVideoCompleted]);
 
   // Обработчик для отметки видео как просмотренного
@@ -55,24 +62,42 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
   };
 
   // Обработчик ошибки при загрузке видео
-  const handleVideoError = (e) => {
+  const handleVideoError = useCallback((e) => {
     console.error('Video loading error:', e);
-    setError(`Ошибка при загрузке видео`);
+    
+    // Если уже пробовали несколько раз и не получилось, показываем текстовый режим
+    if (retryCount >= 2) {
+      setError('Не удалось загрузить видео после нескольких попыток.');
+      setFallbackToText(true);
+      return;
+    }
+    
+    setError(`Ошибка при загрузке видео. Попытка ${retryCount + 1} из 3.`);
+    setRetryCount(prev => prev + 1);
     
     if (videoType === VIDEO_TYPES.STORAGE && video.storagePath) {
       loadVideoWithAlternativeMethods(video.storagePath);
     }
-  };
+  }, [retryCount, videoType, video]);
   
   // Объединенная функция для загрузки видео альтернативными методами
-  const loadVideoWithAlternativeMethods = (storagePath) => {
+  const loadVideoWithAlternativeMethods = useCallback((storagePath) => {
     if (!storagePath) return;
     
     const cleanPath = storagePath.replace(/^\/videos\//, '');
     const timestamp = new Date().getTime();
-    const url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
     
-    setError('Загрузка видео альтернативным методом...');
+    // Используем разные URL для разных попыток, чтобы избежать кэширования ошибок
+    let url;
+    if (retryCount === 0) {
+      url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
+    } else if (retryCount === 1) {
+      url = `/api/videos/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
+    } else {
+      url = `/download/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
+    }
+    
+    setError(`Загрузка видео альтернативным методом... (${retryCount + 1}/3)`);
     
     // Обновляем source у видео напрямую
     const videoElement = document.querySelector(`.${styles.videoElement}`);
@@ -81,18 +106,17 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       if (source) {
         source.src = url;
         videoElement.load();
-        setError(null);
       }
     }
-  };
+  }, [retryCount]);
   
   // Получение URL для хранилища
-  const getStorageVideoUrl = (storagePath) => {
+  const getStorageVideoUrl = useCallback((storagePath) => {
     if (!storagePath) return '';
     const cleanPath = storagePath.replace(/^\/videos\//, '');
     const timestamp = new Date().getTime();
     return `/api/proxy/storage/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
-  };
+  }, []);
 
   // Обработчик для скачивания видео
   const handleDownload = () => {
@@ -124,6 +148,13 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     }
   };
 
+  // Функция для удаления видео
+  const handleDelete = () => {
+    if (onVideoDelete && video && course) {
+      onVideoDelete(course.id, video.id);
+    }
+  };
+
   // Преобразование видео URL для YouTube
   const getEmbedUrl = (url) => {
     if (!url) return '';
@@ -150,11 +181,18 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     <div className={styles.videoInfo}>
       <div className={styles.videoHeader}>
         <h2 className={styles.videoTitle}>{video.title}</h2>
-        {(videoType === VIDEO_TYPES.STORAGE || videoType === VIDEO_TYPES.LOCAL) && (
-          <button className={styles.downloadButton} onClick={handleDownload}>
-            {t('course.download')}
-          </button>
-        )}
+        <div className={styles.videoActions}>
+          {(videoType === VIDEO_TYPES.STORAGE || videoType === VIDEO_TYPES.LOCAL) && (
+            <button className={styles.downloadButton} onClick={handleDownload}>
+              {t('course.download')}
+            </button>
+          )}
+          {currentUser && onVideoDelete && (
+            <button className={styles.deleteButton} onClick={handleDelete}>
+              {t('course.delete')}
+            </button>
+          )}
+        </div>
       </div>
       <div className={styles.videoDescription}>{video.description}</div>
       <button 
@@ -166,22 +204,36 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     </div>
   );
 
-  return (
-    <div className={styles.videoPlayer}>
-      {/* Текстовый урок */}
-      {videoType === VIDEO_TYPES.TEXT && (
+  // Если мы в режиме текстового урока (по умолчанию или после ошибок)
+  if (videoType === VIDEO_TYPES.TEXT || fallbackToText) {
+    return (
+      <div className={styles.videoPlayer}>
         <div className={styles.textLesson}>
           <h2 className={styles.videoTitle}>{video.title}</h2>
-          <div className={styles.videoDescription}>{video.description}</div>
-          <button 
-            className={`${styles.markButton} ${completed ? styles.completed : ''}`}
-            onClick={handleComplete}
-          >
-            {completed ? t('course.completed') : t('course.markCompleted')}
-          </button>
+          <div className={styles.videoDescription}>
+            {error && <div className={styles.errorBlock}>{error}</div>}
+            {video.description}
+          </div>
+          <div className={styles.videoActions}>
+            {currentUser && onVideoDelete && (
+              <button className={styles.deleteButton} onClick={handleDelete}>
+                {t('course.delete')}
+              </button>
+            )}
+            <button 
+              className={`${styles.markButton} ${completed ? styles.completed : ''}`}
+              onClick={handleComplete}
+            >
+              {completed ? t('course.completed') : t('course.markCompleted')}
+            </button>
+          </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
+  return (
+    <div className={styles.videoPlayer}>
       {/* Видео из веб-хранилища */}
       {videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE && (
         <>
@@ -203,9 +255,18 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               {error}
               <button 
                 className={styles.retryButton}
-                onClick={() => loadVideoWithAlternativeMethods(video.storagePath)}
+                onClick={() => {
+                  setRetryCount(prev => prev + 1);
+                  loadVideoWithAlternativeMethods(video.storagePath);
+                }}
               >
                 {t('course.retryLoading')}
+              </button>
+              <button 
+                className={styles.fallbackButton}
+                onClick={() => setFallbackToText(true)}
+              >
+                Открыть как текст
               </button>
             </div>
           )}
@@ -224,8 +285,20 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
               controls
               className={styles.videoElement}
               playsInline
+              onError={handleVideoError}
             ></video>
           </div>
+          {error && (
+            <div className={styles.errorMessage}>
+              {error}
+              <button 
+                className={styles.fallbackButton}
+                onClick={() => setFallbackToText(true)}
+              >
+                Открыть как текст
+              </button>
+            </div>
+          )}
           <VideoInfo />
         </>
       ) : null}

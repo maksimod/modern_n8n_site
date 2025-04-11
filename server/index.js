@@ -79,6 +79,37 @@ app.use((req, res, next) => {
   next();
 });
 
+// Маршрут-прокси для видео из удаленного хранилища
+app.get('/api/proxy/storage/:filename', async (req, res) => {
+  const filename = req.params.filename;
+  
+  if (!STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+    return res.status(400).json({ message: 'Remote storage is disabled' });
+  }
+  
+  try {
+    // Получаем данные из удаленного хранилища через серверный API
+    const videoData = await getFileFromStorage(filename);
+    
+    // Устанавливаем заголовки для стриминга видео
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Кэширование на 1 день
+    
+    // Добавляем CORS заголовки
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
+    
+    // Отправляем файл
+    return res.send(videoData);
+  } catch (error) {
+    console.error(`Ошибка при проксировании файла ${filename}:`, error);
+    res.status(404).json({ message: 'File not found' });
+  }
+});
+
 // Единая функция для обработки видео-файлов
 const handleVideoStream = async (req, res, filename) => {
   try {

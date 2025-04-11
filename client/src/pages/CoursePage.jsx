@@ -1,11 +1,11 @@
 // client/src/pages/CoursePage.jsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useProgress } from '../contexts/ProgressContext';
-import { getCourseById, getVideoById } from '../services/course.service';
+import { getCourseById, getVideoById, deleteVideo } from '../services/course.service';
 import Header from '../components/Layout/Header';
 import VideoPlayer from '../components/Courses/VideoPlayer';
 import styles from '../styles/courses.module.css';
@@ -18,10 +18,12 @@ const CoursePage = () => {
   const { language } = useLanguage();
   const { currentUser } = useAuth();
   const { updateVideoProgress, isVideoCompleted, loadCourseProgress } = useProgress();
+  const navigate = useNavigate();
   
   const [course, setCourse] = useState(null);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
   
   // Используем реф для отслеживания, загрузился ли прогресс
@@ -44,34 +46,36 @@ const CoursePage = () => {
   }, []);
   
   // Загружаем курс
+  const fetchCourse = useCallback(async () => {
+    try {
+      setLoading(true);
+      const courseData = await getCourseById(courseId, language);
+      
+      if (courseData) {
+        setCourse(courseData);
+      }
+    } catch (error) {
+      console.error('Error loading course:', error);
+      setError('Ошибка загрузки курса');
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId, language]);
+  
   useEffect(() => {
     let isMounted = true;
     
-    const fetchCourse = async () => {
-      try {
-        setLoading(true);
-        const courseData = await getCourseById(courseId, language);
-        
-        if (!isMounted) return;
-        
-        if (courseData) {
-          setCourse(courseData);
-        }
-      } catch (error) {
-        console.error('Error loading course:', error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    const loadCourse = async () => {
+      if (!isMounted) return;
+      await fetchCourse();
     };
     
-    fetchCourse();
+    loadCourse();
     
     return () => {
       isMounted = false;
     };
-  }, [courseId, language]);
+  }, [fetchCourse]);
   
   // Загружаем текущее видео когда курс загружен и есть videoId
   useEffect(() => {
@@ -141,6 +145,51 @@ const CoursePage = () => {
     updateVideoProgress(course.id, videoId, !currentCompletionStatus);
   };
 
+  // Удаление видео из курса
+  const handleVideoDelete = async (courseId, videoId) => {
+    if (!currentUser || !currentUser.isAdmin) {
+      alert('У вас нет прав для удаления видео');
+      return;
+    }
+
+    if (!confirm('Вы уверены, что хотите удалить это видео?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Вызов API для удаления видео
+      await deleteVideo(courseId, videoId);
+      
+      // Обновляем данные о курсе
+      await fetchCourse();
+      
+      // Если удалили текущее видео, переходим к первому видео в курсе
+      if (course.videos.length > 0) {
+        const nextVideoIndex = course.videos.findIndex(v => v.id === videoId);
+        const nextVideo = nextVideoIndex > 0 
+          ? course.videos[nextVideoIndex - 1] 
+          : (course.videos.length > 1 ? course.videos[1] : null);
+        
+        if (nextVideo) {
+          setSearchParams({ video: nextVideo.id });
+        } else {
+          // Если видео больше нет, возвращаемся к списку курсов
+          navigate('/');
+        }
+      } else {
+        // Если видео больше нет, возвращаемся к списку курсов
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      setError('Ошибка при удалении видео');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -177,6 +226,8 @@ const CoursePage = () => {
           </Link>
           
           <h2 className={styles.courseTitle}>{course.title}</h2>
+          
+          {error && <div className={styles.errorBlock}>{error}</div>}
           
           <div className={styles.videosList}>
           {course.videos.map((video, index) => {
@@ -234,6 +285,7 @@ const CoursePage = () => {
               course={course} 
               video={currentVideo} 
               onVideoComplete={handleVideoCompletionToggle}
+              onVideoDelete={handleVideoDelete}
             />
           ) : (
             <div className={styles.selectVideo}>{t('selectVideo')}</div>
