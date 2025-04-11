@@ -271,9 +271,8 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       // Очищаем путь от возможных префиксов
       const cleanPath = storagePath.replace(/^\/videos\//, '');
       
-      // Используем прокси-маршрут вместо прямого доступа к хранилищу
-      // Это решает проблему CORS
-      const url = `${SERVER_URL}/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
+      // Используем относительный URL вместо абсолютного с localhost
+      const url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
       console.log('Storage URL generated (proxy):', url);
       return url;
     } catch (error) {
@@ -297,8 +296,8 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       // Очищаем путь от возможных префиксов
       const cleanPath = storagePath.replace(/^\/videos\//, '');
       
-      // Создаем URL через наш прокси
-      const url = `${SERVER_URL}/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
+      // Создаем URL через наш прокси с относительным путем
+      const url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
       console.log('Direct URL through proxy generated:', url);
       
       // Устанавливаем прямую ссылку на видео
@@ -332,10 +331,10 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
           : 'video.mp4';
       } else if ((videoType === VIDEO_TYPES.LOCAL && video.localVideo) || 
                 (videoType === VIDEO_TYPES.STORAGE && video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
-        // Скачивание с локального сервера
+        // Скачивание с локального сервера - используем относительный путь
         const localPath = video.localVideo || video.storagePath;
         const cleanVideoPath = localPath.replace(/^\/videos\//, '');
-        downloadUrl = `${SERVER_URL}/videos/${cleanVideoPath}`;
+        downloadUrl = `/api/videos/${cleanVideoPath}`;
         fileName = video.title 
           ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
           : 'video.mp4';
