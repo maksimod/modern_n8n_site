@@ -257,6 +257,40 @@ app.get('/download/:filename', async (req, res) => {
   }
 });
 
+// Маршрут-прокси для видео из удаленного хранилища
+// Решает проблему CORS при прямом доступе к удаленному хранилищу
+app.get('/api/proxy/storage/:filename', async (req, res) => {
+  const filename = req.params.filename;
+  
+  console.log(`Запрос на проксирование файла: ${filename}`);
+  
+  if (!STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+    return res.status(400).json({ message: 'Remote storage is disabled' });
+  }
+  
+  try {
+    // Получаем данные из удаленного хранилища через серверный API
+    const videoData = await getFileFromStorage(filename);
+    
+    // Устанавливаем заголовки для стриминга видео
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Кэширование на 1 день
+    
+    // Добавляем CORS заголовки
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Range, Accept-Ranges, Content-Length');
+    
+    // Отправляем файл
+    return res.send(videoData);
+  } catch (error) {
+    console.error(`Ошибка при проксировании файла ${filename}:`, error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok' });

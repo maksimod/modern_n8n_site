@@ -260,41 +260,6 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
     xhr.send();
   };
   
-  // Последняя попытка - создаем ссылку на видео с ключом в URL
-  const tryDirectLink = (storagePath) => {
-    console.log('Attempting to create direct link with API key in URL:', storagePath);
-    setError('Пробуем прямой доступ к видео...');
-    
-    try {
-      if (!storagePath) {
-        console.error('Storage path is empty!');
-        return;
-      }
-      
-      // Очищаем путь от возможных префиксов
-      const cleanPath = storagePath.replace(/^\/videos\//, '');
-      
-      // Создаем URL с ключом в параметрах запроса
-      const url = `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(cleanPath)}&apiKey=${encodeURIComponent(STORAGE_CONFIG.API_KEY)}`;
-      console.log('Direct URL with API key generated:', url);
-      
-      // Устанавливаем прямую ссылку на видео
-      const videoElement = document.querySelector(`.${styles.videoElement}`);
-      if (videoElement) {
-        const source = videoElement.querySelector('source');
-        if (source) {
-          source.src = url;
-          videoElement.load();
-          console.log('Video element source updated with direct URL');
-          setError('Используем прямую ссылку с API ключом. Если видео не загружается, сообщите администратору.');
-        }
-      }
-    } catch (error) {
-      console.error('Error generating direct URL:', error);
-      setError('Не удалось создать прямую ссылку на видео.');
-    }
-  };
-  
   // Формирование URL для загрузки видео из веб-хранилища с API ключом
   const getStorageVideoUrl = (storagePath) => {
     try {
@@ -306,13 +271,50 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       // Очищаем путь от возможных префиксов
       const cleanPath = storagePath.replace(/^\/videos\//, '');
       
-      const url = `${STORAGE_CONFIG.API_URL}/download?filePath=${encodeURIComponent(cleanPath)}`;
-      console.log('Storage URL generated:', url);
+      // Используем прокси-маршрут вместо прямого доступа к хранилищу
+      // Это решает проблему CORS
+      const url = `${SERVER_URL}/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
+      console.log('Storage URL generated (proxy):', url);
       return url;
     } catch (error) {
       console.error('Error generating storage URL:', error);
       setError('Ошибка при формировании URL для видео');
       return '';
+    }
+  };
+  
+  // Последняя попытка - создаем ссылку на видео с прокси
+  const tryDirectLink = (storagePath) => {
+    console.log('Attempting to create direct link through proxy:', storagePath);
+    setError('Пробуем прямой доступ к видео через прокси...');
+    
+    try {
+      if (!storagePath) {
+        console.error('Storage path is empty!');
+        return;
+      }
+      
+      // Очищаем путь от возможных префиксов
+      const cleanPath = storagePath.replace(/^\/videos\//, '');
+      
+      // Создаем URL через наш прокси
+      const url = `${SERVER_URL}/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
+      console.log('Direct URL through proxy generated:', url);
+      
+      // Устанавливаем прямую ссылку на видео
+      const videoElement = document.querySelector(`.${styles.videoElement}`);
+      if (videoElement) {
+        const source = videoElement.querySelector('source');
+        if (source) {
+          source.src = url;
+          videoElement.load();
+          console.log('Video element source updated with proxy URL');
+          setError('Используем прокси-маршрут. Если видео не загружается, сообщите администратору.');
+        }
+      }
+    } catch (error) {
+      console.error('Error generating proxy URL:', error);
+      setError('Не удалось создать прокси-ссылку на видео.');
     }
   };
 
@@ -323,7 +325,7 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       let fileName;
       
       if (videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-        // Скачивание из веб-хранилища
+        // Скачивание из веб-хранилища через прокси
         downloadUrl = getStorageVideoUrl(video.storagePath);
         fileName = video.title 
           ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` 
@@ -342,41 +344,14 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
         return;
       }
       
+      // Создаем ссылку для скачивания
       const link = document.createElement('a');
       link.href = downloadUrl;
-      
-      // Добавляем заголовок авторизации для веб-хранилища
-      if (videoType === VIDEO_TYPES.STORAGE) {
-        // Для загрузки через XHR с заголовками авторизации
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', downloadUrl, true);
-        xhr.setRequestHeader('X-API-Key', STORAGE_CONFIG.API_KEY);
-        xhr.responseType = 'blob';
-        
-        xhr.onload = function() {
-          if (this.status === 200) {
-            const blob = new Blob([this.response], { type: 'video/mp4' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-          } else {
-            setError('Ошибка при скачивании файла');
-          }
-        };
-        
-        xhr.send();
-        return;
-      }
-      
-      // Для обычных файлов
       link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
     } catch (err) {
       console.error('Error downloading video:', err);
       setError('Ошибка при скачивании видео');
