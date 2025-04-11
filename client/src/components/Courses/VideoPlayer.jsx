@@ -271,8 +271,11 @@ const VideoPlayer = ({ course, video, onVideoComplete }) => {
       // Очищаем путь от возможных префиксов
       const cleanPath = storagePath.replace(/^\/videos\//, '');
       
-      // Используем относительный URL вместо абсолютного с localhost
-      const url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}`;
+      // Для отладки и решения проблем отображаем время в URL, чтобы избежать кэширования
+      const timestamp = new Date().getTime();
+      
+      // Используем относительный URL для прокси-маршрута
+      const url = `/api/proxy/storage/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
       console.log('Storage URL generated (proxy):', url);
       return url;
     } catch (error) {

@@ -37,11 +37,30 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       // Определяем тип видео для UI (объединяем STORAGE и LOCAL в UI)
       let uiVideoType = VIDEO_TYPES.EXTERNAL;
       
-      if (video.localVideo || (video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
-        // Оба типа отображаются как LOCAL в UI
-        uiVideoType = VIDEO_TYPES.LOCAL;
-      } else if (!video.videoUrl && !video.localVideo && !video.storagePath) {
+      console.log('Initializing form with video data:', video);
+      console.log('Video has storagePath:', video.storagePath);
+      console.log('Video has localVideo:', video.localVideo);
+      console.log('Storage config:', STORAGE_CONFIG);
+      
+      if (video.videoType === VIDEO_TYPES.TEXT) {
+        // Текстовый урок
         uiVideoType = VIDEO_TYPES.TEXT;
+      } else if (video.videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        // Storage video - показываем как LOCAL в UI
+        uiVideoType = VIDEO_TYPES.LOCAL;
+        console.log('⭐ Detected STORAGE video, displaying as LOCAL in UI');
+      } else if (video.localVideo || (video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
+        // Локальное видео или storage path без удаленного хранилища
+        uiVideoType = VIDEO_TYPES.LOCAL;
+        console.log('⭐ Detected LOCAL video');
+      } else if (video.videoUrl) {
+        // Внешнее видео (YouTube)
+        uiVideoType = VIDEO_TYPES.EXTERNAL;
+        console.log('⭐ Detected EXTERNAL video');
+      } else if (!video.videoUrl && !video.localVideo && !video.storagePath) {
+        // Нет источника - используем TEXT
+        uiVideoType = VIDEO_TYPES.TEXT;
+        console.log('⭐ No video source found, using TEXT type');
       }
       
       setFormData({
@@ -287,6 +306,9 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
           finalVideoData.localVideo = '';
           finalVideoData.videoUrl = '';
           finalVideoData.videoType = VIDEO_TYPES.STORAGE; // Internally use STORAGE
+          
+          // Важный отладочный вывод, чтобы видеть что происходит с типом видео
+          console.log("⭐ Using STORAGE type for video with storagePath:", formData.storagePath);
         }
         // Regular local video
         else if (formData.uploadedFile && formData.localVideo || formData.localVideo) {
@@ -294,6 +316,8 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
           finalVideoData.videoUrl = '';
           finalVideoData.storagePath = '';
           finalVideoData.videoType = VIDEO_TYPES.LOCAL;
+          
+          console.log("⭐ Using LOCAL type for video with localVideo:", formData.localVideo);
         } 
         else {
           setError(t('Please select a video file to upload'));
