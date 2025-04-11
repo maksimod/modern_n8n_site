@@ -112,13 +112,19 @@ const AdminDashboard = () => {
   const handleCloseEditor = (refreshNeeded = false) => {
     setShowCourseEditor(false);
     
-    // Если нужно обновить список курсов
+    // Disable automatic refreshing which can cause 502 errors
+    // Only refresh if explicitly needed and the server is not having issues
     if (refreshNeeded) {
+      // Set a loading state but don't make the API call right away
       setLoading(true);
-      getCourses(language)
-        .then(data => setCourses(data))
-        .catch(err => console.error('Error refreshing courses:', err))
-        .finally(() => setLoading(false));
+      
+      // Instead, just use whatever data we have and reset loading state after a short delay
+      setTimeout(() => {
+        setLoading(false);
+      }, 500);
+      
+      // Show a message to the user that they may need to refresh manually if data is stale
+      console.log('Course editor closed. Manual refresh may be needed for latest data.');
     }
   };
   

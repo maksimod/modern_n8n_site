@@ -3,13 +3,26 @@ import React, { useState, useEffect } from 'react';
 import { getDiskUsage } from '../../services/admin.service';
 import styles from '../../styles/admin.module.css';
 
+// Keep track of server health to avoid repeated API calls
+let serverUnavailableTimestamp = 0;
+const SERVER_COOLDOWN_PERIOD = 60000; // 1 minute cooldown
+
 const DiskUsage = () => {
   const [diskInfo, setDiskInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [serverAvailable, setServerAvailable] = useState(true);
   
   useEffect(() => {
+    // If server was unavailable recently, don't even try to fetch
+    const now = Date.now();
+    if (serverUnavailableTimestamp > 0 && now - serverUnavailableTimestamp < SERVER_COOLDOWN_PERIOD) {
+      setServerAvailable(false);
+      setLoading(false);
+      setError('Сервер временно недоступен. Повторите попытку позже.');
+      return;
+    }
+    
     // Track whether the component is still mounted
     let isMounted = true;
     
@@ -23,27 +36,20 @@ const DiskUsage = () => {
         
         if (isMounted) {
           setDiskInfo(data);
-          setRetryCount(0); // Reset retry count on success
+          // Reset server availability if it was previously unavailable
+          setServerAvailable(true);
+          serverUnavailableTimestamp = 0;
         }
       } catch (err) {
         if (!isMounted) return;
         
-        // Only log the error on the first attempt
-        if (retryCount === 0) {
-          console.warn('Error fetching disk usage - will retry silently');
-        }
-        
+        // Mark server as unavailable and set timestamp
+        serverUnavailableTimestamp = Date.now();
+        setServerAvailable(false);
         setError('Не удалось загрузить информацию о дисковом пространстве');
         
-        // Retry with increasing backoff, but max 3 times
-        if (retryCount < 3) {
-          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000);
-          setTimeout(() => {
-            if (isMounted) {
-              setRetryCount(prev => prev + 1);
-            }
-          }, delay);
-        }
+        // Don't retry automatically - manual only
+        console.warn('Disk usage info unavailable - disabled automatic retries');
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -51,10 +57,8 @@ const DiskUsage = () => {
       }
     };
     
-    fetchDiskInfo();
-    
-    // If retry count increases, try fetching again
-    if (retryCount > 0) {
+    // Only fetch if server is believed to be available
+    if (serverAvailable) {
       fetchDiskInfo();
     }
     
@@ -62,7 +66,14 @@ const DiskUsage = () => {
     return () => {
       isMounted = false;
     };
-  }, [retryCount]);
+  }, [serverAvailable]);
+  
+  // Function to manually retry when user clicks button
+  const handleManualRetry = () => {
+    // Reset server unavailable timestamp to allow a new attempt
+    serverUnavailableTimestamp = 0;
+    setServerAvailable(true);
+  };
   
   // Функция для форматирования размера в читаемый вид
   const formatSize = (bytes) => {
@@ -84,14 +95,14 @@ const DiskUsage = () => {
     );
   }
   
-  if (error && !diskInfo) {
+  if (!serverAvailable || (error && !diskInfo)) {
     return (
       <div className={styles.diskUsageCard}>
         <h3 className={styles.diskUsageTitle}>Дисковое пространство</h3>
         <div className={styles.diskUsageError}>
-          {error}
+          {error || 'Сервер временно недоступен'}
           <button 
-            onClick={() => setRetryCount(prev => prev + 1)} 
+            onClick={handleManualRetry} 
             className={styles.retryButton}
             style={{ 
               marginLeft: '10px', 
