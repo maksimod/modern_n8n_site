@@ -120,51 +120,17 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         
         console.log('Starting upload with config:', STORAGE_CONFIG);
         
-        // ПРЯМАЯ ЗАГРУЗКА ФАЙЛА ЧЕРЕЗ XMLHTTPREQUEST
-        // Используем специальный стриминговый эндпоинт для больших файлов
-        const xhr = new XMLHttpRequest();
-        const serverUrl = `/api/simple-upload`;
-        
-        // Настройка обработчиков событий XHR
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-          }
-        };
-        
-        // Создаем промис для работы с XHR
-        const uploadPromise = new Promise((resolve, reject) => {
-          xhr.onload = function() {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const data = JSON.parse(xhr.responseText);
-                resolve(data);
-              } catch (e) {
-                reject(new Error('Ошибка разбора ответа'));
-              }
-            } else {
-              reject(new Error(`Ошибка ${xhr.status}: ${xhr.statusText}`));
-            }
-          };
-          
-          xhr.onerror = function() {
-            reject(new Error('Ошибка сети при загрузке'));
-          };
+        // Вызываем функцию из сервиса для загрузки файла
+        const result = await uploadVideoFile(file, (progress) => {
+          setUploadProgress(progress);
         });
         
-        // Открываем соединение и отправляем файл
-        xhr.open('POST', serverUrl, true);
+        if (!result.success) {
+          throw new Error(result.message);
+        }
         
-        const formData = new FormData();
-        formData.append('video', file);
-        xhr.send(formData);
-        
-        // Ждем результата загрузки
-        const uploadResult = await uploadPromise;
-        
-        console.log("Upload result:", uploadResult);
-        setUploadResponse(uploadResult);
+        console.log("Upload result:", result);
+        setUploadResponse(result);
         
         // Обновляем форму с полученным путем к файлу
         setFormData(prev => {
@@ -173,13 +139,13 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
             videoType: VIDEO_TYPES.LOCAL
           };
           
-          if (uploadResult.videoType === VIDEO_TYPES.STORAGE || STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-            console.log('Setting storagePath:', uploadResult.filePath);
-            newData.storagePath = uploadResult.filePath;
+          if (result.videoType === VIDEO_TYPES.STORAGE || STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+            console.log('Setting storagePath:', result.filePath);
+            newData.storagePath = result.filePath;
             newData.localVideo = '';
           } else {
-            console.log('Setting localVideo:', uploadResult.filePath);
-            newData.localVideo = uploadResult.filePath;
+            console.log('Setting localVideo:', result.filePath);
+            newData.localVideo = result.filePath;
             newData.storagePath = '';
           }
           

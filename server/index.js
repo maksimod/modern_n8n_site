@@ -201,6 +201,7 @@ app.use('/videos', express.static(path.join(__dirname, 'data/videos'), {
 const authRouter = require('./routes/auth');
 const coursesRouter = require('./routes/courses');
 const adminRouter = require('./routes/admin');
+const storageRouter = require('./routes/storage');
 
 // ВАЖНО: Проверяем существование файла маршрутов перед импортом
 // let trustedUsersRouter;
@@ -213,11 +214,7 @@ const adminRouter = require('./routes/admin');
 app.use('/api/auth', authRouter);
 app.use('/api/courses', coursesRouter);
 app.use('/api/admin', adminRouter);
-
-// Регистрируем маршрут только если файл существует
-// if (trustedUsersRouter) {
-//   app.use('/api/admin/trusted-users', trustedUsersRouter);
-// }
+app.use('/api/storage', storageRouter);
 
 // Специальный маршрут для скачивания видео
 app.get('/download/:filename', async (req, res) => {

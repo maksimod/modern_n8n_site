@@ -25,17 +25,6 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-action-in-app",
-        "title": "Узлы \"Action in app\"",
-        "description": "",
-        "duration": "00:00",
-        "isPrivate": false,
-        "storagePath": "7059c474-6b3b-4fd0-94ff-d73322ebedcf.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
-      },
-      {
         "id": "n8n-credentials",
         "title": "Credentials",
         "description": "Настройка учетных данных",
@@ -160,6 +149,17 @@
         "videoType": "text",
         "isPrivate": false,
         "localVideo": ""
+      },
+      {
+        "id": "73688098-b27d-41dc-afce-081f043b8b63",
+        "title": "zagolog",
+        "description": "",
+        "duration": "",
+        "isPrivate": false,
+        "storagePath": "ade7d837-9bd9-4079-97a0-fbf40ff5a56e.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       }
     ]
   },

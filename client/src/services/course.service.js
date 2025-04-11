@@ -173,7 +173,7 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
 export const uploadVideoFile = async (file, onProgress) => {
   try {
     // Проверка размера файла
-    const maxSizeInMB = 900; // Безопасный лимит
+    const maxSizeInMB = 2000; // Увеличиваем лимит до 2GB
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     
     if (file.size > maxSizeInBytes) {
@@ -186,52 +186,134 @@ export const uploadVideoFile = async (file, onProgress) => {
     
     console.log('Загрузка файла:', file.name, 'размер:', Math.round(file.size / 1024), 'KB');
     
-    // Создаем FormData для отправки файла
-    const formData = new FormData();
-    formData.append('video', file);
+    // Получаем конфигурацию хранилища из конфига
+    const { STORAGE_CONFIG } = await import('../config');
+    console.log('Using storage config:', STORAGE_CONFIG);
     
-    // Отправляем запрос на сервер
-    const response = await fetch('/api/simple-upload', {
-      method: 'POST',
-      body: formData,
-      // Функция для отслеживания прогресса не поддерживается fetch API напрямую
-      // Для простоты мы будем имитировать прогресс
-    });
+    // Инициализация загрузки файла (получаем ID сессии)
+    const sessionData = await initializeUpload(file.name, file.size);
+    if (!sessionData.success) {
+      throw new Error(sessionData.message || 'Failed to initialize upload');
+    }
     
-    // Имитируем прогресс загрузки
+    console.log('Initialized upload session:', sessionData);
+    
+    // Размер чанка (500KB) - достаточно маленький, чтобы пройти через nginx
+    const CHUNK_SIZE = 500 * 1024;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    
+    // Загрузка файла по частям
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(file.size, start + CHUNK_SIZE);
+      const chunk = file.slice(start, end);
+      
+      // Вычисляем прогресс
+      const progress = Math.round((i / totalChunks) * 100);
+      if (onProgress) {
+        onProgress(progress);
+      }
+      
+      // Загружаем чанк
+      const chunkResult = await uploadChunk(
+        sessionData.sessionId, 
+        chunk, 
+        i, 
+        totalChunks
+      );
+      
+      if (!chunkResult.success) {
+        throw new Error(`Ошибка загрузки части ${i+1}/${totalChunks}: ${chunkResult.message}`);
+      }
+      
+      console.log(`Uploaded chunk ${i+1}/${totalChunks}`);
+    }
+    
+    // Завершаем загрузку и объединяем чанки на сервере
+    const finalizeResult = await finalizeUpload(sessionData.sessionId, file.name);
+    if (!finalizeResult.success) {
+      throw new Error(`Ошибка финализации загрузки: ${finalizeResult.message}`);
+    }
+    
+    console.log('Upload finalized successfully:', finalizeResult);
+    
+    // Устанавливаем 100% прогресс
     if (onProgress) {
-      setTimeout(() => onProgress(30), 100);
-      setTimeout(() => onProgress(70), 300);
-      setTimeout(() => onProgress(90), 500);
+      onProgress(100);
     }
     
-    // Проверяем статус ответа
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}. ${errorText}`);
-    }
-    
-    // Завершаем прогресс
-    if (onProgress) {
-      setTimeout(() => onProgress(100), 700);
-    }
-    
-    // Получаем данные ответа
-    const data = await response.json();
-    console.log('Ответ от сервера:', data);
-    
+    // Возвращаем результат загрузки
     return {
       success: true,
       message: 'Файл успешно загружен',
-      filePath: data.filePath,
-      fileName: data.fileName,
-      videoType: data.videoType
+      filePath: finalizeResult.filePath,
+      fileName: finalizeResult.originalName || file.name,
+      videoType: STORAGE_CONFIG.USE_REMOTE_STORAGE ? 'storage' : 'local'
     };
   } catch (error) {
     console.error('Ошибка загрузки файла:', error);
     return {
       success: false,
       message: error.message || 'Произошла неизвестная ошибка'
+    };
+  }
+};
+
+// Инициализация сессии загрузки
+const initializeUpload = async (fileName, fileSize) => {
+  try {
+    const response = await api.post('/api/storage/init-upload', {
+      fileName,
+      fileSize
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error initializing upload:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message
+    };
+  }
+};
+
+// Загрузка одного чанка
+const uploadChunk = async (sessionId, chunk, chunkIndex, totalChunks) => {
+  try {
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('chunkIndex', chunkIndex);
+    formData.append('totalChunks', totalChunks);
+    formData.append('chunk', chunk, 'chunk.bin');
+    
+    const response = await api.post('/api/storage/upload-chunk', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error uploading chunk ${chunkIndex}:`, error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message
+    };
+  }
+};
+
+// Завершение загрузки
+const finalizeUpload = async (sessionId, originalName) => {
+  try {
+    const response = await api.post('/api/storage/finalize-upload', {
+      sessionId,
+      originalName
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error finalizing upload:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message
     };
   }
 };
