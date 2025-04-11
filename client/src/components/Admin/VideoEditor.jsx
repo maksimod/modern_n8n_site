@@ -34,14 +34,14 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
   // Инициализируем форму при монтировании или изменении видео
   useEffect(() => {
     if (video) {
-      // Определяем тип видео
-      let videoType = VIDEO_TYPES.EXTERNAL;
-      if (video.localVideo) {
-        videoType = VIDEO_TYPES.LOCAL;
-      } else if (video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-        videoType = VIDEO_TYPES.STORAGE;
+      // Определяем тип видео для UI (объединяем STORAGE и LOCAL в UI)
+      let uiVideoType = VIDEO_TYPES.EXTERNAL;
+      
+      if (video.localVideo || (video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
+        // Оба типа отображаются как LOCAL в UI
+        uiVideoType = VIDEO_TYPES.LOCAL;
       } else if (!video.videoUrl && !video.localVideo && !video.storagePath) {
-        videoType = VIDEO_TYPES.TEXT;
+        uiVideoType = VIDEO_TYPES.TEXT;
       }
       
       setFormData({
@@ -50,7 +50,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         description: video.description || '',
         duration: video.duration || '',
         isPrivate: video.isPrivate || false,
-        videoType,
+        videoType: uiVideoType,
         videoUrl: video.videoUrl || '',
         localVideo: video.localVideo || '',
         storagePath: video.storagePath || '',
@@ -86,16 +86,18 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     if (file) {
       console.log('File selected:', file);
       
+      // Always set video type to LOCAL in the UI, regardless of the actual storage mechanism
       setFormData(prev => ({
         ...prev,
         uploadedFile: file,
-        videoType: STORAGE_CONFIG.USE_REMOTE_STORAGE ? VIDEO_TYPES.STORAGE : VIDEO_TYPES.LOCAL
+        videoType: VIDEO_TYPES.LOCAL
       }));
       
       // Сразу загружаем файл на сервер
       try {
         setLoading(true);
         setUploadProgress(0);
+        setError(null);
         
         console.log('Starting upload with config:', STORAGE_CONFIG);
         
@@ -103,22 +105,34 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
           setUploadProgress(progress);
         });
         
+        // Check for errors in response
+        if (!uploadResult || !uploadResult.success) {
+          const errorMsg = uploadResult?.message || 'Unknown error during upload';
+          console.error('Error in upload result:', errorMsg);
+          setError(`Upload failed: ${errorMsg}`);
+          setUploadResponse(null);
+          // Reset the file input
+          setFormData(prev => ({
+            ...prev,
+            uploadedFile: null
+          }));
+          return;
+        }
+        
         console.log("Upload result:", uploadResult);
         setUploadResponse(uploadResult);
         
-        console.log('Setting form data based on upload result. Video type:', uploadResult.videoType);
-        
         // Обновляем форму с полученным путем к файлу
         setFormData(prev => {
-          // Важно: проверяем тип возвращенный с сервера, а не текущую настройку
           const newData = {
             ...prev,
-            videoType: uploadResult.videoType || VIDEO_TYPES.LOCAL
+            // Always show LOCAL in the UI
+            videoType: VIDEO_TYPES.LOCAL
           };
           
-          // В зависимости от типа видео, устанавливаем путь в соответствующее поле
+          // But still store the file in the correct field based on the backend's response
           if (uploadResult.videoType === VIDEO_TYPES.STORAGE) {
-            console.log('Setting storagePath:', uploadResult.filePath);
+            console.log('Setting storagePath (internal):', uploadResult.filePath);
             newData.storagePath = uploadResult.filePath;
             newData.localVideo = '';
           } else {
@@ -133,6 +147,20 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       } catch (err) {
         console.error('Error uploading file:', err);
         setError(`Error uploading file: ${err.message || 'Unknown error'}`);
+        setUploadResponse(null);
+        // Reset progress and uploaded file on error
+        setUploadProgress(0);
+        // Reset the file input
+        setFormData(prev => ({
+          ...prev,
+          uploadedFile: null
+        }));
+        
+        // Reset file input element
+        const fileInput = document.getElementById('uploadVideo');
+        if (fileInput) {
+          fileInput.value = '';
+        }
       } finally {
         setLoading(false);
       }
@@ -143,18 +171,40 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     const newType = e.target.value;
     const oldType = formData.videoType;
     
-    // Если меняем тип с локального или хранилища на другой и у нас есть файл
-    if ((oldType === VIDEO_TYPES.LOCAL || oldType === VIDEO_TYPES.STORAGE) && 
-        newType !== VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.STORAGE && 
-        (formData.localVideo || formData.storagePath)) {
-      // Удаляем файл
-      try {
-        if (formData.localVideo) {
+    // If changing from LOCAL to another type, check if we need to delete any files
+    if (oldType === VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.LOCAL) {
+      // Try to delete local file if it exists
+      if (formData.localVideo) {
+        try {
           deleteVideoFile(formData.localVideo);
           console.log('Requested file deletion for type change:', formData.localVideo);
+        } catch (error) {
+          console.error('Error requesting file deletion:', error);
         }
-      } catch (error) {
-        console.error('Error requesting file deletion:', error);
+      }
+      
+      // Try to delete storage file if it exists (could be storage file displayed as local)
+      if (formData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+        try {
+          // Use the admin API to delete the file
+          // We can't directly use deleteVideoFile here as it's designed for local files
+          fetch(`/api/admin/files/${formData.storagePath}`, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }).then(response => {
+            if (response.ok) {
+              console.log('Requested storage file deletion for type change:', formData.storagePath);
+            } else {
+              console.error('Error deleting storage file:', response.statusText);
+            }
+          }).catch(error => {
+            console.error('Error requesting storage file deletion:', error);
+          });
+        } catch (error) {
+          console.error('Error requesting storage file deletion:', error);
+        }
       }
     }
     
@@ -162,9 +212,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       ...prev,
       videoType: newType,
       // Очищаем соответствующие поля при смене типа
-      ...((newType !== VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.STORAGE) 
-          ? { localVideo: '', storagePath: '', uploadedFile: null } 
-          : {}),
+      ...(newType !== VIDEO_TYPES.LOCAL ? { localVideo: '', storagePath: '', uploadedFile: null } : {}),
       ...(newType !== VIDEO_TYPES.EXTERNAL ? { videoUrl: '' } : {})
     }));
   };
@@ -221,37 +269,18 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         finalVideoData.storagePath = '';
         finalVideoData.videoType = VIDEO_TYPES.EXTERNAL;
       } 
-      // Обработка видео из хранилища
-      else if (formData.videoType === VIDEO_TYPES.STORAGE) {
-        if (formData.uploadedFile && formData.storagePath) {
-          finalVideoData.storagePath = formData.storagePath;
-          finalVideoData.localVideo = '';
-          finalVideoData.videoUrl = '';
-          finalVideoData.videoType = VIDEO_TYPES.STORAGE;
-        }
-        else if (formData.storagePath) {
-          finalVideoData.storagePath = formData.storagePath;
-          finalVideoData.localVideo = '';
-          finalVideoData.videoUrl = '';
-          finalVideoData.videoType = VIDEO_TYPES.STORAGE;
-        }
-        else {
-          setError(t('Please select a video file to upload'));
-          setLoading(false);
-          return;
-        }
-      }
-      // Обработка локальных видео
+      // Обработка локальных видео (includes storage videos behind the scenes)
       else if (formData.videoType === VIDEO_TYPES.LOCAL) {
-        // Используем результат загрузки, если он есть
-        if (formData.uploadedFile && formData.localVideo) {
-          finalVideoData.localVideo = formData.localVideo;
+        // Check if this is actually a storage video (has storagePath)
+        if (formData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+          // This is a storage video but displayed as local to the user
+          finalVideoData.storagePath = formData.storagePath;
+          finalVideoData.localVideo = '';
           finalVideoData.videoUrl = '';
-          finalVideoData.storagePath = '';
-          finalVideoData.videoType = VIDEO_TYPES.LOCAL;
-        } 
-        // Или используем существующий локальный путь
-        else if (formData.localVideo) {
+          finalVideoData.videoType = VIDEO_TYPES.STORAGE; // Internally use STORAGE
+        }
+        // Regular local video
+        else if (formData.uploadedFile && formData.localVideo || formData.localVideo) {
           finalVideoData.localVideo = formData.localVideo;
           finalVideoData.videoUrl = '';
           finalVideoData.storagePath = '';
@@ -372,7 +401,6 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
             >
               <option value={VIDEO_TYPES.EXTERNAL}>{t('admin.externalUrl')}</option>
               <option value={VIDEO_TYPES.LOCAL}>{t('admin.localFile')}</option>
-              <option value={VIDEO_TYPES.STORAGE}>{t('admin.storage')}</option>
               <option value={VIDEO_TYPES.TEXT}>{t('admin.textLesson')}</option>
             </select>
           </div>
@@ -418,64 +446,9 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
                   className={styles.formInput}
                   style={{ padding: '0.5rem 0' }}
                 />
-              </div>
-              
-              {formData.uploadedFile && !uploadResponse && (
-                <div style={{ marginTop: '10px' }}>
-                  <p>Selected file: {formData.uploadedFile.name}</p>
+                <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+                  Maximum file size: {window.APP_CONFIG?.MAX_UPLOAD_SIZE_MB || 100}MB
                 </div>
-              )}
-              
-              {loading && uploadProgress > 0 && (
-                <div style={{ marginTop: '10px' }}>
-                  <div style={{ 
-                    width: '100%', 
-                    height: '10px', 
-                    backgroundColor: '#e5e7eb',
-                    borderRadius: '5px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{ 
-                      width: `${uploadProgress}%`, 
-                      height: '100%', 
-                      backgroundColor: '#4f46e5',
-                      transition: 'width 0.3s ease'
-                    }}></div>
-                  </div>
-                  <p style={{ marginTop: '5px', fontSize: '0.875rem', color: '#4b5563' }}>
-                    {uploadProgress}% uploaded
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {formData.videoType === VIDEO_TYPES.STORAGE && (
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel} htmlFor="uploadVideo">{t('admin.uploadVideo')}</label>
-              
-              {formData.storagePath && !formData.uploadedFile && !uploadResponse && (
-                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: '#e8f4f8', borderRadius: '4px' }}>
-                  <p>Current storage path: {formData.storagePath}</p>
-                </div>
-              )}
-              
-              {uploadResponse && (
-                <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: '#e8f4f8', borderRadius: '4px' }}>
-                  <p>Uploaded file: {uploadResponse.originalName}</p>
-                  <p>File path: {uploadResponse.filePath}</p>
-                </div>
-              )}
-              
-              <div className={styles.fileUploadContainer}>
-                <input
-                  type="file"
-                  id="uploadVideo"
-                  accept="video/mp4,video/webm,video/ogg"
-                  onChange={handleFileChange}
-                  className={styles.formInput}
-                  style={{ padding: '0.5rem 0' }}
-                />
               </div>
               
               {formData.uploadedFile && !uploadResponse && (

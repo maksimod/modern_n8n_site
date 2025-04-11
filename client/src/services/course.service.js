@@ -172,28 +172,76 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
 // Upload video file
 export const uploadVideoFile = async (file, onProgress) => {
   try {
+    // Check file size before attempting upload using global config or fallback to 100MB
+    const maxSizeInMB = window.APP_CONFIG?.MAX_UPLOAD_SIZE_MB || 100;
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    
+    if (file.size > maxSizeInBytes) {
+      console.error('File too large:', file.size);
+      return {
+        success: false,
+        message: `File is too large (${Math.round(file.size / (1024 * 1024))}MB). Maximum size is ${maxSizeInMB}MB.`
+      };
+    }
+    
     console.log('Uploading file:', file.name);
     const formData = new FormData();
     formData.append('video', file);
     
-    const response = await api.post('/api/admin/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress) {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onProgress(percentCompleted);
-          console.log('Upload progress:', percentCompleted + '%');
+    try {
+      const response = await api.post('/api/admin/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (onProgress) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percentCompleted);
+            console.log('Upload progress:', percentCompleted + '%');
+          }
         }
+      });
+      
+      console.log('Upload response:', response.data);
+      
+      // Ensure response has success property
+      if (response.data && !response.data.hasOwnProperty('success')) {
+        response.data.success = true;
       }
-    });
-    
-    console.log('Upload response:', response.data);
-    return response.data;
+      
+      return response.data;
+    } catch (requestError) {
+      // Handle specific error codes
+      if (requestError.response) {
+        const { status, statusText } = requestError.response;
+        
+        // Handle specific error cases
+        if (status === 413) {
+          console.error('File too large (413 error):', file.name);
+          return {
+            success: false,
+            message: `File is too large. Server rejected the upload (413 Request Entity Too Large). Maximum size is ${maxSizeInMB}MB.`
+          };
+        }
+        
+        return {
+          success: false,
+          message: `Upload failed with status ${status}: ${statusText}`
+        };
+      }
+      
+      // Network errors or other issues
+      return {
+        success: false,
+        message: requestError.message || 'Upload failed due to a network error'
+      };
+    }
   } catch (error) {
-    console.error('Error uploading video:', error);
-    throw error;
+    console.error('Error in uploadVideoFile:', error);
+    return {
+      success: false,
+      message: error.message || 'Unknown error occurred during upload'
+    };
   }
 };
 
