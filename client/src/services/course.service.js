@@ -244,9 +244,14 @@ export const deleteVideoFile = async (fileName) => {
       return { success: false, message: 'No file name provided' };
     }
     
-    // Используем локальный прокси вместо прямого доступа к API
-    // Clean up file name if needed
+    // Улучшенный лог с полным именем файла
+    console.log(`Attempting to delete file: ${fileName}`);
+    
+    // Очищаем путь от возможных префиксов
     const cleanFileName = fileName.replace(/^\/videos\//, '');
+    
+    // Добавляем дополнительные данные для отладки
+    console.log(`Using cleaned file name for deletion: ${cleanFileName}`);
     
     const response = await api.delete('/api/storage/delete', {
       headers: {
@@ -257,13 +262,23 @@ export const deleteVideoFile = async (fileName) => {
       }
     });
     
-    console.log('Delete response:', response.data);
+    console.log('File deletion response:', response.data);
     return response.data || { success: true, message: 'File deleted successfully' };
   } catch (error) {
     console.error('Error deleting video file:', error);
+    
+    // Более детальное логирование ошибки
+    if (error.response) {
+      console.error('Error status:', error.response.status);
+      console.error('Error data:', error.response.data);
+      console.error('Request URL:', error.config?.url);
+      console.error('Request method:', error.config?.method);
+    }
+    
     return { 
       success: false, 
-      message: error.response?.data?.message || error.message || 'Unknown error' 
+      message: error.response?.data?.message || error.message || 'Unknown error',
+      status: error.response?.status || 'N/A'
     };
   }
 };

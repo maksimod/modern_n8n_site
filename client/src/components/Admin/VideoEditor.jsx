@@ -212,24 +212,48 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     const newType = e.target.value;
     const oldType = formData.videoType;
     
+    console.log(`Changing video type from ${oldType} to ${newType}`);
+    
     // If changing from LOCAL to another type, check if we need to delete any files
     if (oldType === VIDEO_TYPES.LOCAL && newType !== VIDEO_TYPES.LOCAL) {
       // Try to delete local file if it exists
       if (formData.localVideo) {
         try {
-          deleteVideoFile(formData.localVideo);
-          console.log('Requested file deletion for type change:', formData.localVideo);
+          console.log(`Requesting deletion of local file: ${formData.localVideo}`);
+          deleteVideoFile(formData.localVideo)
+            .then(result => {
+              console.log('Local file deletion result:', result);
+              if (result.success) {
+                console.log('Successfully deleted local file:', formData.localVideo);
+              } else {
+                console.warn('Failed to delete local file:', result.message);
+              }
+            })
+            .catch(error => {
+              console.error('Error in local file deletion promise:', error);
+            });
         } catch (error) {
-          console.error('Error requesting file deletion:', error);
+          console.error('Error requesting local file deletion:', error);
         }
       }
       
       // Try to delete storage file if it exists (could be storage file displayed as local)
       if (formData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
         try {
+          console.log(`Requesting deletion of storage file: ${formData.storagePath}`);
           // Use the deleteVideoFile function for storage files too
-          deleteVideoFile(formData.storagePath);
-          console.log('Requested storage file deletion for type change:', formData.storagePath);
+          deleteVideoFile(formData.storagePath)
+            .then(result => {
+              console.log('Storage file deletion result:', result);
+              if (result.success) {
+                console.log('Successfully deleted storage file:', formData.storagePath);
+              } else {
+                console.warn('Failed to delete storage file:', result.message);
+              }
+            })
+            .catch(error => {
+              console.error('Error in storage file deletion promise:', error);
+            });
         } catch (error) {
           console.error('Error requesting storage file deletion:', error);
         }
