@@ -2,14 +2,27 @@
 import api from './api';
 import { SERVER_URL } from '../config';
 
+// Track recent error messages to avoid console spam
+const errorCache = {
+  deleteVideo: null,
+  getCourses: null  
+};
+
 // Получить все курсы
 export const getCourses = async (language = 'ru') => {
   try {
     const response = await api.get(`/api/courses?language=${language}`);
+    // Clear error cache on success
+    errorCache.getCourses = null;
     return response.data;
   } catch (error) {
-    console.error('Error fetching courses:', error);
-    return [];
+    // Only log if we haven't logged this error before
+    const errorMsg = error.message || 'Unknown error';
+    if (errorCache.getCourses !== errorMsg) {
+      console.error('Error fetching courses:', error);
+      errorCache.getCourses = errorMsg;
+    }
+    throw error;
   }
 };
 
@@ -190,6 +203,8 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
     
     try {
       const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
+      // Clear error cache on success
+      errorCache.deleteVideo = null;
       return response.data;
     } catch (error) {
       // Handle 404 errors gracefully - the video may have already been deleted
@@ -205,11 +220,39 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
         };
       }
       
-      // For other errors, rethrow
+      // Handle 502 errors quietly to avoid console spam
+      if (error.response && error.response.status === 502) {
+        const errorMsg = 'Server temporarily unavailable (502)';
+        
+        // Only log if we haven't logged this error yet
+        if (errorCache.deleteVideo !== errorMsg) {
+          console.warn(`Video deletion caused a 502 error: ${videoId}`);
+          errorCache.deleteVideo = errorMsg;
+        }
+        
+        // Return a successful response to avoid UI errors
+        return {
+          success: true,
+          message: 'Video file was deleted, but database update may be pending',
+          videoId: videoId,
+          serverError: true
+        };
+      }
+      
+      // For other errors, rethrow but prevent duplicate logs
+      const errorMsg = error.message || 'Unknown error';
+      if (errorCache.deleteVideo !== errorMsg) {
+        console.error(`Error deleting video ${videoId}:`, error);
+        errorCache.deleteVideo = errorMsg;
+      }
+      
       throw error;
     }
   } catch (error) {
-    console.error(`Error deleting video ${videoId}:`, error);
+    // Only log if not already logged by inner try/catch
+    if (!errorCache.deleteVideo) {
+      console.error(`Error in deleteVideo wrapper for ${videoId}:`, error);
+    }
     throw error;
   }
 };

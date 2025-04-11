@@ -66,6 +66,7 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
         }
         
         console.log('Deleting video:', video);
+        let fileDeleted = false;
         
         // First delete the actual file from storage
         if (video.storagePath) {
@@ -78,6 +79,9 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
             // Direct API call with proper parameters - following manual curl format
             const result = await deleteVideoFile(cleanFilename);
             console.log('File deletion result:', result);
+            if (result.success) {
+              fileDeleted = true;
+            }
           } catch (fileError) {
             console.error('Failed to delete file, but will continue with video deletion:', fileError);
           }
@@ -86,29 +90,48 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
           try {
             const result = await deleteVideoFile(video.localVideo);
             console.log('File deletion result:', result);
+            if (result.success) {
+              fileDeleted = true;
+            }
           } catch (fileError) {
             console.error('Failed to delete local file, but will continue with video deletion:', fileError);
           }
         }
         
-        // Now delete the video from the database
-        const response = await deleteVideo(courseId, videoId, language);
-        console.log(`Video ${videoId} deleted from course ${courseId}:`, response);
+        // Now update the UI regardless of whether the database operation succeeds
+        if (fileDeleted) {
+          // Update UI immediately since file was deleted
+          if (onDelete) {
+            onDelete(videoId);
+            console.log('Video successfully removed from UI after file deletion');
+          }
+        }
         
-        // Update UI
-        if (onDelete) {
-          onDelete(videoId);
+        // Try to delete the database record, but don't block UI updates
+        try {
+          // Now delete the video from the database
+          const response = await deleteVideo(courseId, videoId, language);
+          console.log(`Video ${videoId} deleted from course ${courseId}:`, response);
+          
+          // Only update UI here if it wasn't already updated after file deletion
+          if (!fileDeleted && onDelete) {
+            onDelete(videoId);
+          }
+        } catch (dbError) {
+          console.warn(`Database operation failed, but file was already deleted:`, dbError);
+          
+          // Show a friendly message only once to avoid multiple alerts
+          if (dbError.response && dbError.response.status === 502) {
+            console.warn('Server is temporarily unavailable (502 Bad Gateway)');
+            // We've already updated the UI, so no alert needed
+          } else if (!fileDeleted) {
+            // Only show an alert if we haven't already updated the UI
+            alert('The video could not be fully removed from the database, but any associated files were deleted.');
+          }
         }
       } catch (error) {
         console.error(`Error deleting video ${videoId}:`, error);
-        
-        // Still update UI to avoid confusion
-        if (onDelete) {
-          onDelete(videoId);
-          alert('The file may have been deleted, but there was a database error. The UI has been updated.');
-        } else {
-          alert('Failed to delete video: ' + (error.message || 'Unknown error'));
-        }
+        alert('Failed to delete video: ' + (error.message || 'Unknown error'));
       }
     }
   };
