@@ -7,9 +7,10 @@ let _serverUrl = null;
 const getServerUrl = () => {
   if (_serverUrl) return _serverUrl;
   
-  // В production используем хост сервера напрямую
+  // В production используем явно порт 5000
   if (process.env.NODE_ENV === 'production') {
-    _serverUrl = window.location.origin;
+    // В production-режиме всегда используем порт 5000, независимо от порта клиента
+    _serverUrl = `${window.location.protocol}//${window.location.hostname}:5000`;
     return _serverUrl;
   }
   
@@ -21,11 +22,13 @@ const getServerUrl = () => {
     // В режиме разработки Vite клиент работает на порту 4000, а сервер на 5000
     _serverUrl = 'http://127.0.0.1:5000';
   } else {
+    // В production всегда используем порт 5000
     _serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://127.0.0.1:5000'
-      : `http://${window.location.hostname}:5000`;
+      : `${window.location.protocol}//${window.location.hostname}:5000`;
   }
   
+  console.log('Server URL determined:', _serverUrl);
   return _serverUrl;
 };
 

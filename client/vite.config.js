@@ -32,6 +32,8 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    // Добавляем поддержку домена iqbanana.art
+    allowedHosts: ['localhost', '192.168.0.103', 'iqbanana.art'],
     proxy: {
       // Проксирование всех API запросов на сервер
       '/api': {
