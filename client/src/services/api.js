@@ -9,16 +9,19 @@ const isDev = import.meta.env.DEV;
 // В продакшене используем полный URL из конфигурации
 const API_BASE_URL = isDev ? '' : SERVER_URL;
 
-// Создаем экземпляр axios с базовым URL сервера
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+// Создаем экземпляр axios с базовыми настройками
+const instance = axios.create({
+  // Бесконечные лимиты для размера содержимого запроса и тела ответа
+  maxContentLength: Infinity,
+  maxBodyLength: Infinity,
+  // Таймауты для длительных операций
+  timeout: 3600000, // 1 час
+  // Базовый URL берется из текущего домена
+  baseURL: window.location.origin
 });
 
 // Добавляем перехватчик для добавления токена авторизации
-api.interceptors.request.use(
+instance.interceptors.request.use(
   (config) => {
     // Получаем токен напрямую из localStorage
     const token = localStorage.getItem('token');
@@ -33,7 +36,7 @@ api.interceptors.request.use(
 );
 
 // Добавляем обработчик ошибок
-api.interceptors.response.use(
+instance.interceptors.response.use(
   (response) => response,
   (error) => {
     // Обработка ошибок авторизации
@@ -74,4 +77,4 @@ api.interceptors.response.use(
   }
 );
 
-export default api;
+export default instance;

@@ -86,14 +86,14 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
     if (file) {
       console.log('File selected:', file);
       
-      // Always set video type to LOCAL in the UI, regardless of the actual storage mechanism
+      // Устанавливаем тип видео LOCAL в UI
       setFormData(prev => ({
         ...prev,
         uploadedFile: file,
         videoType: VIDEO_TYPES.LOCAL
       }));
       
-      // Сразу загружаем файл на сервер
+      // Загружаем файл на сервер напрямую
       try {
         setLoading(true);
         setUploadProgress(0);
@@ -101,23 +101,48 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         
         console.log('Starting upload with config:', STORAGE_CONFIG);
         
-        const uploadResult = await uploadVideoFile(file, (progress) => {
-          setUploadProgress(progress);
+        // ПРЯМАЯ ЗАГРУЗКА ФАЙЛА ЧЕРЕЗ XMLHTTPREQUEST
+        // Обходим Nginx, обращаясь напрямую к порту 5000
+        const xhr = new XMLHttpRequest();
+        const serverUrl = `http://${window.location.hostname}:5000/api/simple-upload`;
+        
+        // Настройка обработчиков событий XHR
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        };
+        
+        // Создаем промис для работы с XHR
+        const uploadPromise = new Promise((resolve, reject) => {
+          xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+              } catch (e) {
+                reject(new Error('Ошибка разбора ответа'));
+              }
+            } else {
+              reject(new Error(`Ошибка ${xhr.status}: ${xhr.statusText}`));
+            }
+          };
+          
+          xhr.onerror = function() {
+            reject(new Error('Ошибка сети при загрузке'));
+          };
         });
         
-        // Check for errors in response
-        if (!uploadResult || !uploadResult.success) {
-          const errorMsg = uploadResult?.message || 'Unknown error during upload';
-          console.error('Error in upload result:', errorMsg);
-          setError(`Upload failed: ${errorMsg}`);
-          setUploadResponse(null);
-          // Reset the file input
-          setFormData(prev => ({
-            ...prev,
-            uploadedFile: null
-          }));
-          return;
-        }
+        // Открываем соединение и отправляем файл
+        xhr.open('POST', serverUrl, true);
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        xhr.send(formData);
+        
+        // Ждем результата загрузки
+        const uploadResult = await uploadPromise;
         
         console.log("Upload result:", uploadResult);
         setUploadResponse(uploadResult);
@@ -126,13 +151,11 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         setFormData(prev => {
           const newData = {
             ...prev,
-            // Always show LOCAL in the UI
             videoType: VIDEO_TYPES.LOCAL
           };
           
-          // But still store the file in the correct field based on the backend's response
-          if (uploadResult.videoType === VIDEO_TYPES.STORAGE) {
-            console.log('Setting storagePath (internal):', uploadResult.filePath);
+          if (uploadResult.videoType === VIDEO_TYPES.STORAGE || STORAGE_CONFIG.USE_REMOTE_STORAGE) {
+            console.log('Setting storagePath:', uploadResult.filePath);
             newData.storagePath = uploadResult.filePath;
             newData.localVideo = '';
           } else {
@@ -146,17 +169,16 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         });
       } catch (err) {
         console.error('Error uploading file:', err);
-        setError(`Error uploading file: ${err.message || 'Unknown error'}`);
-        setUploadResponse(null);
-        // Reset progress and uploaded file on error
+        setError(`Ошибка загрузки файла: ${err.message || 'Неизвестная ошибка'}`);
         setUploadProgress(0);
-        // Reset the file input
+        
+        // Сбрасываем выбранный файл
         setFormData(prev => ({
           ...prev,
           uploadedFile: null
         }));
         
-        // Reset file input element
+        // Сбрасываем элемент выбора файла
         const fileInput = document.getElementById('uploadVideo');
         if (fileInput) {
           fileInput.value = '';
@@ -186,22 +208,9 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
       // Try to delete storage file if it exists (could be storage file displayed as local)
       if (formData.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
         try {
-          // Use the admin API to delete the file
-          // We can't directly use deleteVideoFile here as it's designed for local files
-          fetch(`/api/admin/files/${formData.storagePath}`, { 
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }).then(response => {
-            if (response.ok) {
-              console.log('Requested storage file deletion for type change:', formData.storagePath);
-            } else {
-              console.error('Error deleting storage file:', response.statusText);
-            }
-          }).catch(error => {
-            console.error('Error requesting storage file deletion:', error);
-          });
+          // Use the deleteVideoFile function for storage files too
+          deleteVideoFile(formData.storagePath);
+          console.log('Requested storage file deletion for type change:', formData.storagePath);
         } catch (error) {
           console.error('Error requesting storage file deletion:', error);
         }

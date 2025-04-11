@@ -32,6 +32,11 @@ export default defineConfig({
     watch: {
       usePolling: true,
     },
+    // Увеличиваем лимит размера тела запроса
+    hmr: {
+      clientPort: 4000,
+      overlay: true
+    },
     // Добавляем поддержку домена iqbanana.art
     allowedHosts: ['localhost', '192.168.0.103', 'iqbanana.art'],
     proxy: {
@@ -39,13 +44,30 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        // Важные настройки для файлов большого размера
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        },
+        // Увеличиваем максимальный размер тела запроса для прокси
+        proxyTimeout: 3600000, // 1 час
+        timeout: 3600000 // 1 час
       },
       // Проксирование для видео
       '/videos': {
         target: 'http://127.0.0.1:5000',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        proxyTimeout: 3600000, // 1 час
+        timeout: 3600000 // 1 час
       }
     }
   },

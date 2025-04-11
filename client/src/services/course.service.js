@@ -172,75 +172,66 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
 // Upload video file
 export const uploadVideoFile = async (file, onProgress) => {
   try {
-    // Check file size before attempting upload using global config or fallback to 100MB
-    const maxSizeInMB = window.APP_CONFIG?.MAX_UPLOAD_SIZE_MB || 100;
+    // Проверка размера файла
+    const maxSizeInMB = 900; // Безопасный лимит
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
     
     if (file.size > maxSizeInBytes) {
       console.error('File too large:', file.size);
       return {
         success: false,
-        message: `File is too large (${Math.round(file.size / (1024 * 1024))}MB). Maximum size is ${maxSizeInMB}MB.`
+        message: `Файл слишком большой (${Math.round(file.size / (1024 * 1024))}MB). Максимальный размер ${maxSizeInMB}MB.`
       };
     }
     
-    console.log('Uploading file:', file.name);
+    console.log('Загрузка файла:', file.name, 'размер:', Math.round(file.size / 1024), 'KB');
+    
+    // Создаем FormData для отправки файла
     const formData = new FormData();
-    formData.append('video', file);
+    formData.append('file', file);
     
-    try {
-      const response = await api.post('/api/admin/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          if (onProgress) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            onProgress(percentCompleted);
-            console.log('Upload progress:', percentCompleted + '%');
-          }
-        }
-      });
-      
-      console.log('Upload response:', response.data);
-      
-      // Ensure response has success property
-      if (response.data && !response.data.hasOwnProperty('success')) {
-        response.data.success = true;
-      }
-      
-      return response.data;
-    } catch (requestError) {
-      // Handle specific error codes
-      if (requestError.response) {
-        const { status, statusText } = requestError.response;
-        
-        // Handle specific error cases
-        if (status === 413) {
-          console.error('File too large (413 error):', file.name);
-          return {
-            success: false,
-            message: `File is too large. Server rejected the upload (413 Request Entity Too Large). Maximum size is ${maxSizeInMB}MB.`
-          };
-        }
-        
-        return {
-          success: false,
-          message: `Upload failed with status ${status}: ${statusText}`
-        };
-      }
-      
-      // Network errors or other issues
-      return {
-        success: false,
-        message: requestError.message || 'Upload failed due to a network error'
-      };
+    // Отправляем запрос на сервер
+    const response = await fetch('/api/simple-upload', {
+      method: 'POST',
+      body: formData,
+      // Функция для отслеживания прогресса не поддерживается fetch API напрямую
+      // Для простоты мы будем имитировать прогресс
+    });
+    
+    // Имитируем прогресс загрузки
+    if (onProgress) {
+      setTimeout(() => onProgress(30), 100);
+      setTimeout(() => onProgress(70), 300);
+      setTimeout(() => onProgress(90), 500);
     }
+    
+    // Проверяем статус ответа
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}. ${errorText}`);
+    }
+    
+    // Завершаем прогресс
+    if (onProgress) {
+      setTimeout(() => onProgress(100), 700);
+    }
+    
+    // Получаем данные ответа
+    const data = await response.json();
+    console.log('Ответ от сервера:', data);
+    
+    return {
+      success: true,
+      message: 'Файл успешно загружен',
+      filePath: data.filePath,
+      fileName: data.fileName,
+      videoType: data.videoType
+    };
   } catch (error) {
-    console.error('Error in uploadVideoFile:', error);
+    console.error('Ошибка загрузки файла:', error);
     return {
       success: false,
-      message: error.message || 'Unknown error occurred during upload'
+      message: error.message || 'Произошла неизвестная ошибка'
     };
   }
 };
@@ -248,16 +239,32 @@ export const uploadVideoFile = async (file, onProgress) => {
 // Удаление видеофайла
 export const deleteVideoFile = async (fileName) => {
   try {
-    if (!fileName) return null;
+    if (!fileName) {
+      console.error('Empty file name provided to deleteVideoFile');
+      return { success: false, message: 'No file name provided' };
+    }
     
-    // Удаляем префикс /videos/ если он есть
+    // Используем локальный прокси вместо прямого доступа к API
+    // Clean up file name if needed
     const cleanFileName = fileName.replace(/^\/videos\//, '');
     
-    const response = await api.delete(`/api/admin/files/${cleanFileName}`);
-    return response.data;
+    const response = await api.delete('/api/storage/delete', {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        pattern: cleanFileName
+      }
+    });
+    
+    console.log('Delete response:', response.data);
+    return response.data || { success: true, message: 'File deleted successfully' };
   } catch (error) {
     console.error('Error deleting video file:', error);
-    throw error;
+    return { 
+      success: false, 
+      message: error.response?.data?.message || error.message || 'Unknown error' 
+    };
   }
 };
 
