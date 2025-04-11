@@ -63,4 +63,4 @@ const CourseItem = ({ course, currentVideo }) => {
   );
 };
 
-export default CourseItem;
+export default CourseItem; 

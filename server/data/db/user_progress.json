@@ -26,5 +26,10 @@
     "n8n-basics": {
       "n8n-action-in-app": true
     }
+  },
+  "6": {
+    "n8n-basics": {
+      "n8n-credentials": true
+    }
   }
 }

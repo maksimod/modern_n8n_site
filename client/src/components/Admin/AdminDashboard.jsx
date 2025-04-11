@@ -69,8 +69,6 @@ const VideoUploader = ({ onUploadSuccess }) => {
       setUploading(false);
     }
   };
-
-  // ... остальной код компонента ...
 };
 
 export default VideoUploader; 
