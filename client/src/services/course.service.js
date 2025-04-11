@@ -188,7 +188,7 @@ export const uploadVideoFile = async (file, onProgress) => {
     
     // Создаем FormData для отправки файла
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('video', file);
     
     // Отправляем запрос на сервер
     const response = await fetch('/api/simple-upload', {

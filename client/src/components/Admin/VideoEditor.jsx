@@ -121,9 +121,9 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         console.log('Starting upload with config:', STORAGE_CONFIG);
         
         // ПРЯМАЯ ЗАГРУЗКА ФАЙЛА ЧЕРЕЗ XMLHTTPREQUEST
-        // Обходим Nginx, обращаясь напрямую к порту 5000
+        // Используем специальный стриминговый эндпоинт для больших файлов
         const xhr = new XMLHttpRequest();
-        const serverUrl = `http://${window.location.hostname}:5000/api/simple-upload`;
+        const serverUrl = `/api/simple-upload`;
         
         // Настройка обработчиков событий XHR
         xhr.upload.onprogress = (e) => {
@@ -157,7 +157,7 @@ const VideoEditor = ({ video, courseId, onClose, language }) => {
         xhr.open('POST', serverUrl, true);
         
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('video', file);
         xhr.send(formData);
         
         // Ждем результата загрузки
