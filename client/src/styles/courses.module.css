@@ -504,3 +504,17 @@
 .backButton:hover {
   background-color: #4338ca;
 }
+
+.youtubeWarning {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border-left: 4px solid #ffc107;
+  font-size: 14px;
+}
+
+.youtubeWarning p {
+  margin: 0;
+}

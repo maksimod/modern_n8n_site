@@ -187,11 +187,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
               {t('course.download')}
             </button>
           )}
-          {currentUser && onVideoDelete && (
-            <button className={styles.deleteButton} onClick={handleDelete}>
-              {t('course.delete')}
-            </button>
-          )}
         </div>
       </div>
       <div className={styles.videoDescription}>{video.description}</div>
@@ -215,11 +210,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
             {video.description}
           </div>
           <div className={styles.videoActions}>
-            {currentUser && onVideoDelete && (
-              <button className={styles.deleteButton} onClick={handleDelete}>
-                {t('course.delete')}
-              </button>
-            )}
             <button 
               className={`${styles.markButton} ${completed ? styles.completed : ''}`}
               onClick={handleComplete}
@@ -307,6 +297,13 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       {videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl && (
         <>
           <div className={styles.videoContainer}>
+            {/* Проверка для YouTube видео */}
+            {video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
+              <div className={styles.youtubeWarning}>
+                <p>⚠️ Внимание! Для просмотра видео с YouTube может потребоваться VPN.</p>
+              </div>
+            ) : null}
+            
             {/* Проверка, что мы не находимся во вложенном iframe */}
             {window.self === window.top ? (
               <iframe 
