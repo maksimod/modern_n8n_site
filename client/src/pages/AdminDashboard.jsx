@@ -150,8 +150,14 @@ const AdminDashboard = () => {
     const courseIds = coursesCopy.map(course => course.id);
     updateCoursePositions(courseIds)
       .catch(err => {
+        // Если ошибка 404, просто логируем и не пытаемся обновить данные - API ещё не реализован
+        if (err?.response?.status === 404) {
+          console.log('Course positions endpoint not available yet, but UI reordering still works');
+          return;
+        }
+        
         console.error('Error saving course positions:', err);
-        // В случае ошибки, просто восстанавливаем состояние, запрашивая курсы заново
+        // В случае других ошибок, восстанавливаем состояние, запрашивая курсы заново
         setLoading(true);
         getCourses(language)
           .then(data => {

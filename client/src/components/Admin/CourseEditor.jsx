@@ -300,7 +300,14 @@ const CourseEditor = ({ course, onClose, language }) => {
       // Async call to update video positions on the server
       const videoIds = videos.map(video => video.id);
       updateVideoPositions(formData.id, videoIds)
-        .catch(err => console.error('Error saving video positions:', err));
+        .catch(err => {
+          // Игнорируем ошибку 404, так как эндпоинт может быть не реализован
+          if (err?.response?.status !== 404) {
+            console.error('Error saving video positions:', err);
+          } else {
+            console.log('Video positions endpoint not available yet, but UI reordering still works');
+          }
+        });
       
       return { ...prev, videos };
     });

@@ -6,16 +6,6 @@
     "language": "ru",
     "videos": [
       {
-        "id": "n8n-json",
-        "title": "JSON",
-        "description": "Работа с JSON форматом",
-        "duration": "12:30",
-        "videoUrl": "xsfs",
-        "videoType": "external",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-interface",
         "title": "Интерфейс",
         "description": "Интерфейс \\n\n\nЯ хочу вам сказать что это только тест\n❤️‍🔥😺👾👁️😻🥴🤕😁😃😀\n\n",
@@ -35,18 +25,19 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-credentials",
-        "title": "Credentials",
-        "description": "Настройка учетных данных",
+        "id": "n8n-data-transformation",
+        "title": "Узлы «Data transformation»",
+        "description": "Преобразование данных",
         "duration": "12:30",
-        "videoType": "text",
+        "storagePath": "c47ff677-f32f-41af-9028-0345eb890abc.mp4",
+        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       },
       {
-        "id": "n8n-data-transformation",
-        "title": "Узлы «Data transformation»",
-        "description": "Преобразование данных",
+        "id": "n8n-credentials",
+        "title": "Credentials",
+        "description": "Настройка учетных данных",
         "duration": "12:30",
         "videoType": "text",
         "isPrivate": false,

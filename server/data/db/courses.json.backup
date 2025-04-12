@@ -15,6 +15,16 @@
         "localVideo": ""
       },
       {
+        "id": "n8n-data-transformation",
+        "title": "Узлы «Data transformation»",
+        "description": "Преобразование данных",
+        "duration": "12:30",
+        "storagePath": "c47ff677-f32f-41af-9028-0345eb890abc.mp4",
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
+      },
+      {
         "id": "n8n-triggers",
         "title": "Триггеры",
         "description": "Использование триггеров в n8n",
@@ -34,30 +44,11 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-data-transformation",
-        "title": "Узлы «Data transformation»",
-        "description": "Преобразование данных",
-        "duration": "12:30",
-        "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-flow",
         "title": "Узлы «Flow»",
         "description": "Управление потоком данных",
         "duration": "12:30",
         "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
-        "id": "n8n-json",
-        "title": "JSON",
-        "description": "Работа с JSON форматом",
-        "duration": "12:30",
-        "videoUrl": "xsfs",
-        "videoType": "external",
         "isPrivate": false,
         "localVideo": ""
       },
