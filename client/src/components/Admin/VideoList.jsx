@@ -56,83 +56,27 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
 
   // Обработчик удаления видео
   const handleDeleteVideo = async (videoId) => {
-    if (window.confirm(t('admin.confirmDeleteVideo'))) {
-      try {
-        // Find the video data
-        const video = videos.find(v => v.id === videoId);
-        if (!video) {
-          console.error(`Video ${videoId} not found`);
-          throw new Error('Video not found');
-        }
-        
-        console.log('Deleting video:', video);
-        let fileDeleted = false;
-        
-        // First delete the actual file from storage
-        if (video.storagePath) {
-          console.log(`Deleting storage file first: ${video.storagePath}`);
-          try {
-            // Clean the filename from any path
-            const cleanFilename = video.storagePath.split('/').pop();
-            console.log(`Using cleaned filename for deletion: ${cleanFilename}`);
-            
-            // Direct API call with proper parameters - following manual curl format
-            const result = await deleteVideoFile(cleanFilename);
-            console.log('File deletion result:', result);
-            if (result.success) {
-              fileDeleted = true;
-            }
-          } catch (fileError) {
-            console.error('Failed to delete file, but will continue with video deletion:', fileError);
-          }
-        } else if (video.localVideo) {
-          console.log(`Deleting local file first: ${video.localVideo}`);
-          try {
-            const result = await deleteVideoFile(video.localVideo);
-            console.log('File deletion result:', result);
-            if (result.success) {
-              fileDeleted = true;
-            }
-          } catch (fileError) {
-            console.error('Failed to delete local file, but will continue with video deletion:', fileError);
-          }
-        }
-        
-        // Now update the UI regardless of whether the database operation succeeds
-        if (fileDeleted) {
-          // Update UI immediately since file was deleted
-          if (onDelete) {
-            onDelete(videoId);
-            console.log('Video successfully removed from UI after file deletion');
-          }
-        }
-        
-        // Try to delete the database record, but don't block UI updates
-        try {
-          // Now delete the video from the database
-          const response = await deleteVideo(courseId, videoId, language);
-          console.log(`Video ${videoId} deleted from course ${courseId}:`, response);
-          
-          // Only update UI here if it wasn't already updated after file deletion
-          if (!fileDeleted && onDelete) {
-            onDelete(videoId);
-          }
-        } catch (dbError) {
-          console.warn(`Database operation failed, but file was already deleted:`, dbError);
-          
-          // Show a friendly message only once to avoid multiple alerts
-          if (dbError.response && dbError.response.status === 502) {
-            console.warn('Server is temporarily unavailable (502 Bad Gateway)');
-            // We've already updated the UI, so no alert needed
-          } else if (!fileDeleted) {
-            // Only show an alert if we haven't already updated the UI
-            alert('The video could not be fully removed from the database, but any associated files were deleted.');
-          }
-        }
-      } catch (error) {
-        console.error(`Error deleting video ${videoId}:`, error);
-        alert('Failed to delete video: ' + (error.message || 'Unknown error'));
+    // Удаляем диалог подтверждения отсюда, чтобы не было двойного запроса
+    try {
+      // Find the video data
+      const video = videos.find(v => v.id === videoId);
+      if (!video) {
+        console.error(`Video ${videoId} not found`);
+        throw new Error('Video not found');
       }
+      
+      console.log('Preparing to delete video:', video);
+      
+      // Просто вызываем переданный обработчик, который уже содержит запрос на подтверждение
+      if (onDelete) {
+        onDelete(videoId);
+        console.log('Delete video request sent to parent component');
+      } else {
+        console.error('No onDelete handler provided');
+      }
+    } catch (error) {
+      console.error(`Error preparing to delete video ${videoId}:`, error);
+      alert('Failed to prepare video for deletion: ' + (error.message || 'Unknown error'));
     }
   };
   

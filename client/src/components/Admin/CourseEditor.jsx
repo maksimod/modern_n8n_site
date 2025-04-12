@@ -161,21 +161,63 @@ const CourseEditor = ({ course, onClose, language }) => {
         setLoading(true);
         setError(null);
         
-        console.log(`Attempting to delete video: ${videoId} from course: ${formData.id}`);
+        // Находим видео для логирования
+        const videoToDelete = formData.videos.find(v => v.id === videoId);
+        console.log(`Deleting video: ${videoId} from course: ${formData.id}`, 
+          videoToDelete ? `(type: ${videoToDelete.videoType || 'unknown'})` : '');
         
-        // Вызываем API для удаления видео
-        await deleteVideo(formData.id, videoId, formData.language);
+        // Создаем копию текущего состояния для возможного восстановления
+        const previousVideos = [...formData.videos];
         
-        // Обновляем состояние после удаления
-        setFormData(prev => ({
-          ...prev,
-          videos: prev.videos.filter(v => v.id !== videoId)
-        }));
+        // Удаляем видео из состояния
+        const updatedVideos = formData.videos.filter(v => v.id !== videoId);
+        const updatedFormData = {
+          ...formData,
+          videos: updatedVideos
+        };
         
-        console.log('Video successfully deleted from state');
+        // Обновляем UI немедленно
+        setFormData(updatedFormData);
+        console.log('Video removed from UI state');
+        
+        // Вызываем оба API одновременно для максимальной надежности:
+        // 1. Удаляем видео через API удаления
+        // 2. Сохраняем полное состояние курса без удаленного видео
+        try {
+          await Promise.all([
+            // API удаления видео
+            deleteVideo(formData.id, videoId, formData.language).then(result => {
+              console.log('Delete video API response:', result);
+            }).catch(error => {
+              console.error('Error in delete video API:', error);
+              // Продолжаем выполнение, так как мы все равно сохраним курс
+              return null;
+            }),
+            
+            // Принудительное сохранение курса без видео
+            updateCourse(formData.id, updatedFormData).then(result => {
+              console.log('Course saved after video deletion:', result);
+            }).catch(error => {
+              console.error('Error saving course after video deletion:', error);
+              throw error; // Прокидываем ошибку наверх
+            })
+          ]);
+          
+          console.log('Video successfully deleted and course updated');
+        } catch (apiError) {
+          console.error('Critical error during video deletion:', apiError);
+          
+          // Восстанавливаем состояние только в случае отказа обоих API
+          setFormData({
+            ...formData,
+            videos: previousVideos
+          });
+          console.log('Restored previous state due to API errors');
+          setError(`Failed to delete video: ${apiError.message || 'Server error'}`);
+        }
       } catch (err) {
-        console.error('Error deleting video:', err);
-        setError(err.message || 'Failed to delete video');
+        console.error('Error in delete video handler:', err);
+        setError(`Failed to delete video: ${err.message || 'Unknown error'}`);
       } finally {
         setLoading(false);
       }

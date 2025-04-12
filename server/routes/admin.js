@@ -67,26 +67,129 @@ const getCourses = () => {
     }
     
     const data = fs.readFileSync(COURSES_FILE, 'utf8');
-    return JSON.parse(data);
+    if (!data || data.trim() === '') {
+      console.warn('Empty courses file found, returning empty array');
+      return [];
+    }
+    
+    try {
+      return JSON.parse(data);
+    } catch (parseError) {
+      console.error('Error parsing courses JSON:', parseError);
+      // Создаем резервную копию поврежденного файла
+      const backupFile = `${COURSES_FILE}.backup.${Date.now()}`;
+      fs.copyFileSync(COURSES_FILE, backupFile);
+      console.log(`Created backup of corrupt courses file at: ${backupFile}`);
+      return [];
+    }
   } catch (error) {
     console.error('Error reading courses file:', error);
     return [];
   }
 };
 
-// Функция для сохранения курсов в файл
+// Функция для сохранения курсов в файл с повторными попытками
 const saveCourses = (courses) => {
-  try {
-    const dataDir = path.dirname(COURSES_FILE);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(COURSES_FILE, JSON.stringify(courses, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error saving courses file:', error);
+  // Проверяем, что courses - массив
+  if (!Array.isArray(courses)) {
+    console.error('Cannot save courses: provided data is not an array');
     return false;
   }
+
+  // Максимальное количество попыток записи файла
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
+  let saveSuccess = false;
+
+  while (retryCount < MAX_RETRIES && !saveSuccess) {
+    try {
+      // Создаем директорию, если её нет
+      const dataDir = path.dirname(COURSES_FILE);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      
+      // Если это повторная попытка, ждем немного
+      if (retryCount > 0) {
+        console.log(`Retry attempt ${retryCount}/${MAX_RETRIES} to save courses file`);
+        // Синхронная задержка для повторных попыток
+        const waitTime = 100 * retryCount; // 100ms, 200ms, 300ms
+        const startTime = Date.now();
+        while (Date.now() - startTime < waitTime) {
+          // Активное ожидание
+        }
+      }
+      
+      // Сначала записываем во временный файл
+      const tempFile = `${COURSES_FILE}.temp`;
+      const jsonData = JSON.stringify(courses, null, 2);
+      
+      // Проверяем, что данные для записи не пусты
+      if (!jsonData || jsonData.trim() === '' || jsonData === '[]') {
+        console.warn('Warning: Empty data or empty array to write');
+      }
+      
+      // Запись с использованием синхронной операции
+      fs.writeFileSync(tempFile, jsonData, { encoding: 'utf8', flag: 'w' });
+      
+      // Проверяем, что временный файл содержит валидный JSON и не пуст
+      if (!fs.existsSync(tempFile)) {
+        throw new Error('Temp file was not created');
+      }
+      
+      const tempData = fs.readFileSync(tempFile, 'utf8');
+      if (!tempData || tempData.trim() === '') {
+        throw new Error('Empty data written to temp file');
+      }
+      
+      try {
+        // Проверяем, что можем распарсить записанный JSON
+        JSON.parse(tempData);
+      } catch (parseError) {
+        throw new Error(`Invalid JSON written to temp file: ${parseError.message}`);
+      }
+      
+      // Создаем резервную копию текущего файла если он существует
+      if (fs.existsSync(COURSES_FILE)) {
+        const backupFile = `${COURSES_FILE}.backup`;
+        fs.copyFileSync(COURSES_FILE, backupFile);
+      }
+      
+      // Атомарно заменяем основной файл временным
+      fs.renameSync(tempFile, COURSES_FILE);
+      
+      // Верификация: проверяем, что файл обновился корректно
+      const verifyData = fs.readFileSync(COURSES_FILE, 'utf8');
+      const verifyJson = JSON.parse(verifyData);
+      
+      // Проверяем, что количество данных совпадает
+      if (verifyJson.length !== courses.length) {
+        throw new Error(`Data verification failed: Expected ${courses.length} items, got ${verifyJson.length}`);
+      }
+      
+      console.log(`Courses file saved successfully at ${new Date().toISOString()}, with ${courses.length} courses`);
+      saveSuccess = true;
+      return true;
+    } catch (error) {
+      console.error(`Error saving courses file (attempt ${retryCount+1}/${MAX_RETRIES}):`, error);
+      retryCount++;
+      
+      // При ошибке на последней попытке, попробуем сделать прямую запись в основной файл
+      if (retryCount >= MAX_RETRIES) {
+        try {
+          console.warn('Last resort: attempting direct write to main file');
+          fs.writeFileSync(COURSES_FILE, JSON.stringify(courses, null, 2), { encoding: 'utf8', flag: 'w' });
+          console.log('Direct write to main file completed');
+          return true;
+        } catch (finalError) {
+          console.error('Final write attempt failed:', finalError);
+          return false;
+        }
+      }
+    }
+  }
+  
+  return saveSuccess;
 };
 
 // Get all courses (Admin view)
@@ -408,10 +511,26 @@ router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req,
     const { courseId, videoId } = req.params;
     const language = req.query.language || 'ru';
     
-    console.log(`DELETING VIDEO: courseId=${courseId}, videoId=${videoId}, language=${language}`);
+    console.log(`==== DELETING VIDEO: courseId=${courseId}, videoId=${videoId}, language=${language} ====`);
     
     // Получаем существующие курсы
-    let courses = getCourses();
+    let courses;
+    try {
+      courses = getCourses();
+      if (!Array.isArray(courses)) {
+        console.error('Error: courses is not an array!', typeof courses, courses);
+        courses = []; // Защитная инициализация, если getCourses не вернул массив
+      }
+    } catch (courseReadError) {
+      console.error('Critical error reading courses file:', courseReadError);
+      return res.status(500).json({ 
+        message: 'Failed to read courses data',
+        error: courseReadError.message
+      });
+    }
+    
+    // Диагностическая информация о всех курсах
+    console.log(`Total courses loaded: ${courses.length}`);
     
     // Ищем курс
     const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
@@ -430,49 +549,117 @@ router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req,
       return res.status(404).json({ message: 'No videos in this course' });
     }
     
+    // Выводим диагностическую информацию о всех видео в курсе
+    course.videos.forEach((vid, idx) => {
+      console.log(`[${idx}] Video ID=${vid.id}, Title=${vid.title}, Type=${vid.videoType || 'unknown'}`);
+    });
+    
     // Находим видео
     const videoIndex = course.videos.findIndex(v => v.id === videoId);
     
     if (videoIndex === -1) {
       console.log(`Video not found: ${videoId}`);
+      
+      // Расширенная диагностика - ищем похожие ID
+      const similarVideos = course.videos.filter(v => 
+        v.id && v.id.includes(videoId) || (videoId && videoId.includes(v.id))
+      );
+      
+      if (similarVideos.length > 0) {
+        console.log('Found similar video IDs:');
+        similarVideos.forEach(v => console.log(`- ${v.id} (${v.title})`));
+      }
+      
       return res.status(404).json({ message: 'Video not found' });
     }
     
     // Получаем видео перед удалением
     const videoToDelete = course.videos[videoIndex];
-    console.log(`Found video to delete: ${videoToDelete.title}`);
+    console.log(`Found video to delete: ${videoToDelete.title}, type: ${videoToDelete.videoType || 'unknown'}`);
+    console.log('Full video object:', JSON.stringify(videoToDelete, null, 2));
     
-    // Удаляем файл, если это локальное видео
+    // Удаляем файл, только если это локальное видео 
     let fileDeleted = false;
-    if (videoToDelete.localVideo) {
+    if (videoToDelete.videoType === VIDEO_TYPES.LOCAL && videoToDelete.localVideo) {
       const videoFileName = videoToDelete.localVideo.replace(/^\/videos\//, '');
       const videoPath = path.join(__dirname, '../data/videos', videoFileName);
       
-      console.log(`Checking video file: ${videoPath}`);
+      console.log(`Checking local video file: ${videoPath}`);
       
       if (fs.existsSync(videoPath)) {
         try {
           fs.unlinkSync(videoPath);
-          console.log(`Successfully deleted video file: ${videoPath}`);
+          console.log(`Successfully deleted local video file: ${videoPath}`);
           fileDeleted = true;
         } catch (fileErr) {
-          console.error(`Error deleting video file: ${fileErr.message}`);
+          console.error(`Error deleting local video file: ${fileErr.message}`);
         }
       } else {
-        console.log(`Video file not found: ${videoPath}`);
+        console.log(`Local video file not found: ${videoPath}`);
       }
     }
     
-    // ВАЖНО: Удаление видео из массива
+    // Создаем копию курса перед изменением для диагностики
+    const originalVideosCount = course.videos.length;
+    
+    // ВАЖНО: Удаление видео из массива (для ВСЕХ типов видео)
     course.videos.splice(videoIndex, 1);
-    console.log(`Removed video from array, new count: ${course.videos.length}`);
+    console.log(`Removed video from array, new count: ${course.videos.length}, original count: ${originalVideosCount}`);
+    
+    // Проверяем, что видео действительно удалено
+    const videoStillExists = course.videos.some(v => v.id === videoId);
+    if (videoStillExists) {
+      console.error('CRITICAL ERROR: Video still exists in the array after deletion!');
+      // Принудительно удаляем видео с заданным ID
+      course.videos = course.videos.filter(v => v.id !== videoId);
+      console.log(`Forced array filtering, new count: ${course.videos.length}`);
+    }
     
     // Сохраняем обновленные курсы
-    const saveResult = saveCourses(courses);
-    console.log(`Courses saved result: ${saveResult}`);
+    let saveResult;
+    try {
+      saveResult = saveCourses(courses);
+      console.log(`Courses saved result: ${saveResult}`);
+      
+      // Проверяем, что изменения действительно сохранились
+      const verifiedCourses = getCourses();
+      const verifiedCourse = verifiedCourses.find(c => c.id === courseId && c.language === language);
+      
+      if (!verifiedCourse) {
+        console.error('VERIFICATION ERROR: Course not found after save!');
+      } else {
+        const videoStillExistsAfterSave = verifiedCourse.videos && 
+                                        verifiedCourse.videos.some(v => v.id === videoId);
+        
+        if (videoStillExistsAfterSave) {
+          console.error('VERIFICATION ERROR: Video still exists after save!');
+          console.log('Attempting emergency direct removal...');
+          
+          // Экстренное повторное удаление
+          verifiedCourse.videos = verifiedCourse.videos.filter(v => v.id !== videoId);
+          const emergencySave = saveCourses(verifiedCourses);
+          console.log(`Emergency save result: ${emergencySave}`);
+        } else {
+          console.log('Verification successful: Video successfully removed from database');
+        }
+      }
+    } catch (saveError) {
+      console.error('Error saving courses after video deletion:', saveError);
+      // Даже если не удалось сохранить, видео уже удалено из памяти
+      return res.status(500).json({ 
+        message: 'Video removed from memory, but failed to save to database',
+        error: saveError.message,
+        partialSuccess: true,
+        videoId
+      });
+    }
     
     if (!saveResult) {
-      return res.status(500).json({ message: 'Failed to save courses after video deletion' });
+      return res.status(500).json({ 
+        message: 'Failed to save courses after video deletion',
+        partialSuccess: true,
+        videoId
+      });
     }
     
     // Отправляем успешный ответ
@@ -480,10 +667,13 @@ router.delete('/courses/:courseId/videos/:videoId', [auth, isAdmin], async (req,
       success: true,
       message: 'Video deleted successfully',
       videoId,
-      fileDeleted
+      fileDeleted,
+      videoType: videoToDelete.videoType || 'unknown'
     });
+    
+    console.log(`==== VIDEO DELETION COMPLETED: ${videoId} ====`);
   } catch (err) {
-    console.error(`Error deleting video: ${err.message}`);
+    console.error(`Error deleting video: ${err.message}`, err.stack);
     res.status(500).json({ message: 'Server error: ' + err.message });
   }
 });

@@ -201,58 +201,72 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
   try {
     console.log(`Deleting video: courseId=${courseId}, videoId=${videoId}, language=${language}`);
     
-    try {
-      const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
-      // Clear error cache on success
-      errorCache.deleteVideo = null;
-      return response.data;
-    } catch (error) {
-      // Handle 404 errors gracefully - the video may have already been deleted
-      if (error.response && error.response.status === 404) {
-        console.log(`Video ${videoId} not found on server, considering it already deleted`);
+    let maxRetries = 3;
+    let retryCount = 0;
+    let lastError = null;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const response = await api.delete(`/api/admin/courses/${courseId}/videos/${videoId}?language=${language}`);
+        // Clear error cache on success
+        errorCache.deleteVideo = null;
+        return response.data;
+      } catch (error) {
+        lastError = error;
         
-        // Return a successful response to avoid UI errors
-        return {
-          success: true,
-          message: 'Video deleted successfully (was already removed from server)',
-          videoId: videoId,
-          fileDeleted: false
-        };
-      }
-      
-      // Handle 502 errors quietly to avoid console spam
-      if (error.response && error.response.status === 502) {
-        const errorMsg = 'Server temporarily unavailable (502)';
-        
-        // Only log if we haven't logged this error yet
-        if (errorCache.deleteVideo !== errorMsg) {
-          console.warn(`Video deletion caused a 502 error: ${videoId}`);
-          errorCache.deleteVideo = errorMsg;
+        // Handle 404 errors gracefully - the video may have already been deleted
+        if (error.response && error.response.status === 404) {
+          console.log(`Video ${videoId} not found on server, considering it already deleted`);
+          
+          // Return a successful response to avoid UI errors
+          return {
+            success: true,
+            message: 'Video deleted successfully (was already removed from server)',
+            videoId: videoId,
+            fileDeleted: false
+          };
         }
         
-        // Return a successful response to avoid UI errors
-        return {
-          success: true,
-          message: 'Video file was deleted, but database update may be pending',
-          videoId: videoId,
-          serverError: true
-        };
+        // Retry on 502 Bad Gateway errors
+        if (error.response && error.response.status === 502) {
+          retryCount++;
+          console.warn(`Video deletion caused a 502 error (attempt ${retryCount}/${maxRetries}): ${videoId}`);
+          
+          // Wait before retrying (increasing timeout with each retry)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          
+          // Continue with next iteration
+          continue;
+        }
+        
+        // For other errors, rethrow
+        throw error;
       }
-      
-      // For other errors, rethrow but prevent duplicate logs
-      const errorMsg = error.message || 'Unknown error';
-      if (errorCache.deleteVideo !== errorMsg) {
-        console.error(`Error deleting video ${videoId}:`, error);
-        errorCache.deleteVideo = errorMsg;
-      }
-      
-      throw error;
     }
+    
+    // If we've exhausted all retries
+    if (retryCount >= maxRetries) {
+      console.error(`Failed to delete video after ${maxRetries} attempts due to 502 errors`);
+      
+      // Return partial success to update UI anyway
+      return {
+        success: true,
+        message: 'Video removed from UI, but server is unavailable. Database may not be updated.',
+        videoId: videoId,
+        serverError: true
+      };
+    }
+    
+    // If we get here, all retries failed but not due to 502
+    throw lastError;
   } catch (error) {
-    // Only log if not already logged by inner try/catch
-    if (!errorCache.deleteVideo) {
-      console.error(`Error in deleteVideo wrapper for ${videoId}:`, error);
+    // Log error but prevent duplicate logs
+    const errorMsg = error.message || 'Unknown error';
+    if (errorCache.deleteVideo !== errorMsg) {
+      console.error(`Error deleting video ${videoId}:`, error);
+      errorCache.deleteVideo = errorMsg;
     }
+    
     throw error;
   }
 };
