@@ -21,7 +21,18 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
   
   // Helper function to determine video type
   const getVideoType = (video) => {
-    if (video.localVideo) return VIDEO_TYPES.LOCAL;
+    // Первый приоритет - используем сохраненный videoType, если он есть и валиден
+    if (video.videoType && Object.values(VIDEO_TYPES).includes(video.videoType)) {
+      // Преобразуем LOCAL в STORAGE, так как мы объединили их
+      if (video.videoType === VIDEO_TYPES.LOCAL) {
+        return VIDEO_TYPES.STORAGE;
+      }
+      return video.videoType;
+    }
+    
+    // Если videoType отсутствует или недействительный, определяем по наличию полей
+    if (video.storagePath) return VIDEO_TYPES.STORAGE;
+    if (video.localVideo) return VIDEO_TYPES.STORAGE; // Теперь localVideo тоже считаем как storage
     if (video.videoUrl) return VIDEO_TYPES.EXTERNAL;
     return VIDEO_TYPES.TEXT;
   };
@@ -31,16 +42,16 @@ const VideoList = ({ videos, onEdit, onDelete, onReorder, courseId }) => {
     const type = getVideoType(video);
     
     switch (type) {
-      case VIDEO_TYPES.LOCAL:
-        return (
-          <span className={`${styles.videoBadge} ${styles.videoBadgeLocal}`}>
-            {t('admin.localFile')}
-          </span>
-        );
       case VIDEO_TYPES.EXTERNAL:
         return (
           <span className={`${styles.videoBadge} ${styles.videoBadgeExternal}`}>
             {t('admin.externalUrl')}
+          </span>
+        );
+      case VIDEO_TYPES.STORAGE:
+        return (
+          <span className={`${styles.videoBadge} ${styles.videoBadgeLocal}`} style={{ backgroundColor: '#3b82f6' }}>
+            {t('admin.remoteStorage')}
           </span>
         );
       case VIDEO_TYPES.TEXT:

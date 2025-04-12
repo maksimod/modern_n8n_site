@@ -65,7 +65,8 @@
         "title": "JSON",
         "description": "Работа с JSON форматом",
         "duration": "12:30",
-        "videoType": "text",
+        "videoUrl": "xsfs",
+        "videoType": "external",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -74,9 +75,11 @@
         "title": "Работа с данными",
         "description": "Продвинутые методы работы с данными",
         "duration": "12:30",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "c36ea0b8-7c6c-4a4c-a70e-ce3c599c52c2.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       },
       {
         "id": "n8n-postgres",
@@ -101,7 +104,8 @@
         "title": "Google sheets",
         "description": "Работа с Google Sheets",
         "duration": "12:30",
-        "videoType": "text",
+        "storagePath": "e65fbb65-d8d0-4eee-aa5a-4624fe8a4419.mp4",
+        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -157,11 +161,10 @@
         "title": "wtf",
         "description": "",
         "duration": "",
-        "isPrivate": false,
         "storagePath": "44d2db61-0875-4fe9-a6e1-aa6b515edf92.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
       }
     ]
   },
