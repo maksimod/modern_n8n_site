@@ -955,4 +955,122 @@ router.delete('/files/:fileName', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// Update video positions (reordering)
+router.put('/courses/:courseId/videos/positions', [auth, isAdmin], async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { positions } = req.body;
+    const language = req.query.language || 'ru';
+    
+    if (!positions || !Array.isArray(positions)) {
+      return res.status(400).json({ message: 'Video positions array is required' });
+    }
+    
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Находим курс
+    const courseIndex = courses.findIndex(c => c.id === courseId && c.language === language);
+    
+    if (courseIndex === -1) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+    
+    const course = courses[courseIndex];
+    
+    if (!course.videos || !Array.isArray(course.videos)) {
+      return res.status(404).json({ message: 'No videos found in this course' });
+    }
+    
+    // Создаем новый порядок видео
+    const reorderedVideos = [];
+    
+    // Проходим по массиву позиций и формируем новый массив в нужном порядке
+    for (const videoId of positions) {
+      const video = course.videos.find(v => v.id === videoId);
+      if (video) {
+        reorderedVideos.push(video);
+      }
+    }
+    
+    // Добавляем видео, которые не были включены в массив positions (если такие есть)
+    for (const video of course.videos) {
+      if (!positions.includes(video.id)) {
+        reorderedVideos.push(video);
+      }
+    }
+    
+    // Обновляем массив видео в курсе
+    courses[courseIndex].videos = reorderedVideos;
+    
+    // Сохраняем обновленные курсы
+    saveCourses(courses);
+    
+    // Возвращаем успешный результат
+    res.json({ 
+      success: true, 
+      message: 'Video positions updated successfully',
+      course: courses[courseIndex]
+    });
+  } catch (err) {
+    console.error('Error updating video positions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update course positions (reordering)
+router.put('/courses/positions', [auth, isAdmin], async (req, res) => {
+  try {
+    const { positions } = req.body;
+    const language = req.query.language || 'ru';
+    
+    if (!positions || !Array.isArray(positions)) {
+      return res.status(400).json({ message: 'Course positions array is required' });
+    }
+    
+    // Получаем существующие курсы
+    const courses = getCourses();
+    
+    // Фильтруем курсы по языку
+    const filteredCourses = courses.filter(course => course.language === language);
+    
+    // Сортируем курсы в соответствии с новым порядком
+    const reorderedCourses = [];
+    
+    // Проходим по массиву позиций и формируем новый массив курсов в нужном порядке
+    for (const courseId of positions) {
+      const course = filteredCourses.find(c => c.id === courseId);
+      if (course) {
+        reorderedCourses.push(course);
+      }
+    }
+    
+    // Добавляем курсы, которые не были включены в массив positions
+    for (const course of filteredCourses) {
+      if (!positions.includes(course.id)) {
+        reorderedCourses.push(course);
+      }
+    }
+    
+    // Создаем новый массив курсов, сохраняя курсы с другими языками
+    const newCourses = courses.filter(course => course.language !== language);
+    
+    // Добавляем отсортированные курсы с выбранным языком
+    newCourses.push(...reorderedCourses);
+    
+    // Сохраняем обновленные курсы
+    saveCourses(newCourses);
+    
+    // Возвращаем успешный результат
+    res.json({ 
+      success: true, 
+      message: 'Course positions updated successfully',
+      courses: reorderedCourses
+    });
+  } catch (err) {
+    console.error('Error updating course positions:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

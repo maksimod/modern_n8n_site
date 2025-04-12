@@ -52,15 +52,6 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-core",
-        "title": "Узлы \"Core\"",
-        "description": "Базовые узлы Core",
-        "duration": "12:30",
-        "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-json",
         "title": "JSON",
         "description": "Работа с JSON форматом",
@@ -71,11 +62,21 @@
         "localVideo": ""
       },
       {
+        "id": "n8n-core",
+        "title": "Узлы \"Core\"",
+        "description": "Базовые узлы Core",
+        "duration": "12:30",
+        "videoType": "text",
+        "isPrivate": false,
+        "localVideo": ""
+      },
+      {
         "id": "n8n-work-with-data",
         "title": "Работа с данными",
         "description": "Продвинутые методы работы с данными",
         "duration": "12:30",
-        "videoType": "text",
+        "storagePath": "c36ea0b8-7c6c-4a4c-a70e-ce3c599c52c2.mp4",
+        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -102,11 +103,10 @@
         "title": "Google sheets",
         "description": "Работа с Google Sheets",
         "duration": "12:30",
-        "isPrivate": false,
         "storagePath": "e65fbb65-d8d0-4eee-aa5a-4624fe8a4419.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-google-drive",

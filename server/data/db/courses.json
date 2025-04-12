@@ -6,6 +6,16 @@
     "language": "ru",
     "videos": [
       {
+        "id": "n8n-json",
+        "title": "JSON",
+        "description": "Работа с JSON форматом",
+        "duration": "12:30",
+        "videoUrl": "xsfs",
+        "videoType": "external",
+        "isPrivate": false,
+        "localVideo": ""
+      },
+      {
         "id": "n8n-interface",
         "title": "Интерфейс",
         "description": "Интерфейс \\n\n\nЯ хочу вам сказать что это только тест\n❤️‍🔥😺👾👁️😻🥴🤕😁😃😀\n\n",
@@ -61,25 +71,14 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-json",
-        "title": "JSON",
-        "description": "Работа с JSON форматом",
-        "duration": "12:30",
-        "videoUrl": "xsfs",
-        "videoType": "external",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-work-with-data",
         "title": "Работа с данными",
         "description": "Продвинутые методы работы с данными",
         "duration": "12:30",
-        "isPrivate": false,
         "storagePath": "c36ea0b8-7c6c-4a4c-a70e-ce3c599c52c2.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-postgres",

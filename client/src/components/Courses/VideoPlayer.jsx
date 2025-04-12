@@ -307,15 +307,22 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       {videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl && (
         <>
           <div className={styles.videoContainer}>
-            <iframe 
-              src={getEmbedUrl(video.videoUrl)}
-              title={video.title}
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              className={styles.videoElement}
-            ></iframe>
+            {/* Проверка, что мы не находимся во вложенном iframe */}
+            {window.self === window.top ? (
+              <iframe 
+                src={getEmbedUrl(video.videoUrl)}
+                title={video.title}
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+                className={styles.videoElement}
+              ></iframe>
+            ) : (
+              <div className={styles.youtubeError}>
+                <p>Для просмотра YouTube видео, пожалуйста, перейдите на главную страницу и запустите видео заново.</p>
+              </div>
+            )}
           </div>
           <VideoInfo />
         </>

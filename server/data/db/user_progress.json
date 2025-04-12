@@ -29,7 +29,8 @@
   },
   "6": {
     "n8n-basics": {
-      "n8n-credentials": true
+      "n8n-credentials": true,
+      "n8n-flow": true
     }
   }
 }

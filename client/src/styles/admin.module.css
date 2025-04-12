@@ -65,6 +65,18 @@
   display: flex;
   gap: 0.75rem;
   margin-top: auto;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reorderButtons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.reorderButtons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .noCourses {

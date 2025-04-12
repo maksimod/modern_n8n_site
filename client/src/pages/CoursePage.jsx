@@ -200,10 +200,32 @@ const CoursePage = () => {
   }
 
   if (!course) {
+    // Проверка на вложенность в iframe, чтобы избежать бесконечной рекурсии
+    const isIframe = window.self !== window.top;
+    
+    if (isIframe) {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%', 
+          padding: '20px',
+          textAlign: 'center',
+          backgroundColor: '#fff'
+        }}>
+          <p>Ошибка: Курс не найден</p>
+        </div>
+      );
+    }
+    
     return (
       <>
         <Header />
-        <div className={styles.notFound}>Курс не найден</div>
+        <div className={styles.notFound}>
+          <p>Курс не найден</p>
+        </div>
       </>
     );
   }

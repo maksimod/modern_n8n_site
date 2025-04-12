@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getCourses, deleteCourse } from '../services/course.service';
+import { getCourses, deleteCourse, updateCoursePositions, createCourse } from '../services/course.service';
 import { deleteAllVideos } from '../services/admin.service';
 import Header from '../components/Layout/Header';
 import CourseEditor from '../components/Admin/CourseEditor';
@@ -128,6 +128,43 @@ const AdminDashboard = () => {
     }
   };
   
+  // Обработчик для перетаскивания курсов (перемещение вверх/вниз)
+  const handleReorderCourses = (courseId, direction) => {
+    const coursesCopy = [...courses];
+    const index = coursesCopy.findIndex(c => c.id === courseId);
+    
+    if (index === -1) return;
+    
+    if (direction === 'up' && index > 0) {
+      // Move course up
+      [coursesCopy[index], coursesCopy[index - 1]] = [coursesCopy[index - 1], coursesCopy[index]];
+    } else if (direction === 'down' && index < coursesCopy.length - 1) {
+      // Move course down
+      [coursesCopy[index], coursesCopy[index + 1]] = [coursesCopy[index + 1], coursesCopy[index]];
+    }
+    
+    // Обновить состояние
+    setCourses(coursesCopy);
+    
+    // Async call to update course positions on the server
+    const courseIds = coursesCopy.map(course => course.id);
+    updateCoursePositions(courseIds)
+      .catch(err => {
+        console.error('Error saving course positions:', err);
+        // В случае ошибки, просто восстанавливаем состояние, запрашивая курсы заново
+        setLoading(true);
+        getCourses(language)
+          .then(data => {
+            setCourses(data);
+            setLoading(false);
+          })
+          .catch(fetchErr => {
+            console.error('Failed to refresh courses after reordering error:', fetchErr);
+            setLoading(false);
+          });
+      });
+  };
+  
   if (loading) {
     return (
       <>
@@ -214,6 +251,28 @@ const AdminDashboard = () => {
                   >
                     {t('view')}
                   </button>
+                  
+                  <div className={styles.reorderButtons}>
+                    <button
+                      className={`${componentStyles.button} ${componentStyles.buttonSecondary}`}
+                      onClick={() => handleReorderCourses(course.id, 'up')}
+                      disabled={courses.indexOf(course) === 0}
+                      title={t('admin.moveUp')}
+                      style={{ padding: '0.375rem 0.75rem' }}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      className={`${componentStyles.button} ${componentStyles.buttonSecondary}`}
+                      onClick={() => handleReorderCourses(course.id, 'down')}
+                      disabled={courses.indexOf(course) === courses.length - 1}
+                      title={t('admin.moveDown')}
+                      style={{ padding: '0.375rem 0.75rem' }}
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  
                   <button 
                     className={`${componentStyles.button} ${componentStyles.buttonPrimary}`}
                     onClick={() => handleEditCourse(course)}

@@ -473,3 +473,34 @@
 .videoElement[loading="lazy"] {
   background-color: #000;
 }
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.notFound p {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #666;
+}
+
+.backButton {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  background-color: #4f46e5;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background-color: #4338ca;
+}

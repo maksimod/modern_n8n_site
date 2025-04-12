@@ -485,3 +485,16 @@ export const updateVideoPositions = async (courseId, videoIds) => {
     throw error;
   }
 };
+
+// Update course positions (reordering)
+export const updateCoursePositions = async (courseIds) => {
+  try {
+    const response = await api.put('/api/admin/courses/positions', { 
+      positions: courseIds 
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating course positions:', error);
+    throw error;
+  }
+};
