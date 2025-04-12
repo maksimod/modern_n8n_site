@@ -26,9 +26,20 @@ const CourseEditor = ({ course, onClose, language }) => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [isCreating, setIsCreating] = useState(!course);
   const [showVideoEditor, setShowVideoEditor] = useState(false);
   const [currentVideo, setCurrentVideo] = useState(null);
+  
+  // Сбрасываем сообщение об успехе через 5 секунд
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
   
   // Загружаем детали курса если редактируем существующий
   useEffect(() => {
@@ -101,6 +112,7 @@ const CourseEditor = ({ course, onClose, language }) => {
     
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
     
     try {
       // Создаем глубокую копию данных для отправки
@@ -112,8 +124,14 @@ const CourseEditor = ({ course, onClose, language }) => {
         await updateCourse(dataToSend.id, dataToSend);
       }
       
-      // Close the editor and refresh the course list
-      onClose(true);
+      // Показываем сообщение об успехе
+      setSuccessMessage(t('Course successfully saved'));
+      
+      // Закрываем редактор через короткую задержку
+      setTimeout(() => {
+        // Close the editor and refresh the course list
+        onClose(true);
+      }, 1000);
     } catch (err) {
       console.error('Error saving course:', err);
       setError(err.message || 'Failed to save course');
@@ -135,23 +153,62 @@ const CourseEditor = ({ course, onClose, language }) => {
   };
   
   // Close video editor
-  const handleCloseVideoEditor = (newVideo = null, isUpdate = false) => {
+  const handleCloseVideoEditor = async (newVideo = null, isUpdate = false) => {
     setShowVideoEditor(false);
     
-    // If we have a new/updated video, add it to the form data
+    // If we have a new/updated video, add it to the form data and save the course
     if (newVideo) {
-      setFormData(prev => {
-        if (isUpdate) {
-          // Update existing video
-          const updatedVideos = prev.videos.map(video => 
-            video.id === newVideo.id ? newVideo : video
-          );
-          return { ...prev, videos: updatedVideos };
-        } else {
-          // Add new video
-          return { ...prev, videos: [...prev.videos, newVideo] };
-        }
-      });
+      // Показываем состояние загрузки
+      setLoading(true);
+      setError(null);
+      setSuccessMessage(null);
+      
+      try {
+        // Обновляем локальное состояние
+        let updatedFormData;
+        setFormData(prev => {
+          let newFormData;
+          if (isUpdate) {
+            // Update existing video
+            const updatedVideos = prev.videos.map(video => 
+              video.id === newVideo.id ? newVideo : video
+            );
+            newFormData = { ...prev, videos: updatedVideos };
+          } else {
+            // Add new video
+            newFormData = { ...prev, videos: [...prev.videos, newVideo] };
+          }
+          
+          // Сохраняем для использования в API запросе
+          updatedFormData = newFormData;
+          return newFormData;
+        });
+        
+        // Даем немного времени для обновления состояния
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        // Автоматически сохраняем курс после изменения видео
+        console.log(`Auto-saving course after ${isUpdate ? 'updating' : 'adding'} video...`, newVideo.id);
+        
+        // Создаем глубокую копию данных для отправки
+        const dataToSend = updatedFormData || JSON.parse(JSON.stringify(formData));
+        
+        // Сохраняем курс на сервере
+        const saveResult = await updateCourse(dataToSend.id, dataToSend);
+        console.log('Course auto-saved after video change:', saveResult);
+        
+        // Показываем сообщение об успехе
+        setSuccessMessage(
+          isUpdate 
+            ? t('Video successfully updated and saved to the server')
+            : t('Video successfully added and saved to the server')
+        );
+      } catch (err) {
+        console.error(`Error auto-saving course after ${isUpdate ? 'updating' : 'adding'} video:`, err);
+        setError(`Video was added to the course, but there was an error saving to the server: ${err.message || 'Unknown error'}. Please try saving the course manually.`);
+      } finally {
+        setLoading(false);
+      }
     }
   };
   
@@ -282,6 +339,18 @@ const CourseEditor = ({ course, onClose, language }) => {
         {error && (
           <div className={styles.errorAlert}>
             {error}
+          </div>
+        )}
+        
+        {successMessage && (
+          <div className={styles.successAlert} style={{ 
+            backgroundColor: '#d1fae5', 
+            color: '#065f46', 
+            padding: '1rem',
+            borderRadius: '0.375rem',
+            marginBottom: '1rem'
+          }}>
+            {successMessage}
           </div>
         )}
         
