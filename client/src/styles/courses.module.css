@@ -508,13 +508,23 @@
 .youtubeWarning {
   background-color: #fff3cd;
   color: #856404;
-  padding: 10px 15px;
-  border-radius: 4px;
+  padding: 12px 15px;
+  border-radius: 6px;
   margin-bottom: 15px;
   border-left: 4px solid #ffc107;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .youtubeWarning p {
   margin: 0;
+}
+
+.youtubeWarning p::before {
+  content: "⚠️";
+  margin-right: 8px;
+  font-size: 18px;
 }

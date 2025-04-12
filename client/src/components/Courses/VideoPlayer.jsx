@@ -296,14 +296,14 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       {/* Внешнее видео (YouTube) */}
       {videoType === VIDEO_TYPES.EXTERNAL && video.videoUrl && (
         <>
+          {/* Проверка для YouTube видео - вынесена над контейнером */}
+          {video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
+            <div className={styles.youtubeWarning}>
+              <p>Внимание! Для просмотра видео с YouTube может потребоваться VPN.</p>
+            </div>
+          ) : null}
+          
           <div className={styles.videoContainer}>
-            {/* Проверка для YouTube видео */}
-            {video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
-              <div className={styles.youtubeWarning}>
-                <p>⚠️ Внимание! Для просмотра видео с YouTube может потребоваться VPN.</p>
-              </div>
-            ) : null}
-            
             {/* Проверка, что мы не находимся во вложенном iframe */}
             {window.self === window.top ? (
               <iframe 
