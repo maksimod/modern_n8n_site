@@ -9,6 +9,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const { STORAGE_CONFIG } = require('../config');
 const { uploadFileToStorage } = require('../utils/file-uploader');
+const { joinChunksEfficiently, cleanupChunks } = require('../utils/file-joiner');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
 
@@ -28,12 +29,12 @@ const tempStorage = multer.diskStorage({
   }
 });
 
-// Set up multer with very large size limits
+// Set up multer with size limits for chunks
 const upload = multer({
   storage: tempStorage,
   limits: { 
-    fileSize: 10000 * 1024 * 1024, // 10GB 
-    fieldSize: 100 * 1024 * 1024   // 100MB for field values
+    fileSize: 300 * 1024, // 300KB - с запасом для клиентского размера чанка
+    fieldSize: 1024 * 1024 // 1MB для значений полей
   }
 });
 
@@ -125,6 +126,10 @@ router.post('/init-upload', [auth, isAdmin], async (req, res) => {
 
 // Загрузка чанка
 router.post('/upload-chunk', [auth, isAdmin, upload.single('chunk')], async (req, res) => {
+  // Увеличиваем таймауты для больших чанков
+  req.setTimeout(120000); // 2 минуты
+  res.setTimeout(120000); // 2 минуты
+  
   try {
     const { sessionId, chunkIndex, totalChunks } = req.body;
     
@@ -181,21 +186,17 @@ router.post('/upload-chunk', [auth, isAdmin, upload.single('chunk')], async (req
   }
 });
 
-// Завершение загрузки и объединение чанков
+// Маршрут для финализации загрузки
 router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
+  const { sessionId, originalName } = req.body;
+  
+  // Увеличиваем таймауты запроса/ответа
+  req.setTimeout(600000); // 10 минут
+  res.setTimeout(600000); // 10 минут
+  
   try {
-    const { sessionId, originalName } = req.body;
-    
-    if (!sessionId) {
+    if (!sessionId || !uploadSessions[sessionId]) {
       return res.status(400).json({
-        success: false,
-        message: 'Missing sessionId'
-      });
-    }
-    
-    // Проверяем существование сессии
-    if (!uploadSessions[sessionId]) {
-      return res.status(404).json({
         success: false,
         message: 'Upload session not found'
       });
@@ -214,15 +215,8 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
       });
     }
     
-    // Создаем временный файл для объединения
-    const fileExt = path.extname(session.fileName);
-    const tempFileName = `${uuidv4()}${fileExt}`;
-    const tempFilePath = path.join(__dirname, '../temp', tempFileName);
-    
-    // Объединяем чанки
-    const writeStream = fs.createWriteStream(tempFilePath);
-    
-    // Записываем чанки по порядку
+    // Создаем массив путей к чанкам в правильном порядке
+    const chunkPaths = [];
     for (let i = 0; i < session.totalChunks; i++) {
       if (!session.chunks[i]) {
         return res.status(400).json({
@@ -230,120 +224,181 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
           message: `Missing chunk ${i}`
         });
       }
-      
-      // Синхронное добавление чанка в файл
-      try {
-        const chunkData = fs.readFileSync(session.chunks[i].path);
-        writeStream.write(chunkData);
-      } catch (error) {
-        console.error(`Error reading chunk ${i}:`, error);
-        return res.status(500).json({
-          success: false,
-          message: `Error reading chunk ${i}: ${error.message}`
-        });
-      }
+      chunkPaths.push(session.chunks[i].path);
     }
     
-    // Ждем завершения записи
-    await new Promise((resolve, reject) => {
-      writeStream.on('finish', resolve);
-      writeStream.on('error', reject);
-      writeStream.end();
+    // Создаем временный файл для объединения
+    const fileExt = path.extname(session.fileName);
+    const tempFileName = `${uuidv4()}${fileExt}`;
+    const tempFilePath = path.join(__dirname, '../temp', tempFileName);
+    
+    // Обновляем статус сессии
+    session.status = 'processing';
+    session.processedChunks = 0;
+    session.tempFilePath = tempFilePath;
+    session.tempFileName = tempFileName;
+    
+    // Отвечаем клиенту немедленно
+    res.json({
+      success: true,
+      message: 'File assembly started in background',
+      status: 'processing',
+      sessionId: sessionId,
+      fileName: originalName || session.fileName,
+      totalChunks: session.totalChunks
     });
     
-    console.log(`All chunks combined to: ${tempFilePath}`);
-    
-    try {
-      // Override storage config if session has explicit flag
-      const useRemoteStorage = session.useLocalStorage === true ? false : STORAGE_CONFIG.USE_REMOTE_STORAGE;
-      
-      console.log(`Upload destination: ${useRemoteStorage ? 'REMOTE STORAGE' : 'LOCAL STORAGE'}`);
-      
-      // Загружаем объединенный файл в хранилище
-      const uploadResult = await uploadFileToStorage(
-        tempFilePath,
-        tempFileName,
-        originalName || session.fileName,
-        session.fileSize
-      );
-      
-      console.log('Storage upload result:', uploadResult);
-      
-      // Очищаем директорию с чанками
+    // Запускаем процесс обработки в фоновом режиме
+    (async () => {
       try {
-        for (let i = 0; i < session.totalChunks; i++) {
-          if (session.chunks[i] && fs.existsSync(session.chunks[i].path)) {
-            fs.unlinkSync(session.chunks[i].path);
+        // Используем нашу оптимизированную функцию для объединения файлов
+        await joinChunksEfficiently(
+          chunkPaths, 
+          tempFilePath, 
+          (processed, total) => {
+            session.processedChunks = processed;
+            console.log(`Processing chunks: ${processed}/${total}`);
           }
-        }
-        fs.rmdirSync(session.sessionDir);
+        );
+        
+        console.log(`All chunks combined to: ${tempFilePath}`);
+        
+        // Override storage config if session has explicit flag
+        const useRemoteStorage = session.useLocalStorage === true ? false : STORAGE_CONFIG.USE_REMOTE_STORAGE;
+        
+        console.log(`Upload destination: ${useRemoteStorage ? 'REMOTE STORAGE' : 'LOCAL STORAGE'}`);
+        
+        // Загружаем объединенный файл в хранилище
+        const uploadResult = await uploadFileToStorage(
+          tempFilePath,
+          tempFileName,
+          originalName || session.fileName,
+          session.fileSize
+        );
+        
+        console.log('Storage upload result:', uploadResult);
+        
+        // Очищаем временные файлы
+        await cleanupChunks(chunkPaths, session.sessionDir);
         
         // Удаляем объединенный файл
         if (fs.existsSync(tempFilePath)) {
           fs.unlinkSync(tempFilePath);
         }
-      } catch (cleanupError) {
-        console.error('Error cleaning up temp files:', cleanupError);
-      }
-      
-      // Удаляем сессию
-      delete uploadSessions[sessionId];
-      
-      // Возвращаем результат
-      return res.json({
-        success: true,
-        message: 'File uploaded successfully',
-        filePath: uploadResult.filePath,
-        originalName: uploadResult.originalName,
-        videoType: uploadResult.videoType || (useRemoteStorage ? 'storage' : 'local'),
-        size: session.fileSize
-      });
-    } catch (uploadError) {
-      console.error('Error uploading to storage:', uploadError);
-      
-      // Attempt local storage as fallback if we haven't already
-      if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !session.useLocalStorage) {
-        console.log('Trying local storage as fallback for failed remote upload...');
-        try {
-          // Force local storage
-          session.useLocalStorage = true;
-          
-          // Try to upload locally
-          const localResult = await uploadFileToStorage(
-            tempFilePath,
-            tempFileName,
-            originalName || session.fileName,
-            session.fileSize
-          );
-          
-          console.log('Local storage fallback result:', localResult);
-          
-          // Cleanup and return result
+        
+        // Сохраняем результат в сессии и обновляем статус
+        session.status = 'completed';
+        session.result = {
+          success: true,
+          message: 'File uploaded successfully',
+          filePath: uploadResult.filePath,
+          originalName: uploadResult.originalName,
+          videoType: uploadResult.videoType || (useRemoteStorage ? 'storage' : 'local'),
+          size: session.fileSize
+        };
+        
+        // Планируем удаление сессии через 30 минут
+        session.cleanupTimeout = setTimeout(() => {
+          console.log(`Cleaning up completed upload session ${sessionId}`);
           delete uploadSessions[sessionId];
-          
-          return res.json({
-            success: true,
-            message: 'File uploaded successfully to local storage (fallback)',
-            filePath: localResult.filePath,
-            originalName: localResult.originalName,
-            videoType: 'local',
-            size: session.fileSize
-          });
+        }, 30 * 60 * 1000);
+        
+      } catch (error) {
+        console.error('Error in background processing:', error);
+        
+        // Проверяем возможность использования локального хранилища как запасной вариант
+        try {
+          if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !session.useLocalStorage && fs.existsSync(tempFilePath)) {
+            console.log('Trying local storage as fallback for failed remote upload...');
+            
+            // Force local storage
+            session.useLocalStorage = true;
+            
+            // Try to upload locally
+            const localResult = await uploadFileToStorage(
+              tempFilePath,
+              tempFileName,
+              originalName || session.fileName,
+              session.fileSize
+            );
+            
+            console.log('Local storage fallback result:', localResult);
+            
+            // Обновляем статус и результат
+            session.status = 'completed';
+            session.result = {
+              success: true,
+              message: 'File uploaded successfully to local storage (fallback)',
+              filePath: localResult.filePath,
+              originalName: localResult.originalName,
+              videoType: 'local',
+              size: session.fileSize
+            };
+            
+            // Планируем удаление сессии через 30 минут
+            session.cleanupTimeout = setTimeout(() => {
+              delete uploadSessions[sessionId];
+            }, 30 * 60 * 1000);
+            
+            return;
+          }
         } catch (fallbackError) {
           console.error('Even local storage fallback failed:', fallbackError);
         }
+        
+        // Обновляем статус в случае ошибки
+        session.status = 'failed';
+        session.error = error.message || 'Unknown error during file assembly';
+        
+        // Планируем удаление сессии через 30 минут
+        session.cleanupTimeout = setTimeout(() => {
+          delete uploadSessions[sessionId];
+        }, 30 * 60 * 1000);
       }
-      
-      return res.status(500).json({
-        success: false,
-        message: `Storage upload error: ${uploadError.message}`
-      });
-    }
+    })();
   } catch (error) {
-    console.error('Error finalizing upload:', error);
+    console.error('Error initiating finalize upload:', error);
     return res.status(500).json({
       success: false,
       message: `Server error: ${error.message}`
+    });
+  }
+});
+
+// Новый маршрут для проверки статуса загрузки
+router.get('/upload-status/:sessionId', [auth, isAdmin], (req, res) => {
+  const { sessionId } = req.params;
+  
+  if (!sessionId || !uploadSessions[sessionId]) {
+    return res.status(404).json({
+      success: false,
+      message: 'Session not found or expired'
+    });
+  }
+  
+  const session = uploadSessions[sessionId];
+  
+  if (session.status === 'completed' && session.result) {
+    return res.json({
+      success: true,
+      status: 'completed',
+      ...session.result
+    });
+  } else if (session.status === 'failed') {
+    return res.status(500).json({
+      success: false,
+      status: 'failed',
+      message: session.error || 'Unknown error during file assembly'
+    });
+  } else {
+    // В процессе обработки
+    return res.json({
+      success: true,
+      status: 'processing',
+      progress: {
+        chunksProcessed: session.processedChunks || 0,
+        totalChunks: session.totalChunks || 0
+      }
     });
   }
 });

@@ -30,8 +30,8 @@ app.use(cors({
 }));
 
 // Увеличиваем лимит размера запроса
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '1gb' }));
+app.use(express.urlencoded({ extended: true, limit: '1gb' }));
 
 // Логирование запросов
 app.use(morgan('dev'));

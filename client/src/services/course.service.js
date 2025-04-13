@@ -274,35 +274,19 @@ export const deleteVideo = async (courseId, videoId, language = 'ru') => {
 // Upload video file
 export const uploadVideoFile = async (file, onProgress) => {
   try {
-    // Проверка размера файла
-    const maxSizeInMB = 2000; // Увеличиваем лимит до 2GB
-    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
-    
-    if (file.size > maxSizeInBytes) {
-      console.error('File too large:', file.size);
-      return {
-        success: false,
-        message: `Файл слишком большой (${Math.round(file.size / (1024 * 1024))}MB). Максимальный размер ${maxSizeInMB}MB.`
-      };
-    }
-    
-    console.log('Загрузка файла:', file.name, 'размер:', Math.round(file.size / 1024), 'KB');
-    
-    // Получаем конфигурацию хранилища из конфига
-    const { STORAGE_CONFIG } = await import('../config');
-    console.log('Using storage config:', STORAGE_CONFIG);
-    
-    // Инициализация загрузки файла (получаем ID сессии)
+    // Инициализируем сессию загрузки
     const sessionData = await initializeUpload(file.name, file.size);
     if (!sessionData.success) {
-      throw new Error(sessionData.message || 'Failed to initialize upload');
+      throw new Error(`Ошибка инициализации загрузки: ${sessionData.message}`);
     }
     
     console.log('Initialized upload session:', sessionData);
     
-    // Размер чанка (500KB) - достаточно маленький, чтобы пройти через nginx
-    const CHUNK_SIZE = 500 * 1024;
+    // Используем оптимальный размер чанка - баланс между размером и количеством запросов
+    const CHUNK_SIZE = 256 * 1024; // 256KB - уменьшит количество чанков в ~2.5 раза
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    
+    console.log(`Загрузка файла размером ${file.size} байт в ${totalChunks} чанках по ${CHUNK_SIZE} байт каждый`);
     
     // Загрузка файла по частям
     for (let i = 0; i < totalChunks; i++) {
@@ -316,7 +300,7 @@ export const uploadVideoFile = async (file, onProgress) => {
         onProgress(progress);
       }
       
-      // Загружаем чанк
+      // Загружаем чанк с увеличенным таймаутом
       const chunkResult = await uploadChunk(
         sessionData.sessionId, 
         chunk, 
@@ -332,8 +316,41 @@ export const uploadVideoFile = async (file, onProgress) => {
     }
     
     // Завершаем загрузку и объединяем чанки на сервере
-    const finalizeResult = await finalizeUpload(sessionData.sessionId, file.name);
-    if (!finalizeResult.success) {
+    let finalizeResult = await finalizeUpload(sessionData.sessionId, file.name);
+    
+    if (finalizeResult.status === 'processing') {
+      // Если финализация происходит асинхронно, начинаем опрос статуса
+      console.log('File assembly started in background, polling for status...');
+      
+      let uploadStatus = finalizeResult;
+      let attempts = 0;
+      const maxAttempts = 120; // Максимум 2 часа при интервале 60 секунд
+      
+      while (uploadStatus.status === 'processing' && attempts < maxAttempts) {
+        // Ждем 60 секунд перед следующей проверкой
+        await new Promise(resolve => setTimeout(resolve, 60000));
+        
+        // Проверяем статус
+        uploadStatus = await checkUploadStatus(sessionData.sessionId);
+        attempts++;
+        
+        console.log(`Check upload status (attempt ${attempts}/${maxAttempts}):`, uploadStatus);
+        
+        // Обновляем индикатор прогресса для пользователя
+        if (onProgress && uploadStatus.progress) {
+          const finalizingProgress = 90 + Math.round((uploadStatus.progress.chunksProcessed / uploadStatus.progress.totalChunks) * 10);
+          onProgress(finalizingProgress);
+        }
+      }
+      
+      // Проверяем окончательный статус
+      if (uploadStatus.status !== 'completed') {
+        throw new Error(`Ошибка финализации загрузки: ${uploadStatus.message || 'Превышено время ожидания'}`);
+      }
+      
+      // Используем результат последней проверки
+      finalizeResult = uploadStatus;
+    } else if (!finalizeResult.success) {
       throw new Error(`Ошибка финализации загрузки: ${finalizeResult.message}`);
     }
     
@@ -350,7 +367,7 @@ export const uploadVideoFile = async (file, onProgress) => {
       message: 'Файл успешно загружен',
       filePath: finalizeResult.filePath,
       fileName: finalizeResult.originalName || file.name,
-      videoType: STORAGE_CONFIG.USE_REMOTE_STORAGE ? 'storage' : 'local'
+      videoType: finalizeResult.videoType || 'local'
     };
   } catch (error) {
     console.error('Ошибка загрузки файла:', error);
@@ -381,6 +398,8 @@ const initializeUpload = async (fileName, fileSize) => {
 // Загрузка одного чанка
 const uploadChunk = async (sessionId, chunk, chunkIndex, totalChunks) => {
   try {
+    console.log(`Uploading chunk ${chunkIndex+1}/${totalChunks}, size: ${chunk.size} bytes`);
+    
     const formData = new FormData();
     formData.append('sessionId', sessionId);
     formData.append('chunkIndex', chunkIndex);
@@ -390,7 +409,8 @@ const uploadChunk = async (sessionId, chunk, chunkIndex, totalChunks) => {
     const response = await api.post('/api/storage/upload-chunk', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      }
+      },
+      timeout: 60000 // Увеличенный таймаут до 60 секунд для загрузки больших чанков
     });
     
     return response.data;
@@ -409,12 +429,31 @@ const finalizeUpload = async (sessionId, originalName) => {
     const response = await api.post('/api/storage/finalize-upload', {
       sessionId,
       originalName
+    }, {
+      timeout: 600000 // Увеличенный таймаут до 10 минут для финализации
     });
     return response.data;
   } catch (error) {
     console.error('Error finalizing upload:', error);
     return {
       success: false,
+      message: error.response?.data?.message || error.message
+    };
+  }
+};
+
+// Новая функция для проверки статуса загрузки
+const checkUploadStatus = async (sessionId) => {
+  try {
+    const response = await api.get(`/api/storage/upload-status/${sessionId}`, {
+      timeout: 30000 // 30 секунд таймаут
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error checking upload status:', error);
+    return {
+      success: false,
+      status: 'failed',
       message: error.response?.data?.message || error.message
     };
   }

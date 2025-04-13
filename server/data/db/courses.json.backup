@@ -29,9 +29,11 @@
         "title": "Credentials",
         "description": "Настройка учетных данных",
         "duration": "12:30",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "e1cfcfb6-3289-4ff3-a0f2-b2dee6165032.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       },
       {
         "id": "n8n-flow",
@@ -101,11 +103,10 @@
         "title": "trestim",
         "description": "",
         "duration": "",
-        "isPrivate": false,
         "storagePath": "ae90dfc7-86c9-4b55-835f-b0c2bb027ce3.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
       }
     ]
   },
