@@ -441,23 +441,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
     </div>
   );
 
-  // Компонент для отображения информации о загрузке чанков
-  const ChunkLoadingInfo = () => (
-    <div className={styles.chunkInfo || "chunk-info"} style={{
-      position: 'absolute',
-      bottom: '10px',
-      left: '10px',
-      background: 'rgba(0,0,0,0.7)',
-      color: 'white',
-      padding: '5px 10px',
-      borderRadius: '4px',
-      fontSize: '12px',
-      zIndex: 10
-    }}>
-      <div>Загружено: ~{chunksLoaded} чанков</div>
-      <div>Буфер: {currentBuffer || 'загрузка...'}</div>
-    </div>
-  );
 
   // Если мы в режиме текстового урока (по умолчанию или после ошибок)
   if (videoType === VIDEO_TYPES.TEXT || fallbackToText) {
@@ -519,9 +502,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
                 <strong>Тест успешен!</strong> Воспроизведен 10-секундный чанк видео.
               </div>
             )}
-            
-            {/* Добавляем информацию о загрузке чанков */}
-            <ChunkLoadingInfo />
           </div>
           
           {error && !testLimitReached && (
@@ -600,9 +580,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
                 <strong>Тест успешен!</strong> Воспроизведен 10-секундный чанк видео.
               </div>
             )}
-            
-            {/* Добавляем информацию о загрузке чанков */}
-            <ChunkLoadingInfo />
           </div>
           {error && !testLimitReached && (
             <div className={styles.errorMessage}>

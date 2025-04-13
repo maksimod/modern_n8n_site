@@ -28,12 +28,12 @@
         "id": "n8n-credentials",
         "title": "Credentials",
         "description": "Настройка учетных данных",
+        "videoType": "text",
         "duration": "12:30",
-        "isPrivate": false,
-        "storagePath": "e1cfcfb6-3289-4ff3-a0f2-b2dee6165032.mp4",
         "localVideo": "",
+        "storagePath": "",
         "videoUrl": "",
-        "videoType": "storage"
+        "isPrivate": false
       },
       {
         "id": "n8n-flow",
@@ -95,16 +95,6 @@
         "description": "Настройка Telegram триггера",
         "duration": "12:30",
         "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
-        "id": "4892a458-fd31-4212-b852-cab49240929a",
-        "title": "trestim",
-        "description": "",
-        "duration": "",
-        "storagePath": "ae90dfc7-86c9-4b55-835f-b0c2bb027ce3.mp4",
-        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       }
