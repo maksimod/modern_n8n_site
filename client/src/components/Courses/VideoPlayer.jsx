@@ -1,5 +1,5 @@
 // client/src/components/Courses/VideoPlayer.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProgress } from '../../contexts/ProgressContext';
@@ -15,6 +15,15 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const [fallbackToText, setFallbackToText] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [connectionSpeed, setConnectionSpeed] = useState('high'); // 'low', 'medium', 'high'
+  const videoRef = useRef(null);
+  const downloadStartTime = useRef(null);
+  const downloadedBytes = useRef(0);
+  const [testLimitReached, setTestLimitReached] = useState(false);
+  const [chunksLoaded, setChunksLoaded] = useState(0);
+  const [currentBuffer, setCurrentBuffer] = useState('');
 
   // Определение типа видео
   const detectVideoType = useCallback((videoData) => {
@@ -113,10 +122,68 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
   // Получение URL для хранилища
   const getStorageVideoUrl = useCallback((storagePath) => {
     if (!storagePath) return '';
+    
+    // Очищаем путь от потенциальных префиксов
     const cleanPath = storagePath.replace(/^\/videos\//, '');
+    
+    // Добавляем timestamp для предотвращения кэширования
     const timestamp = new Date().getTime();
+    
+    // Формируем правильный URL для прокси, который обращается к обновлённому API хранилища
+    // Здесь важно: путь к файлу теперь передаётся как часть URL, а не как query параметр
     return `/api/proxy/storage/${encodeURIComponent(cleanPath)}?t=${timestamp}`;
   }, []);
+
+  // Функция для предзагрузки следующего видео
+  const preloadNextVideo = useCallback(() => {
+    if (!course || !course.videos || !video) return;
+    
+    // Находим текущее видео в списке курса
+    const currentIndex = course.videos.findIndex(v => v.id === video.id);
+    if (currentIndex === -1 || currentIndex >= course.videos.length - 1) return;
+    
+    // Получаем следующее видео
+    const nextVideo = course.videos[currentIndex + 1];
+    if (!nextVideo) return;
+    
+    // Определяем тип следующего видео для предзагрузки
+    const nextVideoType = detectVideoType(nextVideo);
+    
+    // Создаем ссылку на ресурс для предзагрузки
+    let preloadUrl = '';
+    
+    if (nextVideoType === VIDEO_TYPES.STORAGE && nextVideo.storagePath) {
+      preloadUrl = getStorageVideoUrl(nextVideo.storagePath);
+    } else if (nextVideoType === VIDEO_TYPES.LOCAL && nextVideo.localVideo) {
+      preloadUrl = `${SERVER_URL}/videos/${nextVideo.localVideo.replace(/^\/videos\//, '')}`;
+    } else if (nextVideoType === VIDEO_TYPES.EXTERNAL && nextVideo.videoUrl) {
+      // Для YouTube и других внешних ресурсов предзагрузка не требуется
+      return;
+    }
+    
+    if (!preloadUrl) return;
+    
+    // Создаем элемент link для предзагрузки
+    const linkEl = document.createElement('link');
+    linkEl.rel = 'preload';
+    linkEl.as = 'video';
+    linkEl.href = preloadUrl;
+    
+    // Добавляем элемент в head
+    document.head.appendChild(linkEl);
+    
+    console.log(`Preloading next video: ${nextVideo.title}`);
+  }, [course, video, detectVideoType, getStorageVideoUrl]);
+  
+  // Запускаем предзагрузку следующего видео при монтировании
+  useEffect(() => {
+    // Небольшая задержка для приоритета загрузки текущего видео
+    const timer = setTimeout(() => {
+      preloadNextVideo();
+    }, 5000); // 5 секунд задержки для приоритета текущего видео
+    
+    return () => clearTimeout(timer);
+  }, [preloadNextVideo]);
 
   // Обработчик для скачивания видео
   const handleDownload = () => {
@@ -172,6 +239,181 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
     return url;
   };
 
+  // Обработчик буферизации для локальных видео
+  const handleBuffering = useCallback((e) => {
+    if (!videoRef.current) return;
+    
+    const video = videoRef.current;
+    if (video.readyState < 3) { // HAVE_FUTURE_DATA = 3
+      setIsBuffering(true);
+    } else {
+      setIsBuffering(false);
+    }
+    
+    // Рассчитываем прогресс загрузки
+    if (video.buffered.length > 0) {
+      const bufferedEnd = video.buffered.end(video.buffered.length - 1);
+      const duration = video.duration;
+      const progress = (bufferedEnd / duration) * 100;
+      setLoadProgress(progress);
+    }
+  }, []);
+  
+  // Функция для определения скорости соединения
+  const measureConnectionSpeed = useCallback((progressEvent) => {
+    if (!downloadStartTime.current) {
+      downloadStartTime.current = Date.now();
+      downloadedBytes.current = 0;
+      return;
+    }
+    
+    // Получаем количество загруженных байт и затраченное время
+    const currentBytes = progressEvent.loaded;
+    const bytesDelta = currentBytes - downloadedBytes.current;
+    downloadedBytes.current = currentBytes;
+    
+    const currentTime = Date.now();
+    const timeDelta = currentTime - downloadStartTime.current;
+    
+    // Если прошло достаточно времени для измерения
+    if (timeDelta >= 1000) { // 1 секунда
+      // Рассчитываем скорость в байтах в секунду
+      const bytesPerSecond = (downloadedBytes.current / timeDelta) * 1000;
+      const kilobytesPerSecond = bytesPerSecond / 1024;
+      
+      // Определяем качество соединения
+      let newSpeed;
+      if (kilobytesPerSecond < 200) {
+        newSpeed = 'low';
+      } else if (kilobytesPerSecond < 1000) {
+        newSpeed = 'medium';
+      } else {
+        newSpeed = 'high';
+      }
+      
+      if (newSpeed !== connectionSpeed) {
+        setConnectionSpeed(newSpeed);
+        adjustVideoQuality(newSpeed);
+      }
+      
+      // Сбрасываем для нового измерения
+      downloadStartTime.current = currentTime;
+      downloadedBytes.current = 0;
+    }
+  }, [connectionSpeed]);
+  
+  // Функция для адаптации качества видео
+  const adjustVideoQuality = useCallback((speed) => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    console.log(`Adjusting video quality based on connection speed: ${speed}`);
+    
+    switch (speed) {
+      case 'low':
+        // Для слабого соединения
+        video.playbackQuality = 'low';
+        video.preload = 'metadata'; // Только метаданные
+        break;
+      case 'medium':
+        // Для среднего соединения
+        video.playbackQuality = 'medium';
+        video.preload = 'auto';
+        break;
+      case 'high':
+        // Для хорошего соединения
+        video.playbackQuality = 'high';
+        video.preload = 'auto';
+        break;
+      default:
+        break;
+    }
+  }, []);
+  
+  // Функция отслеживания загрузки чанков видео
+  const handleProgress = useCallback((e) => {
+    const video = e.target;
+    if (!video || !video.buffered || video.buffered.length === 0) return;
+    
+    // Собираем информацию о буферизации
+    const bufferInfo = [];
+    for (let i = 0; i < video.buffered.length; i++) {
+      const start = Math.floor(video.buffered.start(i));
+      const end = Math.floor(video.buffered.end(i));
+      bufferInfo.push(`${start}с-${end}с`);
+    }
+    
+    // Вычисляем сколько чанков загружено (примерно)
+    const lastEnd = Math.floor(video.buffered.end(video.buffered.length - 1));
+    const approxChunks = Math.ceil(lastEnd / 5); // Примерно 5 секунд на чанк
+    
+    setCurrentBuffer(bufferInfo.join(', '));
+    setChunksLoaded(approxChunks);
+    
+    // Если загрузили хотя бы 2 секунды и видео ещё не играет - автоматически запускаем
+    if (lastEnd >= 2 && video.paused && video.readyState >= 3) {
+      try {
+        video.play().catch(err => console.log("Автозапуск не сработал:", err));
+      } catch (err) {
+        console.log("Ошибка при автозапуске:", err);
+      }
+    }
+    
+    console.log(`ЧАНКИ: Загружено ~${approxChunks} чанков, буферы: ${bufferInfo.join(', ')}`);
+  }, []);
+
+  // Добавляем обработчик для тестового ограничения в 10 секунд
+  const handleVideoEnded = useCallback((e) => {
+    console.log('Video playback ended or stalled');
+    
+    // Проверяем, не закончился ли тестовый чанк
+    if (videoRef.current && videoRef.current.currentTime > 0) {
+      setTestLimitReached(true);
+      console.log('Тестовое ограничение: 10-секундный чанк воспроизведен');
+    }
+  }, []);
+
+  // Добавляем обработчик для ошибок загрузки после начала воспроизведения
+  const handleVideoStalled = useCallback((e) => {
+    console.log('Video stalled or buffering event');
+    
+    // Если видео уже что-то воспроизвело и затем остановилось, предполагаем что достигли конца тестового чанка
+    if (videoRef.current && videoRef.current.currentTime > 5) { // если проиграли хотя бы 5 секунд
+      setTestLimitReached(true);
+      console.log('Тестовое ограничение: воспроизведение прервано после частичной загрузки');
+    }
+  }, []);
+
+  // Установка слушателей для видео
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const events = ['loadeddata', 'waiting', 'canplay', 'canplaythrough', 'playing', 'timeupdate'];
+    
+    events.forEach(event => {
+      video.addEventListener(event, handleBuffering);
+    });
+    
+    // Добавляем слушатели для тестового режима
+    video.addEventListener('ended', handleVideoEnded);
+    video.addEventListener('stalled', handleVideoStalled);
+    video.addEventListener('error', handleVideoEnded);
+    
+    // Добавляем слушатель для события progress
+    video.addEventListener('progress', handleProgress);
+    
+    return () => {
+      events.forEach(event => {
+        video.removeEventListener(event, handleBuffering);
+      });
+      video.removeEventListener('progress', handleProgress);
+      video.removeEventListener('ended', handleVideoEnded);
+      video.removeEventListener('stalled', handleVideoStalled);
+      video.removeEventListener('error', handleVideoEnded);
+    };
+  }, [handleBuffering, handleProgress, handleVideoEnded, handleVideoStalled]);
+
   if (!video) {
     return <div className={styles.selectVideo}>{t('selectVideo')}</div>;
   }
@@ -196,6 +438,24 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       >
         {completed ? t('course.completed') : t('course.markCompleted')}
       </button>
+    </div>
+  );
+
+  // Компонент для отображения информации о загрузке чанков
+  const ChunkLoadingInfo = () => (
+    <div className={styles.chunkInfo || "chunk-info"} style={{
+      position: 'absolute',
+      bottom: '10px',
+      left: '10px',
+      background: 'rgba(0,0,0,0.7)',
+      color: 'white',
+      padding: '5px 10px',
+      borderRadius: '4px',
+      fontSize: '12px',
+      zIndex: 10
+    }}>
+      <div>Загружено: ~{chunksLoaded} чанков</div>
+      <div>Буфер: {currentBuffer || 'загрузка...'}</div>
     </div>
   );
 
@@ -232,15 +492,39 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
               controls
               className={styles.videoElement}
               playsInline
+              preload="metadata"
               onError={handleVideoError}
               onCanPlay={() => setError(null)}
+              onProgress={handleProgress}
             >
-              <source src={getStorageVideoUrl(video.storagePath)} type="video/mp4" />
+              <source 
+                src={`${getStorageVideoUrl(video.storagePath)}&_force_chunks=1&_t=${Date.now()}`} 
+                type="video/mp4"
+              />
               {t('course.browserNotSupportVideo')}
             </video>
+            
+            {/* Индикатор тестового ограничения */}
+            {testLimitReached && (
+              <div className={styles.testLimitMessage || 'test-limit-message'} style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                background: 'rgba(0,0,0,0.7)',
+                color: 'white',
+                padding: '10px',
+                borderRadius: '5px',
+                zIndex: 100
+              }}>
+                <strong>Тест успешен!</strong> Воспроизведен 10-секундный чанк видео.
+              </div>
+            )}
+            
+            {/* Добавляем информацию о загрузке чанков */}
+            <ChunkLoadingInfo />
           </div>
           
-          {error && (
+          {error && !testLimitReached && (
             <div className={styles.errorMessage}>
               {error}
               <button 
@@ -269,16 +553,58 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       {(videoType === VIDEO_TYPES.LOCAL && video.localVideo) || 
        (videoType === VIDEO_TYPES.STORAGE && video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE) ? (
         <>
+          {/* Проверка YouTube перенесена выше контейнера видео */}
           <div className={styles.videoContainer}>
             <video 
-              src={`${SERVER_URL}/videos/${(video.localVideo || video.storagePath).replace(/^\/videos\//, '')}`}
+              ref={videoRef}
               controls
               className={styles.videoElement}
               playsInline
+              preload="metadata"
               onError={handleVideoError}
-            ></video>
+              onCanPlay={() => setError(null)}
+              controlsList="nodownload"
+              autoPlay={false}
+              key={`video-${video.id}-${Date.now()}`}
+              onProgress={handleProgress}
+            >
+              <source 
+                src={`${SERVER_URL}/videos/${(video.localVideo || video.storagePath).replace(/^\/videos\//, '')}?_force_chunks=1&_t=${Date.now()}`} 
+                type="video/mp4"
+              />
+              {t('course.browserNotSupportVideo')}
+            </video>
+            
+            {/* Индикатор загрузки перед началом воспроизведения */}
+            {isBuffering && !testLimitReached && <div className={styles.loadingIndicator}></div>}
+            
+            {/* Прогресс загрузки */}
+            <div 
+              className={styles.loadProgress} 
+              style={{ width: `${loadProgress}%` }}
+              aria-hidden="true"
+            ></div>
+            
+            {/* Индикатор тестового ограничения */}
+            {testLimitReached && (
+              <div className={styles.testLimitMessage || 'test-limit-message'} style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                background: 'rgba(0,0,0,0.7)',
+                color: 'white',
+                padding: '10px',
+                borderRadius: '5px',
+                zIndex: 100
+              }}>
+                <strong>Тест успешен!</strong> Воспроизведен 10-секундный чанк видео.
+              </div>
+            )}
+            
+            {/* Добавляем информацию о загрузке чанков */}
+            <ChunkLoadingInfo />
           </div>
-          {error && (
+          {error && !testLimitReached && (
             <div className={styles.errorMessage}>
               {error}
               <button 

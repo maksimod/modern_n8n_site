@@ -178,12 +178,13 @@ async function saveFileLocally(tempFilePath, fileName, originalName, fileSize) {
 /**
  * Получает файл из хранилища
  * @param {string} filePath Путь к файлу в хранилище
- * @returns {Promise<Buffer>} Буфер с содержимым файла
+ * @param {string} rangeHeader Заголовок Range для частичной загрузки
+ * @returns {Promise<Object>} Результат запроса с данными и заголовками
  */
-async function getFileFromStorage(filePath) {
+async function getFileFromStorage(filePath, rangeHeader) {
   if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
     try {
-      console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Загрузка файла: ${filePath}`);
+      console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Загрузка файла: ${filePath} с диапазоном: ${rangeHeader || 'нет'}`);
       
       // Формируем URL для запроса с правильным кодированием параметра пути
       const apiUrl = `${STORAGE_CONFIG.API_URL}/download`;
@@ -191,45 +192,121 @@ async function getFileFromStorage(filePath) {
       
       console.log(`Запрос к API: ${apiUrl}?filePath=${encodeURIComponent(filePath)}`);
       
-      // Пробуем прямой запрос через axios
-      try {
-        const response = await axios({
-          method: 'GET',
-          url: apiUrl,
-          params: { filePath },
-          headers: {
-            'X-API-KEY': apiKey
-          },
-          responseType: 'arraybuffer'
-        });
-        
-        console.log(`Ответ получен, статус: ${response.status}, размер: ${response.data ? response.data.length : 'N/A'} байт`);
-        
-        return response.data;
-      } catch (error) {
-        console.error('Ошибка при получении файла:', error.message);
-        
-        if (error.response) {
-          console.error('Статус ответа:', error.response.status);
-        }
-        
-        throw error;
+      // Настраиваем опции запроса
+      const options = {
+        method: 'GET',
+        url: apiUrl,
+        params: { filePath },
+        headers: {
+          'X-API-KEY': apiKey,
+          'Accept': 'video/mp4, application/octet-stream'
+        },
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 секунд таймаут
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+      };
+      
+      // Добавляем заголовок Range если он есть
+      if (rangeHeader) {
+        options.headers['Range'] = rangeHeader;
+        console.log(`[УДАЛЕННОЕ ХРАНИЛИЩЕ] Добавлен заголовок Range: ${rangeHeader}`);
       }
+      
+      // Пробуем прямой запрос через axios
+      const response = await axios(options);
+      
+      console.log(`Ответ получен, статус: ${response.status}, размер: ${response.data ? response.data.length : 'N/A'} байт`);
+      console.log(`Заголовки ответа:`, response.headers);
+      
+      return {
+        data: response.data,
+        headers: response.headers,
+        status: response.status
+      };
     } catch (error) {
       console.error(`Ошибка загрузки файла из удаленного хранилища: ${filePath}`, error.message);
       
-      // Пробуем получить файл из локального хранилища как запасной вариант
-      console.log(`Попытка получить файл из локального хранилища: ${filePath}`);
-      try {
-        return await getFileFromLocalStorage(filePath);
-      } catch (localError) {
-        console.error('Ошибка получения файла из локального хранилища:', localError.message);
-        throw error; // Возвращаем оригинальную ошибку
+      if (error.response) {
+        console.error('Статус ответа:', error.response.status);
+        console.error('Заголовки ответа:', error.response.headers);
+        
+        // Если ошибка формата запроса, пробуем альтернативный способ
+        if (error.response.status === 400 || error.response.status === 404) {
+          console.log('Пробуем альтернативный формат запроса к API...');
+          
+          try {
+            // Пробуем добавить filePath в путь вместо параметра запроса
+            const altUrl = `${STORAGE_CONFIG.API_URL}/download/${encodeURIComponent(filePath)}`;
+            console.log(`Альтернативный URL: ${altUrl}`);
+            
+            const altOptions = {
+              method: 'GET',
+              url: altUrl,
+              headers: {
+                'X-API-KEY': apiKey,
+                'Accept': 'video/mp4, application/octet-stream'
+              },
+              responseType: 'arraybuffer',
+              timeout: 30000
+            };
+            
+            if (rangeHeader) {
+              altOptions.headers['Range'] = rangeHeader;
+            }
+            
+            const altResponse = await axios(altOptions);
+            console.log(`Альтернативный запрос успешен, статус: ${altResponse.status}`);
+            
+            return {
+              data: altResponse.data,
+              headers: altResponse.headers,
+              status: altResponse.status
+            };
+          } catch (altError) {
+            console.error('Альтернативный запрос тоже не удался:', altError.message);
+          }
+        }
       }
+      
+      // Пробуем получить файл из локального хранилища как запасной вариант
+      if (STORAGE_CONFIG.FALLBACK_TO_LOCAL !== false) {
+        console.log(`Попытка получить файл из локального хранилища: ${filePath}`);
+        try {
+          const localData = await getFileFromLocalStorage(filePath);
+          return {
+            data: localData,
+            status: 200,
+            headers: {
+              'content-type': 'video/mp4',
+              'content-length': localData.length,
+              'accept-ranges': 'bytes'
+            }
+          };
+        } catch (localError) {
+          console.error('Ошибка получения файла из локального хранилища:', localError.message);
+        }
+      }
+      
+      throw error; // Переброс ошибки выше
     }
   } else {
     // Логика для локального хранилища
-    return await getFileFromLocalStorage(filePath);
+    try {
+      const localData = await getFileFromLocalStorage(filePath);
+      return {
+        data: localData,
+        status: 200,
+        headers: {
+          'content-type': 'video/mp4',
+          'content-length': localData.length,
+          'accept-ranges': 'bytes'
+        }
+      };
+    } catch (error) {
+      console.error(`Ошибка чтения файла из локального хранилища: ${filePath}`, error.message);
+      throw error;
+    }
   }
 }
 

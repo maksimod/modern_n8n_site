@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { courseModel } = require('../models/data-model');
 const { VIDEO_TYPES, STORAGE_CONFIG } = require('../config'); // Обновляем импорт констант
+const mime = require('mime');
 
 function formatYoutubeUrl(url) {
   if (!url) return '';
@@ -279,6 +280,111 @@ router.get('/:courseId/videos/:videoId', async (req, res) => {
   } catch (err) {
     console.error(`Error getting video ${req.params.videoId}:`, err);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Маршрут для стриминга видео с поддержкой chunk-загрузки
+router.get('/videos/:filename', async (req, res) => {
+  const filename = req.params.filename;
+  
+  if (!filename) {
+    return res.status(400).json({ message: 'Filename is required' });
+  }
+  
+  try {
+    // Очищаем имя файла от запрещенных символов
+    const cleanFilename = filename.replace(/\.\./g, '');
+    const videoPath = path.join(__dirname, '../data/videos', cleanFilename);
+    
+    console.log(`Streaming video: ${videoPath}`);
+    
+    if (!fs.existsSync(videoPath)) {
+      console.error(`Video file not found: ${videoPath}`);
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Получение информации о файле
+    const stat = fs.statSync(videoPath);
+    const fileSize = stat.size;
+    const mimeType = mime.getType(path.extname(videoPath)) || 'video/mp4';
+    
+    // ТЕСТОВОЕ ОГРАНИЧЕНИЕ: ограничиваем размер видео до примерно 10 секунд
+    const tenSecondsChunkSize = 10 * 1024 * 1024; // примерно 10 секунд видео
+    const limitedFileSize = Math.min(fileSize, tenSecondsChunkSize);
+    
+    console.log(`ТЕСТ: ограничиваем видео до ${limitedFileSize} байт (≈10 секунд)`);
+    
+    // Получаем заголовок Range, если он присутствует
+    const range = req.headers.range;
+    
+    if (range) {
+      // Разбираем диапазон на начальную и конечную позиции
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      
+      // Если начальная позиция больше нашего ограничения, возвращаем ошибку
+      if (start >= limitedFileSize) {
+        console.log(`ТЕСТ: запрошенный диапазон за пределами тестового лимита в 10 секунд`);
+        return res.status(416).json({ message: 'Requested Range Not Satisfiable - Test limit' });
+      }
+      
+      // Если конечная позиция не указана, используем размер чанка или конец файла
+      const chunkSize = 1024 * 1024; // 1MB чанки
+      let end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + chunkSize, limitedFileSize - 1);
+      
+      // Ограничиваем конечную позицию нашим лимитом
+      end = Math.min(end, limitedFileSize - 1);
+      
+      // Размер части для отправки
+      const contentLength = (end - start) + 1;
+      
+      console.log(`ТЕСТ: стриминг чанка: start=${start}, end=${end}, length=${contentLength}`);
+      
+      // Устанавливаем правильные заголовки для частичного контента
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${limitedFileSize}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': contentLength,
+        'Content-Type': mimeType,
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      // Создаем поток для чтения файла в заданном диапазоне
+      const fileStream = fs.createReadStream(videoPath, { start, end });
+      
+      // При ошибке чтения отправляем 500
+      fileStream.on('error', (error) => {
+        console.error(`Error streaming file: ${error.message}`);
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Error streaming video' });
+        }
+      });
+      
+      // Отправляем поток клиенту
+      fileStream.pipe(res);
+    } else {
+      // Если клиент не запросил Range, отправляем весь файл с правильными заголовками
+      res.writeHead(200, {
+        'Content-Length': limitedFileSize,
+        'Content-Type': mimeType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      
+      // Отправляем ограниченную часть файла
+      const fileStream = fs.createReadStream(videoPath, { end: limitedFileSize - 1 });
+      fileStream.on('error', (error) => {
+        console.error(`Error streaming limited file: ${error.message}`);
+        if (!res.headersSent) {
+          res.status(500).json({ message: 'Error streaming video' });
+        }
+      });
+      
+      fileStream.pipe(res);
+    }
+  } catch (error) {
+    console.error(`Error accessing video file: ${error.message}`);
+    res.status(500).json({ message: 'Server error accessing video' });
   }
 });
 

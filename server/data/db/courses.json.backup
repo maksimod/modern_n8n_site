@@ -15,16 +15,6 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-data-transformation",
-        "title": "Узлы «Data transformation»",
-        "description": "Преобразование данных",
-        "duration": "12:30",
-        "storagePath": "c47ff677-f32f-41af-9028-0345eb890abc.mp4",
-        "videoType": "storage",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-triggers",
         "title": "Триггеры",
         "description": "Использование триггеров в n8n",
@@ -62,16 +52,6 @@
         "localVideo": ""
       },
       {
-        "id": "n8n-work-with-data",
-        "title": "Работа с данными",
-        "description": "Продвинутые методы работы с данными",
-        "duration": "12:30",
-        "storagePath": "c36ea0b8-7c6c-4a4c-a70e-ce3c599c52c2.mp4",
-        "videoType": "storage",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
         "id": "n8n-postgres",
         "title": "Postgres",
         "description": "Интеграция с PostgreSQL",
@@ -86,16 +66,6 @@
         "description": "Подключение к Google Cloud",
         "duration": "12:30",
         "videoType": "text",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
-        "id": "n8n-google-sheets",
-        "title": "Google sheets",
-        "description": "Работа с Google Sheets",
-        "duration": "12:30",
-        "storagePath": "e65fbb65-d8d0-4eee-aa5a-4624fe8a4419.mp4",
-        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -127,34 +97,15 @@
         "localVideo": ""
       },
       {
-        "id": "5b03be92-0d62-408e-8c0f-ce9d956e6b93",
-        "title": "чспа",
+        "id": "4892a458-fd31-4212-b852-cab49240929a",
+        "title": "trestim",
         "description": "",
         "duration": "",
-        "storagePath": "aadbb76d-3b8e-4e5e-b9fe-0acc161ac608.mp4",
-        "videoType": "storage",
         "isPrivate": false,
-        "localVideo": ""
-      },
-      {
-        "id": "f594f870-40af-40c9-84ec-6b1af82fd37c",
-        "title": "anopther",
-        "description": "",
-        "duration": "",
-        "storagePath": "42f3c73a-af1d-4ebe-a0c3-161ddbcda6f8.mp4",
-        "videoType": "storage",
-        "isPrivate": false,
-        "localVideo": ""
-      },
-      {
-        "id": "421344f0-e394-4491-9f4e-86f0a96534f5",
-        "title": "wtf",
-        "description": "",
-        "duration": "",
-        "storagePath": "44d2db61-0875-4fe9-a6e1-aa6b515edf92.mp4",
-        "videoType": "storage",
-        "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "ae90dfc7-86c9-4b55-835f-b0c2bb027ce3.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       }
     ]
   },

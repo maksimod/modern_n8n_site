@@ -8,11 +8,23 @@ const VIDEO_TYPES = {
   
 // Настройка удаленного хранилища
 const STORAGE_CONFIG = {
+  // Основной URL API
   API_URL: process.env.STORAGE_API_URL || 'http://46.35.241.37:6005/api/remote/files/Videos',
+  // Ключ API для авторизации
   API_KEY: process.env.STORAGE_API_KEY || 'iq-banana-secure-api-key-2024',
   // Включаем удаленное хранилище
-  USE_REMOTE_STORAGE: process.env.USE_REMOTE_STORAGE === 'false' ? false : true
+  USE_REMOTE_STORAGE: process.env.USE_REMOTE_STORAGE === 'false' ? false : true,
+  // Настройки для отладки
+  DEBUG: process.env.STORAGE_DEBUG === 'true' ? true : false,
+  // Попытка снова использовать локальное хранилище при ошибках
+  FALLBACK_TO_LOCAL: true
 };
+
+console.log('Загружена конфигурация хранилища:', {
+  API_URL: STORAGE_CONFIG.API_URL,
+  USE_REMOTE_STORAGE: STORAGE_CONFIG.USE_REMOTE_STORAGE,
+  DEBUG: STORAGE_CONFIG.DEBUG
+});
 
 module.exports = {
   VIDEO_TYPES,

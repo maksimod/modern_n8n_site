@@ -528,3 +528,53 @@
   margin-right: 8px;
   font-size: 18px;
 }
+
+.loadingIndicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Скрывать индикатор загрузки когда видео начало воспроизводиться */
+video.videoElement:not([paused]):not([seeking]):not([waiting]) + .loadingIndicator {
+  display: none;
+}
+
+video.videoElement::-webkit-media-controls-panel {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+video.videoElement::-webkit-media-controls-play-button,
+video.videoElement::-webkit-media-controls-timeline,
+video.videoElement::-webkit-media-controls-volume-slider-container {
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+}
+
+.loadProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: #4f46e5;
+  transition: width 0.3s ease;
+  z-index: 3;
+  pointer-events: none;
+}
