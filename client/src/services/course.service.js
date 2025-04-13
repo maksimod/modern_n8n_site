@@ -324,11 +324,24 @@ export const uploadVideoFile = async (file, onProgress) => {
       
       let uploadStatus = finalizeResult;
       let attempts = 0;
-      const maxAttempts = 120; // Максимум 2 часа при интервале 60 секунд
+      const maxAttempts = 120; // Максимальное число попыток
+      
+      // Определяем интервал проверки в зависимости от размера файла
+      let checkInterval;
+      if (file.size < 10 * 1024 * 1024) { // < 10MB
+        checkInterval = 1000; // 1 секунда для маленьких файлов
+        console.log('Small file detected, checking status every 1 second');
+      } else if (file.size < 100 * 1024 * 1024) { // < 100MB
+        checkInterval = 5000; // 5 секунд для средних файлов
+        console.log('Medium file detected, checking status every 5 seconds');
+      } else {
+        checkInterval = 15000; // 15 секунд для больших файлов
+        console.log('Large file detected, checking status every 15 seconds');
+      }
       
       while (uploadStatus.status === 'processing' && attempts < maxAttempts) {
-        // Ждем 60 секунд перед следующей проверкой
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        // Ждем перед следующей проверкой
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
         
         // Проверяем статус
         uploadStatus = await checkUploadStatus(sessionData.sessionId);

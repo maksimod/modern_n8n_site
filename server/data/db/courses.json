@@ -28,12 +28,10 @@
         "id": "n8n-credentials",
         "title": "Credentials",
         "description": "Настройка учетных данных",
-        "videoType": "text",
         "duration": "12:30",
-        "localVideo": "",
-        "storagePath": "",
-        "videoUrl": "",
-        "isPrivate": false
+        "videoType": "text",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-flow",
@@ -94,9 +92,11 @@
         "title": "Практика: Telegram Trigger",
         "description": "Настройка Telegram триггера",
         "duration": "12:30",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "8b0415a9-9869-421e-9635-30b357d46fe0.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       }
     ]
   },

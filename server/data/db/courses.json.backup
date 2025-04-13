@@ -29,8 +29,7 @@
         "title": "Credentials",
         "description": "Настройка учетных данных",
         "duration": "12:30",
-        "storagePath": "e1cfcfb6-3289-4ff3-a0f2-b2dee6165032.mp4",
-        "videoType": "storage",
+        "videoType": "text",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -93,9 +92,11 @@
         "title": "Практика: Telegram Trigger",
         "description": "Настройка Telegram триггера",
         "duration": "12:30",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "8b0415a9-9869-421e-9635-30b357d46fe0.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       }
     ]
   },
