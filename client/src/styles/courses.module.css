@@ -274,23 +274,6 @@
   background-color: var(--success-darker, #047857);
 }
 
-.downloadButton {
-  padding: 0.5rem 1rem;
-  background-color: var(--secondary-color, #0ea5e9);
-  color: white;
-  border: none;
-  border-radius: var(--border-radius, 8px);
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-}
-
-.downloadButton:hover {
-  background-color: var(--secondary-darker, #0284c7);
-}
-
 .deleteButton {
   padding: 0.5rem 1rem;
   background-color: var(--danger-color, #ef4444);
@@ -306,11 +289,6 @@
 
 .deleteButton:hover {
   background-color: var(--danger-darker, #b91c1c);
-}
-
-.downloadButton:before {
-  content: "\2193"; /* downwards arrow */
-  margin-right: 0.5rem;
 }
 
 .selectVideo, .loading, .notFound {

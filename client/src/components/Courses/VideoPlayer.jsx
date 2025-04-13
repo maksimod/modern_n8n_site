@@ -185,36 +185,6 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
     return () => clearTimeout(timer);
   }, [preloadNextVideo]);
 
-  // Обработчик для скачивания видео
-  const handleDownload = () => {
-    try {
-      let downloadUrl;
-      let fileName = video.title ? `${video.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.mp4` : 'video.mp4';
-      
-      if (videoType === VIDEO_TYPES.STORAGE && video.storagePath && STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-        downloadUrl = getStorageVideoUrl(video.storagePath);
-      } else if ((videoType === VIDEO_TYPES.LOCAL && video.localVideo) || 
-                (videoType === VIDEO_TYPES.STORAGE && video.storagePath && !STORAGE_CONFIG.USE_REMOTE_STORAGE)) {
-        const localPath = video.localVideo || video.storagePath;
-        const cleanVideoPath = localPath.replace(/^\/videos\//, '');
-        downloadUrl = `/api/videos/${cleanVideoPath}`;
-      } else {
-        setError('Невозможно скачать внешнее видео');
-        return;
-      }
-      
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error('Error downloading video:', err);
-      setError('Ошибка при скачивании видео');
-    }
-  };
-
   // Функция для удаления видео
   const handleDelete = () => {
     if (onVideoDelete && video && course) {
@@ -424,11 +394,7 @@ const VideoPlayer = ({ course, video, onVideoComplete, onVideoDelete }) => {
       <div className={styles.videoHeader}>
         <h2 className={styles.videoTitle}>{video.title}</h2>
         <div className={styles.videoActions}>
-          {(videoType === VIDEO_TYPES.STORAGE || videoType === VIDEO_TYPES.LOCAL) && (
-            <button className={styles.downloadButton} onClick={handleDownload}>
-              {t('course.download')}
-            </button>
-          )}
+          {/* Кнопка скачивания удалена */}
         </div>
       </div>
       <div className={styles.videoDescription}>{video.description}</div>

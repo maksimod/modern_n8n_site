@@ -16,7 +16,6 @@ const resources = {
       "hideCourseContents": "Hide Contents",
       "course.markCompleted": "Mark as completed",
       "course.completed": "Completed",
-      "course.download": "Download",
       "course.courses": "Courses",
       "course.continueCourse": "Continue course",
       "course.startCourse": "Start course",
@@ -26,6 +25,9 @@ const resources = {
       "previous": "Previous",
       "next": "Next",
       "private": "Private",
+      "course.browserNotSupportVideo": "Your browser does not support video playback",
+      "course.retryLoading": "Retry loading",
+      "course.noAccessNonTexo": "To access this video, you need to register on the Texo platform.",
       
       // Авторизация
       "login": "Login",
@@ -83,7 +85,6 @@ const resources = {
       "hideCourseContents": "Скрыть содержание",
       "course.markCompleted": "Отметить как просмотренное",
       "course.completed": "Просмотрено",
-      "course.download": "Скачать",
       "course.courses": "Курсы",
       "course.continueCourse": "Продолжить курс",
       "course.startCourse": "Начать курс",
@@ -93,6 +94,9 @@ const resources = {
       "previous": "Предыдущее",
       "next": "Следующее",
       "private": "Приватный",
+      "course.browserNotSupportVideo": "Ваш браузер не поддерживает воспроизведение видео",
+      "course.retryLoading": "Повторить загрузку",
+      "course.noAccessNonTexo": "Для доступа к этому видео вам нужно зарегистрироваться на платформе Texo",
       
       // Авторизация
       "login": "Вход",

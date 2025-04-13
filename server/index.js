@@ -356,58 +356,6 @@ app.get('/videos/:filename', (req, res) => {
   handleVideoStream(req, res, filename);
 });
 
-// Маршрут для скачивания видео
-app.get('/download/:filename', (req, res) => {
-  const filename = req.params.filename;
-  
-  if (STORAGE_CONFIG.USE_REMOTE_STORAGE) {
-    getFileFromStorage(filename)
-      .then(videoData => {
-        // ТЕСТОВОЕ ОГРАНИЧЕНИЕ: только 10 секунд видео
-        const tenSecondsChunkSize = 10 * 1024 * 1024; // примерно 10 секунд
-        const limitedData = videoData.length > tenSecondsChunkSize ? 
-                           videoData.slice(0, tenSecondsChunkSize) : 
-                           videoData;
-                           
-        console.log(`ТЕСТ: ограничиваем скачиваемое видео до ${limitedData.length} байт (≈10 секунд)`);
-        
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Content-Length', limitedData.length);
-        res.send(limitedData);
-      })
-      .catch(error => {
-        console.error(`Ошибка при получении файла из хранилища: ${filename}`, error);
-        res.status(404).json({ message: 'File not found' });
-      });
-  } else {
-    const filePath = path.join(__dirname, 'data/videos', filename);
-    
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-    
-    // ТЕСТОВОЕ ОГРАНИЧЕНИЕ: только 10 секунд видео
-    const tenSecondsChunkSize = 10 * 1024 * 1024; // примерно 10 секунд
-    const stat = fs.statSync(filePath);
-    
-    if (stat.size > tenSecondsChunkSize) {
-      console.log(`ТЕСТ: ограничиваем локальное скачиваемое видео до ${tenSecondsChunkSize} байт (≈10 секунд)`);
-      
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'video/mp4');
-      res.setHeader('Content-Length', tenSecondsChunkSize);
-      
-      // Создаем поток для чтения только части файла
-      const limitedStream = fs.createReadStream(filePath, { end: tenSecondsChunkSize - 1 });
-      limitedStream.pipe(res);
-    } else {
-      // Если файл меньше 10 секунд, отправляем как есть
-      res.download(filePath);
-    }
-  }
-});
-
 // Перехватываем все запросы к /videos и перенаправляем на наш кастомный обработчик
 app.use('/videos', (req, res, next) => {
   const url = req.url;
