@@ -762,9 +762,15 @@ router.get('/disk-usage', [auth, isAdmin], async (req, res) => {
     // Путь к директории с видео
     const videosPath = path.join(__dirname, '../data/videos');
 
-    // Если директория не существует, создаем её
+    // Если директория не существует, создаем её только если не используется удаленное хранилище
+    // или включен режим резервного копирования
     if (!fs.existsSync(videosPath)) {
-      fs.mkdirSync(videosPath, { recursive: true });
+      if (!STORAGE_CONFIG.USE_REMOTE_STORAGE || STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+        fs.mkdirSync(videosPath, { recursive: true });
+        console.log(`Создана директория для видео при запросе места на диске: ${videosPath}`);
+      } else {
+        console.log('Пропускаем создание директории videos при запросе места на диске: используется удаленное хранилище без резервного копирования');
+      }
     }
 
     // Получаем информацию о диске с помощью команды df
@@ -812,18 +818,22 @@ router.get('/disk-usage', [auth, isAdmin], async (req, res) => {
     }
 
     // Вычисляем размер директории с видео
-    const videoFiles = fs.readdirSync(videosPath);
+    let videoFiles = [];
     let videoSize = 0;
 
-    for (const file of videoFiles) {
-      const filePath = path.join(videosPath, file);
-      try {
-        const stats = fs.statSync(filePath);
-        if (stats.isFile()) {
-          videoSize += stats.size;
+    if (fs.existsSync(videosPath)) {
+      videoFiles = fs.readdirSync(videosPath);
+      
+      for (const file of videoFiles) {
+        const filePath = path.join(videosPath, file);
+        try {
+          const stats = fs.statSync(filePath);
+          if (stats.isFile()) {
+            videoSize += stats.size;
+          }
+        } catch (err) {
+          console.error(`Error getting stats for file ${file}:`, err);
         }
-      } catch (err) {
-        console.error(`Error getting stats for file ${file}:`, err);
       }
     }
 
@@ -854,6 +864,12 @@ router.delete('/delete-all-videos', [auth, isAdmin], async (req, res) => {
 
     // Проверяем существование директории
     if (!fs.existsSync(videosPath)) {
+      // Не создаем директорию если используется удаленное хранилище без резервного копирования
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+        console.log('Пропускаем создание директории videos при удалении: используется удаленное хранилище без резервного копирования');
+        return res.json({ success: true, message: 'No videos to delete (remote storage mode)', deletedCount: 0 });
+      }
+      
       fs.mkdirSync(videosPath, { recursive: true });
       return res.json({ success: true, message: 'No videos to delete', deletedCount: 0 });
     }

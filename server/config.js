@@ -17,13 +17,14 @@ const STORAGE_CONFIG = {
   // Настройки для отладки
   DEBUG: process.env.STORAGE_DEBUG === 'true' ? true : false,
   // Попытка снова использовать локальное хранилище при ошибках
-  FALLBACK_TO_LOCAL: true
+  FALLBACK_TO_LOCAL: process.env.FALLBACK_TO_LOCAL === 'false' ? false : true
 };
 
 console.log('Загружена конфигурация хранилища:', {
   API_URL: STORAGE_CONFIG.API_URL,
   USE_REMOTE_STORAGE: STORAGE_CONFIG.USE_REMOTE_STORAGE,
-  DEBUG: STORAGE_CONFIG.DEBUG
+  DEBUG: STORAGE_CONFIG.DEBUG,
+  FALLBACK_TO_LOCAL: STORAGE_CONFIG.FALLBACK_TO_LOCAL
 });
 
 module.exports = {

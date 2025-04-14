@@ -9,14 +9,19 @@ const { STORAGE_CONFIG } = require('../config');
 
 // Проверяем существование директории для видео и создаем её при необходимости
 function ensureVideosDirectory() {
-  // Директория всегда нужна для временных файлов
-  const videosDir = path.join(__dirname, '../data/videos');
-  if (!fs.existsSync(videosDir)) {
-    fs.mkdirSync(videosDir, { recursive: true });
-    console.log(`Created videos directory: ${videosDir}`);
+  // Создаем директорию для видео только если не используется удаленное хранилище
+  // или если включен режим резервного копирования
+  if (!STORAGE_CONFIG.USE_REMOTE_STORAGE || STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+    const videosDir = path.join(__dirname, '../data/videos');
+    if (!fs.existsSync(videosDir)) {
+      fs.mkdirSync(videosDir, { recursive: true });
+      console.log(`Created videos directory: ${videosDir}`);
+    }
+  } else {
+    console.log('Skipping videos directory creation: using remote storage without fallback');
   }
   
-  // Создаем директорию для временных файлов
+  // Создаем директорию для временных файлов (нужна всегда)
   const tempDir = path.join(__dirname, '../temp');
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });

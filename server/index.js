@@ -185,22 +185,26 @@ app.get('/api/proxy/storage/:filename', async (req, res) => {
       console.error(`ПОТОК: Ошибка при настройке запроса:`, error.message);
     }
     
-    // Пробуем использовать локальное хранилище как запасной вариант
-    try {
-      const localPath = path.join(__dirname, 'data/videos', filename);
-      
-      if (fs.existsSync(localPath)) {
-        console.log(`ПОТОК: Найден локальный файл ${localPath}, используем его как запасной вариант`);
+    // Пробуем использовать локальное хранилище как запасной вариант только если это разрешено
+    if (STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+      try {
+        const localPath = path.join(__dirname, 'data/videos', filename);
         
-        res.setHeader('Content-Type', 'video/mp4');
-        res.setHeader('Accept-Ranges', 'bytes');
-        
-        const fileStream = fs.createReadStream(localPath);
-        fileStream.pipe(res);
-        return;
+        if (fs.existsSync(localPath)) {
+          console.log(`ПОТОК: Найден локальный файл ${localPath}, используем его как запасной вариант`);
+          
+          res.setHeader('Content-Type', 'video/mp4');
+          res.setHeader('Accept-Ranges', 'bytes');
+          
+          const fileStream = fs.createReadStream(localPath);
+          fileStream.pipe(res);
+          return;
+        }
+      } catch (localError) {
+        console.error(`ПОТОК: Ошибка при попытке использовать локальное хранилище:`, localError);
       }
-    } catch (localError) {
-      console.error(`ПОТОК: Ошибка при попытке использовать локальное хранилище:`, localError);
+    } else {
+      console.log(`ПОТОК: Использование локального хранилища запрещено настройками`);
     }
     
     res.status(500).json({ message: 'Error proxying file from storage' });
@@ -243,13 +247,19 @@ const handleVideoStream = async (req, res, filename) => {
       } catch (error) {
         console.error(`Ошибка получения файла из удаленного хранилища: ${filename}`, error);
         
-        // Пробуем локальное хранилище как запасной вариант
+        // Пробуем локальное хранилище как запасной вариант, только если это разрешено
+        if (!STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+          console.log(`ПОТОК: Использование локального хранилища запрещено настройками`);
+          return res.status(500).send('Ошибка получения файла из хранилища');
+        }
+        
         console.log(`ПОТОК: Попытка использовать локальное хранилище для ${filename}`);
         // Продолжаем выполнение - код ниже попробует локальное хранилище
       }
     }
     
-    // Код для локального хранилища (без изменений, оставляем как есть)
+    // Код для локального хранилища - выполняется только если отключено удаленное хранилище 
+    // или если разрешен fallback и была ошибка с удаленным хранилищем
     const videoPath = path.join(__dirname, 'data/videos', filename);
     
     if (!fs.existsSync(videoPath)) {

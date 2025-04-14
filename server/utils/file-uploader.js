@@ -123,11 +123,24 @@ async function uploadFileToStorage(tempFilePath, fileName, originalName, fileSiz
 async function saveFileLocally(tempFilePath, fileName, originalName, fileSize) {
   console.log(`[ЛОКАЛЬНОЕ ХРАНИЛИЩЕ] Начало загрузки файла: ${fileName}`);
   
-  // Создаем каталог для видео, если не существует
+  // Создаем каталог для видео, если не используется удаленное хранилище
+  // или включен режим резервного копирования
   const videosDir = path.join(__dirname, '../data/videos');
-  if (!fs.existsSync(videosDir)) {
-    fs.mkdirSync(videosDir, { recursive: true });
-    console.log(`Создана директория для видео: ${videosDir}`);
+  if (!STORAGE_CONFIG.USE_REMOTE_STORAGE || STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+    if (!fs.existsSync(videosDir)) {
+      fs.mkdirSync(videosDir, { recursive: true });
+      console.log(`Создана директория для видео: ${videosDir}`);
+    }
+  } else {
+    console.log('Пропускаем создание директории videos: используется удаленное хранилище без резервного копирования');
+    return {
+      success: true,
+      message: 'Используется удаленное хранилище без локального резервного копирования',
+      filePath: fileName,
+      originalName: originalName,
+      size: fileSize,
+      videoType: VIDEO_TYPES.STORAGE
+    };
   }
   
   // Копируем файл в директорию видео
