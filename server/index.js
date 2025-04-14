@@ -18,8 +18,17 @@ require('dotenv').config();
 // Создаем приложение Express
 const app = express();
 
-// Инициализируем директорию для видео
-storageFixUtils.ensureVideosDirectory();
+// Инициализируем директорию для видео только если нужно
+// Проверка внутри функции не решает проблему полностью, так как сам факт вызова этой функции
+// может вызывать создание директории, поэтому добавляем дополнительную проверку здесь
+if (!STORAGE_CONFIG.USE_REMOTE_STORAGE || STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+  console.log('Инициализация директории для видео (локальное хранилище или резервное копирование)');
+  storageFixUtils.ensureVideosDirectory();
+} else {
+  console.log('Пропускаем инициализацию директории для видео: используется удаленное хранилище без резервного копирования');
+  // Создаем только директорию для временных файлов, которая всегда нужна
+  storageFixUtils.ensureTempDirectory();
+}
 
 // Middleware
 app.use(cors({
@@ -262,8 +271,17 @@ const handleVideoStream = async (req, res, filename) => {
     // или если разрешен fallback и была ошибка с удаленным хранилищем
     const videoPath = path.join(__dirname, 'data/videos', filename);
     
+    // Проверяем существование файла и добавляем проверку доступности директории
     if (!fs.existsSync(videoPath)) {
       console.error(`ПОТОК: Файл не найден локально: ${videoPath}`);
+      
+      // Если директория не существует и мы используем удаленное хранилище без резервного копирования,
+      // выдаем более информативное сообщение
+      if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+        console.log('ПОТОК: Локальное хранилище не используется в текущей конфигурации');
+        return res.status(404).send('Файл не найден в удаленном хранилище');
+      }
+      
       return res.status(404).send('Файл не найден');
     }
     

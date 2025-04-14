@@ -22,6 +22,11 @@ function ensureVideosDirectory() {
   }
   
   // Создаем директорию для временных файлов (нужна всегда)
+  ensureTempDirectory();
+}
+
+// Выделяем создание директории для временных файлов в отдельную функцию
+function ensureTempDirectory() {
   const tempDir = path.join(__dirname, '../temp');
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir, { recursive: true });
@@ -65,5 +70,6 @@ function setupStorageMock(app) {
 
 module.exports = {
   ensureVideosDirectory,
+  ensureTempDirectory,
   setupStorageMock
 }; 

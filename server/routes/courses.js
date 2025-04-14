@@ -61,6 +61,19 @@ router.get('/', async (req, res) => {
         
         // Проверка наличия локального видео
         if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+          // Если используется удаленное хранилище без резервного копирования, не проверяем локальные файлы
+          if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+            console.log(`Пропускаем проверку локального видео ${video.id}: используется удаленное хранилище без резервного копирования`);
+            return {
+              id: video.id,
+              title: video.title,
+              description: video.description || '',
+              duration: video.duration,
+              videoType: VIDEO_TYPES.TEXT, // Изменяем тип на TEXT, так как локальный файл недоступен
+              isPrivate: video.isPrivate
+            };
+          }
+          
           const localVideoPath = typeof video.localVideo === 'string' ? video.localVideo.replace(/^\/videos\//, '') : '';
           const videoPath = path.join(__dirname, '../data/videos', localVideoPath);
           
@@ -174,6 +187,19 @@ router.get('/:courseId', async (req, res) => {
           isPrivate: video.isPrivate
         };
       } else if (videoType === VIDEO_TYPES.LOCAL && video.localVideo) {
+        // Если используется удаленное хранилище без резервного копирования, не используем локальные видео
+        if (STORAGE_CONFIG.USE_REMOTE_STORAGE && !STORAGE_CONFIG.FALLBACK_TO_LOCAL) {
+          console.log(`Пропускаем локальное видео ${video.id} в курсе ${course.id}: используется удаленное хранилище без резервного копирования`);
+          return {
+            id: video.id,
+            title: video.title,
+            description: video.description || '',
+            duration: video.duration,
+            videoType: VIDEO_TYPES.TEXT, // Изменяем тип на TEXT, так как локальный файл недоступен
+            isPrivate: video.isPrivate
+          };
+        }
+        
         return {
           id: video.id,
           title: video.title,
