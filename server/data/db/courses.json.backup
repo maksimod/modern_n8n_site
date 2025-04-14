@@ -48,7 +48,8 @@
         "title": "Узлы \"Core\"",
         "description": "Базовые узлы Core",
         "duration": "12:30",
-        "videoType": "text",
+        "storagePath": "e7ddd9d6-49b2-4a33-a914-5a0adabaac81.mp4",
+        "videoType": "storage",
         "isPrivate": false,
         "localVideo": ""
       },
@@ -66,9 +67,11 @@
         "title": "Google cloud console",
         "description": "Подключение к Google Cloud",
         "duration": "12:30",
-        "videoType": "text",
         "isPrivate": false,
-        "localVideo": ""
+        "storagePath": "5041ce52-89c1-4cc3-b8e3-4cb432dbda7a.mp4",
+        "localVideo": "",
+        "videoUrl": "",
+        "videoType": "storage"
       },
       {
         "id": "n8n-google-drive",

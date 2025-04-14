@@ -13,6 +13,21 @@ const { joinChunksEfficiently, cleanupChunks } = require('../utils/file-joiner')
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
 
+/**
+ * Удаляет конкретный временный файл
+ * @param {string} filePath путь к файлу для удаления
+ */
+function cleanTempFile(filePath) {
+  try {
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`Временный файл удален: ${filePath}`);
+    }
+  } catch (err) {
+    console.error(`Ошибка при удалении временного файла ${filePath}:`, err);
+  }
+}
+
 // Configure multer for temporary storage
 const tempStorage = multer.diskStorage({
   destination: function(req, file, cb) {
@@ -282,9 +297,7 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
         await cleanupChunks(chunkPaths, session.sessionDir);
         
         // Удаляем объединенный файл
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
-        }
+        cleanTempFile(tempFilePath);
         
         // Сохраняем результат в сессии и обновляем статус
         session.status = 'completed';
@@ -324,6 +337,12 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
             
             console.log('Local storage fallback result:', localResult);
             
+            // Удаляем временные файлы чанков
+            await cleanupChunks(chunkPaths, session.sessionDir);
+            
+            // Удаляем объединенный файл
+            cleanTempFile(tempFilePath);
+            
             // Обновляем статус и результат
             session.status = 'completed';
             session.result = {
@@ -345,6 +364,10 @@ router.post('/finalize-upload', [auth, isAdmin], async (req, res) => {
         } catch (fallbackError) {
           console.error('Even local storage fallback failed:', fallbackError);
         }
+        
+        // В любом случае очищаем временные файлы
+        await cleanupChunks(chunkPaths, session.sessionDir);
+        cleanTempFile(tempFilePath);
         
         // Обновляем статус в случае ошибки
         session.status = 'failed';
@@ -436,6 +459,10 @@ router.post('/upload', [auth, isAdmin, upload.single('file')], async (req, res) 
       
       console.log('Simple upload result:', result);
       
+      // Временный файл очищается внутри uploadFileToStorage, но на всякий случай
+      // проверим и сделаем дополнительно
+      cleanTempFile(tempFilePath);
+      
       // Return a standardized response
       return res.json({
         success: true,
@@ -448,14 +475,8 @@ router.post('/upload', [auth, isAdmin, upload.single('file')], async (req, res) 
     } catch (uploadError) {
       console.error('Error with simple upload:', uploadError);
       
-      // Clean up temp file if it exists
-      try {
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
-        }
-      } catch (cleanupError) {
-        console.error('Error cleaning up temp file:', cleanupError);
-      }
+      // Гарантированно очищаем временный файл
+      cleanTempFile(tempFilePath);
       
       return res.status(500).json({
         success: false,
@@ -479,6 +500,12 @@ setInterval(() => {
   for (const sessionId in uploadSessions) {
     const session = uploadSessions[sessionId];
     
+    // Пропускаем сессии, которые все еще активны (в процессе загрузки или обработки)
+    if (session.status === 'processing') {
+      console.log(`Skipping cleanup for active session: ${sessionId} (processing)`);
+      continue;
+    }
+    
     if (now - session.createdAt > expireTime) {
       console.log(`Cleaning up expired session: ${sessionId}`);
       
@@ -486,13 +513,18 @@ setInterval(() => {
         // Удаляем чанки
         for (let i = 0; i < session.totalChunks; i++) {
           if (session.chunks[i] && fs.existsSync(session.chunks[i].path)) {
-            fs.unlinkSync(session.chunks[i].path);
+            cleanTempFile(session.chunks[i].path);
           }
         }
         
         // Удаляем директорию сессии
         if (fs.existsSync(session.sessionDir)) {
           fs.rmdirSync(session.sessionDir);
+        }
+        
+        // Если есть временный файл, удаляем его
+        if (session.tempFilePath && fs.existsSync(session.tempFilePath)) {
+          cleanTempFile(session.tempFilePath);
         }
       } catch (cleanupError) {
         console.error(`Error cleaning up session ${sessionId}:`, cleanupError);
