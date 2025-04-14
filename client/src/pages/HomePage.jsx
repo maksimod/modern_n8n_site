@@ -72,9 +72,9 @@ const HomePage = () => {
         ) : (
           <div className={styles.courseGrid}>
             {courses.map(course => (
-              <Link 
+              <a 
                 key={course.id} 
-                to={`/course/${course.id}`}
+                href={`/course/${course.id}`}
                 className={styles.courseCard}
               >
                 <h2 className={styles.courseTitle}>{course.title}</h2>
@@ -84,7 +84,7 @@ const HomePage = () => {
                     {course.videos?.length || 0} {t('videos')}
                   </span>
                 </div>
-              </Link>
+              </a>
             ))}
           </div>
         )}

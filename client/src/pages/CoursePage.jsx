@@ -243,9 +243,9 @@ const CoursePage = () => {
       
       <div className={styles.coursePageContainer}>
         <div className={`${styles.courseSidebar} ${showSidebar ? styles.visible : ''}`}>
-          <Link to="/" className={styles.backToCoursesLink}>
+          <a href="/" className={styles.backToCoursesLink}>
             <span>← {t('backToCourses')}</span>
-          </Link>
+          </a>
           
           <h2 className={styles.courseTitle}>{course.title}</h2>
           
@@ -264,8 +264,8 @@ const CoursePage = () => {
                 key={video.id} 
                 className={styles.videoItemContainer} 
               >
-                <Link 
-                  to={`/course/${courseId}?video=${video.id}`}
+                <a 
+                  href={`/course/${courseId}?video=${video.id}`}
                   className={`${styles.videoItem} ${isActive ? styles.videoItemActive : ''} ${
                     completed ? styles.videoCardCompleted : ''
                   }`}
@@ -285,7 +285,7 @@ const CoursePage = () => {
                       )}
                     </div>
                   </div>
-                </Link>
+                </a>
 
                 <div className={styles.videoCheckboxContainer}>
                   <input 
