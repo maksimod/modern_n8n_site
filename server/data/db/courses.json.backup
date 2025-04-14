@@ -67,11 +67,10 @@
         "title": "Google cloud console",
         "description": "Подключение к Google Cloud",
         "duration": "12:30",
-        "isPrivate": false,
         "storagePath": "5041ce52-89c1-4cc3-b8e3-4cb432dbda7a.mp4",
-        "localVideo": "",
-        "videoUrl": "",
-        "videoType": "storage"
+        "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
       },
       {
         "id": "n8n-google-drive",
@@ -98,6 +97,16 @@
         "duration": "12:30",
         "storagePath": "48593581-e224-43c7-83a5-0b1c2997e44e.mp4",
         "videoType": "storage",
+        "isPrivate": false,
+        "localVideo": ""
+      },
+      {
+        "id": "f49b98ce-5855-433d-a32a-ed46a084c509",
+        "title": "хехехе",
+        "description": "папыав",
+        "duration": "",
+        "videoUrl": "ваы",
+        "videoType": "external",
         "isPrivate": false,
         "localVideo": ""
       }

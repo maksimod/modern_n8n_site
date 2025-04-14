@@ -203,6 +203,13 @@ const CourseEditor = ({ course, onClose, language }) => {
             ? t('Video successfully updated and saved to the server')
             : t('Video successfully added and saved to the server')
         );
+        
+        // Предлагаем вернуться в список курсов с перезагрузкой
+        if (!isUpdate && confirm(t('Video added. Would you like to return to the course list?'))) {
+          setTimeout(() => {
+            onClose(true); // Закрываем редактор с перезагрузкой страницы
+          }, 500);
+        }
       } catch (err) {
         console.error(`Error auto-saving course after ${isUpdate ? 'updating' : 'adding'} video:`, err);
         setError(`Video was added to the course, but there was an error saving to the server: ${err.message || 'Unknown error'}. Please try saving the course manually.`);
